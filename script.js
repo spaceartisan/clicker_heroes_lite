@@ -36,6 +36,7 @@ const autoClickerCostText = document.getElementById("auto-clicker-cost");
 const mercenaryList = document.getElementById("mercenary-shop");
 const healthFill = document.getElementById("health-fill");
 const enemyNameText = document.createElement("p");
+const enemyLevelText = document.getElementById("enemy-level");
 document.getElementById("enemy-box").appendChild(enemyNameText);
 
 // === Hero Abilities ===
@@ -117,6 +118,7 @@ function drawRandomEnemy() {
   const name = enemyNames[(currentLevel - 1) % enemyNames.length];
   enemyNameText.textContent = `${name} of the ${theme.name}`;
   enemyHealth = getEnemyHealth();
+  enemyLevelText.textContent = `Level: ${currentLevel}`;
 }
 
 // === Enemy Logic ===
@@ -274,6 +276,7 @@ function upgradeMercSpeed(i) {
     gold -= m.attackSpeedCost;
     m.attackSpeedLevel++;
     m.attackSpeedCost = Math.floor(m.attackSpeedCost * 2);
+    startMercAttack(i)
     updateUI();
     updateMercenaryText();
   }
