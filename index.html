@@ -15,7 +15,7 @@
 
       <div id="enemy-box">
         <div id="enemy-wrapper">
-          <img src="https://via.placeholder.com/150" id="enemy" alt="Enemy">
+          <canvas id="enemy-canvas" width="150" height="150"></canvas>
           <div id="damage-overlay"></div>
         </div>
         <div id="health-bar">
@@ -26,8 +26,6 @@
 
       <button id="next-level" onclick="goToNextLevel()">➡</button>
     </div>
-
-    <button id="click-button">Attack!</button>
 
     <div id="auto-level-container">
       <label>
@@ -44,16 +42,15 @@
     <div id="shop">
       <h2>Shop</h2>
       <button onclick="buyClickUpgrade()">Upgrade Click Damage x2 (Cost: <span id="click-upgrade-cost">10</span> gold)</button>
-      <button onclick="buyAutoClickUpgrade()">Upgrade Auto Click Damage x2 (Cost: <span id="auto-upgrade-cost">20</span> gold)</button>
     </div>
 
-    <div id="auto-clicker-shop">
-      <h2>Auto Clickers</h2>
-      <button onclick="buyAutoClicker()">Buy Auto Clicker (Cost: <span id="auto-clicker-cost">50</span> gold)</button>
-      <p>Auto Clickers Owned: <span id="auto-clicker-count">0</span></p>
+    <div id="mercenary-shop">
+      <h2>Mercenaries</h2>
+      <button onclick="hireMercenary()">Hire Mercenary (Cost: <span id="auto-clicker-cost">50</span> gold)</button>
+      <p>Mercenaries Hired: <span id="auto-clicker-count">0</span></p>
     </div>
+
+    <script src="script.js"></script>
   </div>
-
-  <script src="script.js"></script>
 </body>
 </html>

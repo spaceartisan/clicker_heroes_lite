@@ -33,13 +33,10 @@ body {
   display: inline-block;
 }
 
-#enemy {
+#enemy-canvas {
+  background-color: #000;
+  image-rendering: pixelated;
   cursor: pointer;
-  transition: transform 0.1s;
-}
-
-#enemy:active {
-  transform: scale(0.95);
 }
 
 #damage-overlay {
@@ -114,7 +111,16 @@ button:hover {
 
 #stats,
 #shop,
-#auto-clicker-shop,
+#mercenary-shop,
 #auto-level-container {
   margin-top: 20px;
+}
+
+.merc-row {
+  margin-top: 6px;
+}
+.merc-row button {
+  margin-left: 6px;
+  font-size: 12px;
+  padding: 4px 8px;
 }
