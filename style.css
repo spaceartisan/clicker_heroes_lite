@@ -13,6 +13,7 @@ body {
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 0 15px #00ffcc;
+  position: relative;
 }
 
 #enemy-container {
@@ -27,12 +28,55 @@ body {
   text-align: center;
 }
 
+#enemy-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 #enemy {
   cursor: pointer;
   transition: transform 0.1s;
 }
+
 #enemy:active {
   transform: scale(0.95);
+}
+
+#damage-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.floating-damage {
+  position: absolute;
+  color: red;
+  font-size: 20px;
+  animation: floatUp 1s ease-out forwards;
+}
+
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-40px); }
+}
+
+#health-bar {
+  width: 150px;
+  height: 20px;
+  background-color: #444;
+  border-radius: 10px;
+  margin: 10px auto;
+  overflow: hidden;
+}
+
+#health-fill {
+  height: 100%;
+  background-color: #00cc88;
+  width: 100%;
+  transition: width 0.3s;
 }
 
 #prev-level,
@@ -63,20 +107,14 @@ button {
   color: #fff;
   font-size: 16px;
 }
+
 button:hover {
   background: #00ffaa;
 }
 
 #stats,
 #shop,
-#auto-clicker-shop {
-  margin-top: 20px;
-}
-
+#auto-clicker-shop,
 #auto-level-container {
-  margin-top: 15px;
-  font-size: 14px;
-}
-#auto-level-container label {
-  cursor: pointer;
+  margin-top: 20px;
 }

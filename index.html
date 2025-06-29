@@ -14,8 +14,13 @@
       <button id="prev-level" onclick="goToPrevLevel()">⬅</button>
 
       <div id="enemy-box">
-        <img src="https://via.placeholder.com/150" id="enemy" alt="Enemy">
-        <p id="enemy-health">Health: 5</p>
+        <div id="enemy-wrapper">
+          <img src="https://via.placeholder.com/150" id="enemy" alt="Enemy">
+          <div id="damage-overlay"></div>
+        </div>
+        <div id="health-bar">
+          <div id="health-fill"></div>
+        </div>
         <p id="enemy-level">Level: 1</p>
       </div>
 
