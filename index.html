@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clicker Heroes Lite</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <h1>Clicker Heroes Lite</h1>
+
+    <div id="enemy-container">
+      <button id="prev-level" onclick="goToPrevLevel()">⬅</button>
+
+      <div id="enemy-box">
+        <img src="https://via.placeholder.com/150" id="enemy" alt="Enemy">
+        <p id="enemy-health">Health: 5</p>
+        <p id="enemy-level">Level: 1</p>
+      </div>
+
+      <button id="next-level" onclick="goToNextLevel()">➡</button>
+    </div>
+
+    <button id="click-button">Attack!</button>
+
+    <div id="auto-level-container">
+      <label>
+        <input type="checkbox" id="auto-next-toggle" checked>
+        Auto advance to next level
+      </label>
+    </div>
+
+    <div id="stats">
+      <p>Gold: <span id="gold">0</span></p>
+      <p>Damage: <span id="damage">Click: 1, Auto: 1</span></p>
+    </div>
+
+    <div id="shop">
+      <h2>Shop</h2>
+      <button onclick="buyClickUpgrade()">Upgrade Click Damage x2 (Cost: <span id="click-upgrade-cost">10</span> gold)</button>
+      <button onclick="buyAutoClickUpgrade()">Upgrade Auto Click Damage x2 (Cost: <span id="auto-upgrade-cost">20</span> gold)</button>
+    </div>
+
+    <div id="auto-clicker-shop">
+      <h2>Auto Clickers</h2>
+      <button onclick="buyAutoClicker()">Buy Auto Clicker (Cost: <span id="auto-clicker-cost">50</span> gold)</button>
+      <p>Auto Clickers Owned: <span id="auto-clicker-count">0</span></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
