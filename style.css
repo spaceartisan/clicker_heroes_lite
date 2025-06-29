@@ -109,6 +109,12 @@ button:hover {
   background: #00ffaa;
 }
 
+button:disabled {
+  background: #444;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
 #stats,
 #shop,
 #mercenary-shop,
@@ -119,8 +125,52 @@ button:hover {
 .merc-row {
   margin-top: 6px;
 }
+
 .merc-row button {
   margin-left: 6px;
   font-size: 12px;
   padding: 4px 8px;
+}
+
+/* Hero Ability Bar */
+#ability-bar {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid #555;
+}
+
+#ability-bar .ability-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+#ability-bar button {
+  background-color: #00cc88;
+  color: white;
+  border: none;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+#ability-bar button:hover {
+  background-color: #00ffaa;
+}
+
+#ability-bar button:disabled {
+  background-color: #444;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+#ability-bar button.locked {
+  background-color: #222;
+  color: #777;
+  border: 1px solid #555;
+  cursor: not-allowed;
 }

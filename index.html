@@ -36,18 +36,33 @@
 
     <div id="stats">
       <p>Gold: <span id="gold">0</span></p>
-      <p>Damage: <span id="damage">Click: 1, Auto: 1</span></p>
+      <p>Damage: <span id="damage">Click: 1, Auto: 0</span></p>
     </div>
 
+    <div id="ability-bar">
+        <div class="ability-header">
+            <h3>Hero Abilities</h3>
+        </div>
+        <div class="ability-buttons">
+            <button id="strong-attack">Strong Attack</button>
+            <button id="rally">Rally</button>
+            <button id="double-attack">Double Attack</button>
+            <button id="rage">Rage</button>
+        </div>
+        </div>
+
+
+
     <div id="shop">
-      <h2>Shop</h2>
-      <button onclick="buyClickUpgrade()">Upgrade Click Damage x2 (Cost: <span id="click-upgrade-cost">10</span> gold)</button>
+      <h2>Player</h2>
+      <!-- Dynamic player upgrades added by JS -->
     </div>
 
     <div id="mercenary-shop">
       <h2>Mercenaries</h2>
       <button onclick="hireMercenary()">Hire Mercenary (Cost: <span id="auto-clicker-cost">50</span> gold)</button>
       <p>Mercenaries Hired: <span id="auto-clicker-count">0</span></p>
+      <!-- Mercenaries will populate here -->
     </div>
 
     <script src="script.js"></script>

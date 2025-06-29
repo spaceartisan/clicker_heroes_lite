@@ -1,26 +1,23 @@
-let currentLevel = 1;
-let highestLevel = 1;
-
-let baseHealth = 5;
-let enemyHealth = getHealthForLevel(currentLevel);
-let enemyMaxHealth = enemyHealth;
-
+// === Game State ===
 let gold = 0;
-let clickDamage = 1;
-let autoClickerCount = 0;
-let autoClickerCost = 50;
+let playerLevel = 1;
+let playerGearLevel = 0;
+let playerUpgradeCost = 10;
+let playerGearCost = 100;
+let nextPlayerGearLevelReq = 10;
+let playerClickDamage = 1;
 
-let clickUpgradeLevel = 0;
-let clickUpgradeCost = 10;
+let currentLevel = 1;
+let baseEnemyHealth = 5;
+let enemyHealth = baseEnemyHealth;
+let autoAdvance = true;
 
-const mercenaryNames = ["Thud", "Zara", "Clank", "Vex", "Snip"];
-let hiredMercenaries = [];
+const hiredMercenaries = [];
 
-const enemyNames = [
-  "Slime", "ByteBat", "Goblink", "Rasteroid", "HexWorm", "Pixel Fiend",
-  "Bugbear", "NullKnight", "Cryptoad", "8-Bit Dragon"
-];
+const enemyCanvas = document.getElementById("enemy-canvas");
+const ctx = enemyCanvas.getContext("2d");
 
+const enemyNames = ["Slime", "ByteBat", "Goblink", "Rasteroid", "HexWorm", "Pixel Fiend", "Bugbear", "NullKnight", "Cryptoad", "8-Bit Dragon"];
 const levelThemes = [
   { palette: ["#00f", "#0ff", "#88f"], name: "Frozen Sector" },
   { palette: ["#0f0", "#4f4", "#8f8"], name: "Jungle Grid" },
@@ -29,173 +26,80 @@ const levelThemes = [
   { palette: ["#fff", "#aaa", "#ddd"], name: "Glitch Field" }
 ];
 
-// DOM
-const canvas = document.getElementById('enemy-canvas');
-const ctx = canvas.getContext('2d');
-const enemyHealthBar = document.getElementById('health-fill');
-const enemyLevelText = document.getElementById('enemy-level');
-const goldText = document.getElementById('gold');
-const damageText = document.getElementById('damage');
-const clickUpgradeCostText = document.getElementById('click-upgrade-cost');
-const autoClickerCostText = document.getElementById('auto-clicker-cost');
-const autoClickerCountText = document.getElementById('auto-clicker-count');
-const autoNextToggle = document.getElementById('auto-next-toggle');
-const damageOverlay = document.getElementById('damage-overlay');
+const mercenaryNames = ["Thud", "Zara", "Clank", "Vex", "Snip"];
 
-// Dynamic DOM elements
+// === DOM Elements ===
+const goldText = document.getElementById("gold");
+const damageText = document.getElementById("damage");
+const autoClickerCountText = document.getElementById("auto-clicker-count");
+const autoClickerCostText = document.getElementById("auto-clicker-cost");
+const mercenaryList = document.getElementById("mercenary-shop");
+const healthFill = document.getElementById("health-fill");
 const enemyNameText = document.createElement("p");
 document.getElementById("enemy-box").appendChild(enemyNameText);
 
-const mercenaryText = document.createElement("p");
-mercenaryText.textContent = "Mercenaries:";
-document.getElementById("mercenary-shop").appendChild(mercenaryText);
+// === Hero Abilities ===
+const abilities = [
+  { name: "Strong Attack", cooldown: 30000, duration: 0, unlockLevel: 5 },
+  { name: "Rally", cooldown: 60000, duration: 30000, unlockLevel: 10 },
+  { name: "Double Attack", cooldown: 60000, duration: 0, unlockLevel: 15 },
+  { name: "Rage", cooldown: 60000, duration: 30000, unlockLevel: 20 }
+];
 
-function getHealthForLevel(lvl) {
-  return Math.floor(baseHealth * Math.pow(1.3, lvl - 1)) + lvl * 5;
-}
+let abilityStates = {};
+let rallyActive = false;
+let doubleAttackReady = false;
+let rageInterval = null;
 
-function updateUI() {
-  goldText.textContent = gold;
-  damageText.textContent = `Click: ${clickDamage}, Auto: ${getAutoDamage()}`;
-  clickUpgradeCostText.textContent = clickUpgradeCost;
-  autoClickerCostText.textContent = autoClickerCost;
-  autoClickerCountText.textContent = autoClickerCount;
-  enemyLevelText.textContent = `Level: ${currentLevel}`;
-  enemyHealthBar.style.width = `${Math.max(0, enemyHealth / enemyMaxHealth) * 100}%`;
-}
+abilities.forEach(ability => {
+  const btn = document.getElementById(ability.name.toLowerCase().replace(/ /g, '-'));
+  abilityStates[ability.name] = { cooldown: false, button: btn, unlocked: false };
+  btn.onclick = () => {
+    if (abilityStates[ability.name].unlocked) activateAbility(ability);
+  };
+  btn.disabled = true;
+  btn.classList.add("locked");
+  btn.textContent = `${ability.name} (Unlocks at Lv ${ability.unlockLevel})`;
+});
 
-function getAutoDamage() {
-  return hiredMercenaries.reduce((sum, m) => {
-    return sum + m.level * (2 ** m.gearLevel);
-  }, 0);
-}
-
+// === Click Mechanics ===
+enemyCanvas.onclick = attack;
 
 function attack() {
-  showDamage(clickDamage);
-  enemyHealth -= clickDamage;
+  let dmg = playerClickDamage;
+  if (doubleAttackReady) {
+    dmg *= 2;
+    doubleAttackReady = false;
+  }
+  showDamage(dmg);
+  enemyHealth -= dmg;
   if (enemyHealth <= 0) handleEnemyDefeat();
   updateUI();
 }
 
-function handleEnemyDefeat() {
-  gold += 5 * currentLevel;
-  if (currentLevel === highestLevel) highestLevel++;
-  if (autoNextToggle.checked && currentLevel < highestLevel) currentLevel++;
-  enemyMaxHealth = getHealthForLevel(currentLevel);
-  enemyHealth = enemyMaxHealth;
-  drawRandomEnemy();
+function showDamage(dmg) {
+  const text = document.createElement("div");
+  text.className = "floating-damage";
+  text.textContent = dmg;
+  const overlay = document.getElementById("damage-overlay");
+  overlay.appendChild(text);
+  setTimeout(() => overlay.removeChild(text), 1000);
 }
 
-function buyClickUpgrade() {
-  if (gold >= clickUpgradeCost) {
-    gold -= clickUpgradeCost;
-    clickUpgradeLevel++;
-    clickDamage = Math.floor(1 * Math.pow(2, clickUpgradeLevel));
-    clickUpgradeCost = Math.floor(clickUpgradeCost * 2.5);
-    updateUI();
-  }
-}
-
-function hireMercenary() {
-  if (gold >= autoClickerCost && hiredMercenaries.length < 5) {
-    gold -= autoClickerCost;
-    const name = mercenaryNames[hiredMercenaries.length % mercenaryNames.length];
-    hiredMercenaries.push({
-        name,
-        level: 1,
-        upgradeCost: 30,
-        gearLevel: 0,
-        gearCost: 100,
-        nextGearLevelReq: 10
-    });
-
-    autoClickerCount++;
-    autoClickerCost = Math.floor(autoClickerCost * 1.5);
-    updateMercenaryText();
-    updateUI();
-  }
-}
-
-function levelUpMercenaries() {
-  hiredMercenaries.forEach(m => m.level++);
-  updateMercenaryText();
-}
-
-function updateMercenaryText() {
-  const shopDiv = document.getElementById("mercenary-shop");
-
-  // Remove old rows (except first 3 static ones)
-  [...shopDiv.querySelectorAll(".merc-row")].forEach(e => e.remove());
-
-  if (hiredMercenaries.length === 0) {
-    const p = document.createElement("p");
-    p.className = "merc-row";
-    p.textContent = "Mercenaries: None";
-    shopDiv.appendChild(p);
-    return;
-  }
-
-  hiredMercenaries.forEach((merc, i) => {
-    const row = document.createElement("div");
-    row.className = "merc-row";
-
-    const label = document.createElement("span");
-    label.textContent = `${merc.name} (Lv${merc.level}, Gear x${2 ** merc.gearLevel})`;
-
-    const lvlBtn = document.createElement("button");
-    lvlBtn.textContent = `Level Up (${merc.upgradeCost}g)`;
-    lvlBtn.onclick = () => upgradeMercenary(i);
-
-    row.appendChild(label);
-    row.appendChild(lvlBtn);
-
-    // Gear button
-    if (merc.level >= merc.nextGearLevelReq) {
-    const gearBtn = document.createElement("button");
-    gearBtn.textContent = `Upgrade Gear (${merc.gearCost}g)`;
-    gearBtn.onclick = () => upgradeMercGear(i);
-    row.appendChild(gearBtn);
-    } else {
-    const gearNote = document.createElement("span");
-    gearNote.textContent = ` (Gear unlocks at Lv${merc.nextGearLevelReq})`;
-    row.appendChild(gearNote);
-    }
-
-    shopDiv.appendChild(row);
-
-  });
-}
-
-function showDamage(amount) {
-  const dmg = document.createElement("div");
-  dmg.className = "floating-damage";
-  dmg.textContent = `-${amount}`;
-  dmg.style.left = `${Math.random() * 80 + 10}px`;
-  dmg.style.top = `50%`;
-  damageOverlay.appendChild(dmg);
-  setTimeout(() => dmg.remove(), 1000);
-}
-
-function getRandomColor(palette) {
-  return palette[Math.floor(Math.random() * palette.length)];
-}
-
+// === Enemy ===
 function drawRandomEnemy() {
   const gridSize = 10;
-  const cellSize = canvas.width / gridSize;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.imageSmoothingEnabled = false;
-
+  const cellSize = enemyCanvas.width / gridSize;
   const theme = levelThemes[(currentLevel - 1) % levelThemes.length];
   const palette = theme.palette;
-
   const pixels = [];
+
+  ctx.clearRect(0, 0, enemyCanvas.width, enemyCanvas.height);
+
   for (let y = 0; y < gridSize; y++) {
     const row = [];
     for (let x = 0; x < gridSize / 2; x++) {
-      row[x] = Math.random() < 0.5 ? getRandomColor(palette) : null;
+      row[x] = Math.random() < 0.5 ? palette[Math.floor(Math.random() * palette.length)] : null;
     }
     pixels.push(row.concat([...row].reverse()));
   }
@@ -212,44 +116,239 @@ function drawRandomEnemy() {
 
   const name = enemyNames[(currentLevel - 1) % enemyNames.length];
   enemyNameText.textContent = `${name} of the ${theme.name}`;
-
+  enemyHealth = getEnemyHealth();
 }
 
-function upgradeMercenary(index) {
-  const merc = hiredMercenaries[index];
-  if (gold >= merc.upgradeCost) {
-    gold -= merc.upgradeCost;
-    merc.level++;
-    merc.upgradeCost = Math.floor(merc.upgradeCost * 1.5);
-    updateMercenaryText();
+// === Enemy Logic ===
+function handleEnemyDefeat() {
+  gold += Math.floor(currentLevel * 2);
+  if (autoAdvance) currentLevel++;
+  drawRandomEnemy();
+}
+
+// === Damage and UI ===
+function getPlayerClickDamage() {
+  return playerLevel * (2 ** playerGearLevel);
+}
+
+function getEnemyHealth() {
+  return Math.floor(baseEnemyHealth + currentLevel * 5);
+}
+
+function getAutoDamage() {
+  return hiredMercenaries.reduce((sum, m) => {
+    let base = m.level * (2 ** m.gearLevel);
+    if (rallyActive) base *= 2;
+    return sum + base;
+  }, 0);
+}
+
+function updateUI() {
+  goldText.textContent = gold;
+  playerClickDamage = getPlayerClickDamage();
+  damageText.textContent = `Click: ${playerClickDamage}, Auto: ${getAutoDamage()}`;
+  healthFill.style.width = `${(enemyHealth / getEnemyHealth()) * 100}%`;
+  updatePlayerText();
+}
+
+// === Player Upgrade ===
+function updatePlayerText() {
+  const shop = document.getElementById("shop");
+  shop.innerHTML = `
+    <button onclick="levelUpPlayer()">Level Up (${playerUpgradeCost}g)</button>
+    <button ${playerLevel < nextPlayerGearLevelReq ? 'disabled' : ''} onclick="gearUpPlayer()">Upgrade Gear (${playerGearCost}g)</button>
+    <p>Player Lv: ${playerLevel}, Gear x${2 ** playerGearLevel}</p>
+  `;
+
+  abilities.forEach(ability => {
+    const state = abilityStates[ability.name];
+    if (!state.unlocked && playerLevel >= ability.unlockLevel) {
+      state.unlocked = true;
+      const btn = state.button;
+      btn.disabled = false;
+      btn.classList.remove("locked");
+      btn.textContent = ability.name;
+    }
+  });
+}
+
+function levelUpPlayer() {
+  if (gold >= playerUpgradeCost) {
+    gold -= playerUpgradeCost;
+    playerLevel++;
+    playerUpgradeCost = Math.floor(10 + playerLevel ** 1.5);
     updateUI();
   }
 }
 
-function upgradeMercGear(index) {
-  const merc = hiredMercenaries[index];
-  if (merc.level >= merc.nextGearLevelReq && gold >= merc.gearCost) {
-    gold -= merc.gearCost;
-    merc.gearLevel++;
-    merc.gearCost = Math.floor(merc.gearCost * 2);
-    merc.nextGearLevelReq += 40; // 10 → 50 → 90 → ...
+function gearUpPlayer() {
+  if (gold >= playerGearCost && playerLevel >= nextPlayerGearLevelReq) {
+    gold -= playerGearCost;
+    playerGearLevel++;
+    playerGearCost = Math.floor(playerGearCost * 2);
+    nextPlayerGearLevelReq += 40;
+    updateUI();
+  }
+}
+
+// === Mercenaries ===
+function hireMercenary() {
+  const cost = parseInt(autoClickerCostText.textContent);
+  if (gold >= cost && hiredMercenaries.length < 5) {
+    gold -= cost;
+    const name = mercenaryNames[hiredMercenaries.length % mercenaryNames.length];
+    hiredMercenaries.push({
+      name,
+      level: 1,
+      gearLevel: 0,
+      gearCost: 100,
+      nextGearLevelReq: 10,
+      attackSpeedLevel: 1,
+      attackSpeedCost: 100
+    });
+    autoClickerCostText.textContent = Math.floor(cost * 1.5);
+    autoClickerCountText.textContent = hiredMercenaries.length;
+    updateMercenaryText();
+    updateUI();
+    startMercAttack(hiredMercenaries.length - 1);
+  }
+}
+
+function updateMercenaryText() {
+  const mercRows = hiredMercenaries.map((m, i) => {
+    const row = document.createElement("div");
+    row.className = "merc-row";
+    row.textContent = `${m.name} (Lv${m.level}) Gear x${2 ** m.gearLevel} Speed x${m.attackSpeedLevel}`;
+
+    const lvlBtn = document.createElement("button");
+    lvlBtn.textContent = `Lv Up (${m.upgradeCost || 20}g)`;
+    lvlBtn.onclick = () => levelUpMercenary(i);
+    row.appendChild(lvlBtn);
+
+    if (m.level >= m.nextGearLevelReq) {
+      const gearBtn = document.createElement("button");
+      gearBtn.textContent = `Gear (${m.gearCost}g)`;
+      gearBtn.onclick = () => upgradeMercGear(i);
+      row.appendChild(gearBtn);
+    }
+
+    const speedBtn = document.createElement("button");
+    speedBtn.textContent = `Speed (${m.attackSpeedCost}g)`;
+    speedBtn.onclick = () => upgradeMercSpeed(i);
+    row.appendChild(speedBtn);
+
+    return row;
+  });
+
+  mercenaryList.querySelectorAll(".merc-row").forEach(el => el.remove());
+  mercRows.forEach(row => mercenaryList.appendChild(row));
+}
+
+function levelUpMercenary(i) {
+  const m = hiredMercenaries[i];
+  const cost = m.upgradeCost || 20;
+  if (gold >= cost) {
+    gold -= cost;
+    m.level++;
+    m.upgradeCost = Math.floor(cost * 1.5);
     updateUI();
     updateMercenaryText();
   }
 }
 
+function upgradeMercGear(i) {
+  const m = hiredMercenaries[i];
+  if (gold >= m.gearCost) {
+    gold -= m.gearCost;
+    m.gearLevel++;
+    m.gearCost = Math.floor(m.gearCost * 2);
+    m.nextGearLevelReq += 40;
+    updateUI();
+    updateMercenaryText();
+  }
+}
 
-canvas.onclick = attack;
+function upgradeMercSpeed(i) {
+  const m = hiredMercenaries[i];
+  if (gold >= m.attackSpeedCost) {
+    gold -= m.attackSpeedCost;
+    m.attackSpeedLevel++;
+    m.attackSpeedCost = Math.floor(m.attackSpeedCost * 2);
+    updateUI();
+    updateMercenaryText();
+  }
+}
 
-setInterval(() => {
-  const dmg = getAutoDamage();
-  if (dmg > 0) {
-    showDamage(dmg);
+function startMercAttack(i) {
+  const m = hiredMercenaries[i];
+  setInterval(() => {
+    const dmg = m.level * (2 ** m.gearLevel) * (rallyActive ? 2 : 1);
     enemyHealth -= dmg;
+    showDamage(dmg);
     if (enemyHealth <= 0) handleEnemyDefeat();
     updateUI();
+  }, 2000 / m.attackSpeedLevel);
+}
+
+// === Hero Abilities ===
+function activateAbility(ability) {
+  const state = abilityStates[ability.name];
+  if (state.cooldown) return;
+
+  const btn = state.button;
+  btn.disabled = true;
+  state.cooldown = true;
+
+  if (ability.name === "Strong Attack") strongAttack();
+  else if (ability.name === "Rally") {
+    rallyActive = true;
+    setTimeout(() => rallyActive = false, ability.duration);
+  } else if (ability.name === "Double Attack") {
+    doubleAttackReady = true;
+  } else if (ability.name === "Rage") {
+    rageInterval = setInterval(() => attack(), 500);
+    setTimeout(() => clearInterval(rageInterval), ability.duration);
   }
-}, 1000);
+
+  let timeLeft = ability.cooldown / 1000;
+  btn.textContent = `${ability.name} (${timeLeft})`;
+  const interval = setInterval(() => {
+    timeLeft--;
+    btn.textContent = `${ability.name} (${timeLeft})`;
+    if (timeLeft <= 0) {
+      clearInterval(interval);
+      btn.textContent = ability.name;
+      btn.disabled = false;
+      state.cooldown = false;
+    }
+  }, 1000);
+}
+
+function strongAttack() {
+  let dmg = playerClickDamage * 5;
+  if (doubleAttackReady) {
+    dmg *= 2;
+    doubleAttackReady = false;
+  }
+  showDamage(dmg);
+  enemyHealth -= dmg;
+  if (enemyHealth <= 0) handleEnemyDefeat();
+  updateUI();
+}
+
+// === Level Controls ===
+function goToNextLevel() {
+  currentLevel++;
+  drawRandomEnemy();
+}
+
+function goToPrevLevel() {
+  if (currentLevel > 1) currentLevel--;
+  drawRandomEnemy();
+}
+
+// === Init ===
+document.getElementById("auto-next-toggle").onchange = e => autoAdvance = e.target.checked;
 
 drawRandomEnemy();
 updateUI();
