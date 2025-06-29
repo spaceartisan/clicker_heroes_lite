@@ -8,6 +8,7 @@ let nextPlayerGearLevelReq = 10;
 let playerClickDamage = 1;
 
 let currentLevel = 1;
+let maxLevel = currentLevel
 let baseEnemyHealth = 5;
 let enemyHealth = baseEnemyHealth;
 let autoAdvance = true;
@@ -91,7 +92,8 @@ function showDamage(dmg) {
 function drawRandomEnemy() {
   const gridSize = 10;
   const cellSize = enemyCanvas.width / gridSize;
-  const theme = levelThemes[(currentLevel - 1) % levelThemes.length];
+  const themeIndex = Math.floor((currentLevel - 1) / 5) % levelThemes.length;
+  const theme = levelThemes[themeIndex];
   const palette = theme.palette;
   const pixels = [];
 
@@ -124,6 +126,7 @@ function drawRandomEnemy() {
 // === Enemy Logic ===
 function handleEnemyDefeat() {
   gold += Math.floor(currentLevel * 2);
+  if (currentLevel == maxLevel) maxLevel++
   if (autoAdvance) currentLevel++;
   drawRandomEnemy();
 }
@@ -341,8 +344,11 @@ function strongAttack() {
 
 // === Level Controls ===
 function goToNextLevel() {
-  currentLevel++;
-  drawRandomEnemy();
+    if (currentLevel < maxLevel) 
+    {
+        currentLevel++;
+        drawRandomEnemy();
+    }
 }
 
 function goToPrevLevel() {
