@@ -47,11 +47,7 @@ const enemyNameText = document.createElement("p");
 document.getElementById("enemy-box").appendChild(enemyNameText);
 
 const mercenaryText = document.createElement("p");
-<<<<<<< HEAD
 mercenaryText.textContent = "Mercenaries:";
-=======
-mercenaryText.textContent = "Mercenaries: None";
->>>>>>> 6a7f2aa11539588d16b8b2548874821d93f6c998
 document.getElementById("mercenary-shop").appendChild(mercenaryText);
 
 function getHealthForLevel(lvl) {
