@@ -160,6 +160,7 @@ function updateUI() {
 function updatePlayerText() {
   const shop = document.getElementById("shop");
   shop.innerHTML = `
+    <h3>Hero Upgrades</h3>
     <button onclick="levelUpPlayer()">Level Up (${playerUpgradeCost}g)</button>
     <button ${playerLevel < nextPlayerGearLevelReq ? 'disabled' : ''} onclick="gearUpPlayer()">Upgrade Gear (${playerGearCost}g)</button>
     <p>Player Lv: ${playerLevel}, Gear x${2 ** playerGearLevel}</p>
@@ -418,3 +419,11 @@ window.addEventListener("DOMContentLoaded", () => {
 setInterval(() => {
   saveGame();
 }, 15000); // every 30 seconds
+
+function deleteSave() {
+  if (confirm("Are you sure you want to delete your save?")) {
+    localStorage.removeItem("clickerHeroSave");
+    alert("Save deleted.");
+    location.reload();
+  }
+}

@@ -2,11 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Clicker Heroes Lite</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
   <div id="game-container">
     <h1>Clicker Heroes Lite</h1>
 
@@ -49,20 +51,22 @@
             <button id="double-attack">Double Attack</button>
             <button id="rage">Rage</button>
         </div>
-        </div>
-
-
+    </div>
 
     <div id="shop">
-      <h2>Player</h2>
       <!-- Dynamic player upgrades added by JS -->
     </div>
 
     <div id="mercenary-shop">
-      <h2>Mercenaries</h2>
+      <h3>Mercenaries</h3>
       <button onclick="hireMercenary()">Hire Mercenary (Cost: <span id="auto-clicker-cost">50</span> gold)</button>
       <p>Mercenaries Hired: <span id="auto-clicker-count">0</span></p>
       <!-- Mercenaries will populate here -->
+    </div>
+
+    <h3><</h3>
+    <div id="save-load-controls">
+        <button onclick="deleteSave()">🗑️ Delete Save</button>
     </div>
 
     <script src="script.js"></script>
