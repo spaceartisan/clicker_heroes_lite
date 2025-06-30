@@ -356,8 +356,65 @@ function goToPrevLevel() {
   drawRandomEnemy();
 }
 
+function saveGame() {
+  const saveData = {
+    gold,
+    playerLevel,
+    playerGearLevel,
+    playerUpgradeCost,
+    playerGearCost,
+    nextPlayerGearLevelReq,
+    currentLevel,
+    maxLevel,
+    baseEnemyHealth,
+    hiredMercenaries
+  };
+  localStorage.setItem("clickerHeroSave", JSON.stringify(saveData));
+  console.log("Game saved.");
+}
+
+function loadGame() {
+  const saved = localStorage.getItem("clickerHeroSave");
+  if (saved) {
+    const data = JSON.parse(saved);
+    gold = data.gold ?? 0;
+    playerLevel = data.playerLevel ?? 1;
+    playerGearLevel = data.playerGearLevel ?? 0;
+    playerUpgradeCost = data.playerUpgradeCost ?? 10;
+    playerGearCost = data.playerGearCost ?? 100;
+    nextPlayerGearLevelReq = data.nextPlayerGearLevelReq ?? 10;
+    currentLevel = data.currentLevel ?? 1;
+    maxLevel = data.maxLevel ?? currentLevel;
+    baseEnemyHealth = data.baseEnemyHealth ?? 5;
+
+    hiredMercenaries.length = 0;
+    if (Array.isArray(data.hiredMercenaries)) {
+      data.hiredMercenaries.forEach((m, i) => {
+        hiredMercenaries.push(m);
+        startMercAttack(i);  // Restart attack loop for merc
+      });
+    }
+
+    drawRandomEnemy();
+    updateUI();
+    updateMercenaryText();
+    console.log("Game loaded.");
+  }
+}
+
+
 // === Init ===
 document.getElementById("auto-next-toggle").onchange = e => autoAdvance = e.target.checked;
 
-drawRandomEnemy();
-updateUI();
+window.addEventListener("DOMContentLoaded", () => {
+  if (localStorage.getItem("clickerHeroSave")) {
+    loadGame();
+  } else {
+    drawRandomEnemy();  // fresh start
+    updateUI();
+  }
+});
+
+setInterval(() => {
+  saveGame();
+}, 15000); // every 30 seconds
