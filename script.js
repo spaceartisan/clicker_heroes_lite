@@ -13,6 +13,9 @@ let baseEnemyHealth = 5;
 let enemyHealth = baseEnemyHealth;
 let autoAdvance = true;
 
+let maxMercenaries = 5;
+let guildLevel = 1;
+
 const hiredMercenaries = [];
 
 const enemyCanvas = document.getElementById("enemy-canvas");
@@ -29,6 +32,22 @@ const levelThemes = [
 
 const mercenaryNames = ["Thud", "Zara", "Clank", "Vex", "Snip"];
 
+function generateName() {
+  const starts = ["Al", "Ka", "Th", "Ma", "El", "Bry", "Li", "Ro", "Ny", "So"];
+  const middles = ["a", "e", "o", "i", "y", "ae"];
+  const ends = ["n", "ric", "ra", "el", "ra", "in", "a", "ar", "or", "is"];
+
+  let name = "";
+  while (name.length === 0 || name.length > 6) {
+    const s = starts[Math.floor(Math.random() * starts.length)];
+    const m = middles[Math.floor(Math.random() * middles.length)];
+    const e = ends[Math.floor(Math.random() * ends.length)];
+    name = s + m + e;
+  }
+
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
 // === DOM Elements ===
 const goldText = document.getElementById("gold");
 const damageText = document.getElementById("damage");
@@ -38,6 +57,7 @@ const mercenaryList = document.getElementById("mercenary-shop");
 const healthFill = document.getElementById("health-fill");
 const enemyNameText = document.createElement("p");
 const enemyLevelText = document.getElementById("enemy-level");
+const guildCostText = document.getElementById("guild-cost");
 document.getElementById("enemy-box").appendChild(enemyNameText);
 
 // === Hero Abilities ===
@@ -204,9 +224,9 @@ function gearUpPlayer() {
 // === Mercenaries ===
 function hireMercenary() {
   const cost = parseInt(autoClickerCostText.textContent);
-  if (gold >= cost && hiredMercenaries.length < 5) {
+  if (gold >= cost && hiredMercenaries.length < maxMercenaries) {
     gold -= cost;
-    const name = mercenaryNames[hiredMercenaries.length % mercenaryNames.length];
+    const name = generateName();
     hiredMercenaries.push({
       name,
       level: 1,
@@ -216,15 +236,27 @@ function hireMercenary() {
       attackSpeedLevel: 1,
       attackSpeedCost: 100
     });
-    autoClickerCostText.textContent = Math.floor(cost * 1.5);
-    autoClickerCountText.textContent = hiredMercenaries.length;
     updateMercenaryText();
     updateUI();
     startMercAttack(hiredMercenaries.length - 1);
   }
 }
 
+function increaseMercenaryCap() {
+  const guildCost = parseInt(document.getElementById("guild-cost").textContent);
+    if (gold >= guildCost) {
+        gold -= guildCost;
+        maxMercenaries += 5; // Increase cap by 5
+        guildLevel++;
+        updateMercenaryText();
+        updateUI();
+    }
+}
+
 function updateMercenaryText() {
+  guildCostText.textContent = Math.floor(10000 * guildLevel ** 2.0);
+  autoClickerCountText.textContent = hiredMercenaries.length + "/" + maxMercenaries;
+  autoClickerCostText.textContent = Math.floor(100 * hiredMercenaries.length ** 2.0);
   const mercRows = hiredMercenaries.map((m, i) => {
     const row = document.createElement("div");
     row.className = "merc-row";
@@ -372,6 +404,8 @@ function saveGame() {
     currentLevel,
     maxLevel,
     baseEnemyHealth,
+    guildLevel,
+    maxMercenaries,
     hiredMercenaries,
     lastSaved: Date.now()  // <--- new
   };
@@ -415,6 +449,8 @@ function loadGame() {
     currentLevel = data.currentLevel ?? 1;
     maxLevel = data.maxLevel ?? currentLevel;
     baseEnemyHealth = data.baseEnemyHealth ?? 5;
+    guildLevel = data.guildLevel ?? 0;
+    maxMercenaries = data.maxMercenaries ?? 5;
 
     drawRandomEnemy();
     updateUI();
@@ -422,12 +458,22 @@ function loadGame() {
   }
 }
 
+function showAutosaveIndicator() {
+  const indicator = document.getElementById("autosave-indicator");
+  indicator.style.visibility = "visible";
+  indicator.style.opacity = "1";
+
+  setTimeout(() => {
+    indicator.style.opacity = "0";
+    indicator.style.visibility = "hidden";
+  }, 1500);
+}
+
+
 function getTotalAutoDamage() {
-    console.log("Calculating total auto damage from mercenaries...");
   return hiredMercenaries.reduce((sum, m) => {
     const base = m.level * (2 ** m.gearLevel);
     const speed = m.attackSpeedLevel || 1;
-    console.log(`Mercenary ${m.name} - Level: ${m.level}, Gear: ${m.gearLevel}, Speed: ${m.attackSpeedLevel}, Base Damage: ${base}`);
     return sum + (base * speed / 2); // assuming 2s base interval
   }, 0);
 }
@@ -447,7 +493,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
 setInterval(() => {
   saveGame();
-}, 15000); // every 30 seconds
+  showAutosaveIndicator();
+}, 60000); // every 30 seconds
 
 function deleteSave() {
   if (confirm("Are you sure you want to delete your save?")) {

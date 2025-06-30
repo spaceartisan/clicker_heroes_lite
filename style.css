@@ -192,3 +192,15 @@ h1, h3 {
   padding-bottom: 4px;
   margin-bottom: 10px;
 }
+
+#autosave-indicator {
+  margin-left: 10px;
+  font-size: 14px;
+  color: #00cc88;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+  display: inline-block;
+  width: 100px; /* optional: fix width for consistency */
+  text-align: left;
+}
