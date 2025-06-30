@@ -424,6 +424,20 @@ function loadGame() {
         startMercAttack(i);
       });
     }
+
+    // restore everything else...
+    gold = data.gold ?? 0;
+    playerLevel = data.playerLevel ?? 1;
+    playerGearLevel = data.playerGearLevel ?? 0;
+    playerUpgradeCost = data.playerUpgradeCost ?? 10;
+    playerGearCost = data.playerGearCost ?? 100;
+    nextPlayerGearLevelReq = data.nextPlayerGearLevelReq ?? 10;
+    currentLevel = data.currentLevel ?? 1;
+    maxLevel = data.maxLevel ?? currentLevel;
+    baseEnemyHealth = data.baseEnemyHealth ?? 5;
+    guildLevel = data.guildLevel ?? 0;
+    maxMercenaries = data.maxMercenaries ?? 5;
+
     // Offline gold calc
     if (data.lastSaved) {
       const now = Date.now();
@@ -439,22 +453,10 @@ function loadGame() {
       }
     }
 
-    // restore everything else...
-    gold = data.gold ?? 0;
-    playerLevel = data.playerLevel ?? 1;
-    playerGearLevel = data.playerGearLevel ?? 0;
-    playerUpgradeCost = data.playerUpgradeCost ?? 10;
-    playerGearCost = data.playerGearCost ?? 100;
-    nextPlayerGearLevelReq = data.nextPlayerGearLevelReq ?? 10;
-    currentLevel = data.currentLevel ?? 1;
-    maxLevel = data.maxLevel ?? currentLevel;
-    baseEnemyHealth = data.baseEnemyHealth ?? 5;
-    guildLevel = data.guildLevel ?? 0;
-    maxMercenaries = data.maxMercenaries ?? 5;
-
     drawRandomEnemy();
     updateUI();
     updateMercenaryText();
+    saveGame();
   }
 }
 
