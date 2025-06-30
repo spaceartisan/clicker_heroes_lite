@@ -154,9 +154,9 @@ button:disabled {
 }
 
 #ability-bar button {
-  background-color: #00cc88;
+  background-color: #444;
   color: white;
-  border: none;
+  border: 2px solid #a67c52;
   padding: 10px 12px;
   border-radius: 6px;
   cursor: pointer;
@@ -165,7 +165,7 @@ button:disabled {
 }
 
 #ability-bar button:hover {
-  background-color: #00ffaa;
+  background-color: #444;
 }
 
 #ability-bar button:disabled {

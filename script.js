@@ -158,14 +158,6 @@ function updateUI() {
 
 // === Player Upgrade ===
 function updatePlayerText() {
-  const shop = document.getElementById("shop");
-  shop.innerHTML = `
-    <h3>Hero Upgrades</h3>
-    <button onclick="levelUpPlayer()">Level Up (${playerUpgradeCost}g)</button>
-    <button ${playerLevel < nextPlayerGearLevelReq ? 'disabled' : ''} onclick="gearUpPlayer()">Upgrade Gear (${playerGearCost}g)</button>
-    <p>Player Lv: ${playerLevel}, Gear x${2 ** playerGearLevel}</p>
-  `;
-
   abilities.forEach(ability => {
     const state = abilityStates[ability.name];
     if (!state.unlocked && playerLevel >= ability.unlockLevel) {
@@ -178,12 +170,23 @@ function updatePlayerText() {
   });
 }
 
+function updatePlayerLevelGearText() {
+  const shop = document.getElementById("shop");
+  shop.innerHTML = `
+    <h3>Hero Upgrades</h3>
+    <button onclick="levelUpPlayer()">Level Up (${playerUpgradeCost}g)</button>
+    <button ${playerLevel < nextPlayerGearLevelReq ? 'disabled' : ''} onclick="gearUpPlayer()">Upgrade Gear (${playerGearCost}g)</button>
+    <p>Player Lv: ${playerLevel}, Gear x${2 ** playerGearLevel}</p>
+  `;
+}
+
 function levelUpPlayer() {
   if (gold >= playerUpgradeCost) {
     gold -= playerUpgradeCost;
     playerLevel++;
     playerUpgradeCost = Math.floor(10 + playerLevel ** 1.5);
     updateUI();
+    updatePlayerLevelGearText()
   }
 }
 
@@ -194,6 +197,7 @@ function gearUpPlayer() {
     playerGearCost = Math.floor(playerGearCost * 2);
     nextPlayerGearLevelReq += 40;
     updateUI();
+    updatePlayerLevelGearText()
   }
 }
 
@@ -368,16 +372,40 @@ function saveGame() {
     currentLevel,
     maxLevel,
     baseEnemyHealth,
-    hiredMercenaries
+    hiredMercenaries,
+    lastSaved: Date.now()  // <--- new
   };
   localStorage.setItem("clickerHeroSave", JSON.stringify(saveData));
-  console.log("Game saved.");
 }
 
 function loadGame() {
   const saved = localStorage.getItem("clickerHeroSave");
   if (saved) {
     const data = JSON.parse(saved);
+
+    hiredMercenaries.length = 0;
+    if (Array.isArray(data.hiredMercenaries)) {
+      data.hiredMercenaries.forEach((m, i) => {
+        hiredMercenaries.push(m);
+        startMercAttack(i);
+      });
+    }
+    // Offline gold calc
+    if (data.lastSaved) {
+      const now = Date.now();
+      const diffSeconds = Math.floor((now - data.lastSaved) / 1000);
+      const goldPerSecond = getTotalAutoDamage(); // simple estimate
+      const offlineGold = diffSeconds * goldPerSecond;
+
+      console.log(`Offline gold earned: ${offlineGold} (calculated over ${diffSeconds} seconds) for ${goldPerSecond} gold/sec`);
+
+      if (offlineGold > 0) {
+        gold += offlineGold;
+        alert(`While you were away, your mercenaries earned ${offlineGold} gold!`);
+      }
+    }
+
+    // restore everything else...
     gold = data.gold ?? 0;
     playerLevel = data.playerLevel ?? 1;
     playerGearLevel = data.playerGearLevel ?? 0;
@@ -388,21 +416,21 @@ function loadGame() {
     maxLevel = data.maxLevel ?? currentLevel;
     baseEnemyHealth = data.baseEnemyHealth ?? 5;
 
-    hiredMercenaries.length = 0;
-    if (Array.isArray(data.hiredMercenaries)) {
-      data.hiredMercenaries.forEach((m, i) => {
-        hiredMercenaries.push(m);
-        startMercAttack(i);  // Restart attack loop for merc
-      });
-    }
-
     drawRandomEnemy();
     updateUI();
     updateMercenaryText();
-    console.log("Game loaded.");
   }
 }
 
+function getTotalAutoDamage() {
+    console.log("Calculating total auto damage from mercenaries...");
+  return hiredMercenaries.reduce((sum, m) => {
+    const base = m.level * (2 ** m.gearLevel);
+    const speed = m.attackSpeedLevel || 1;
+    console.log(`Mercenary ${m.name} - Level: ${m.level}, Gear: ${m.gearLevel}, Speed: ${m.attackSpeedLevel}, Base Damage: ${base}`);
+    return sum + (base * speed / 2); // assuming 2s base interval
+  }, 0);
+}
 
 // === Init ===
 document.getElementById("auto-next-toggle").onchange = e => autoAdvance = e.target.checked;
@@ -414,6 +442,7 @@ window.addEventListener("DOMContentLoaded", () => {
     drawRandomEnemy();  // fresh start
     updateUI();
   }
+  updatePlayerLevelGearText();
 });
 
 setInterval(() => {
