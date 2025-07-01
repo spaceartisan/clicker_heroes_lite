@@ -99,14 +99,31 @@ function attack() {
   updateUI();
 }
 
-function showDamage(dmg) {
-  const text = document.createElement("div");
-  text.className = "floating-damage";
-  text.textContent = dmg;
+function showDamage(amount) {
+  const damageText = document.createElement("div");
+  damageText.className = "floating-damage";
+  damageText.textContent = amount;
+
   const overlay = document.getElementById("damage-overlay");
-  overlay.appendChild(text);
-  setTimeout(() => overlay.removeChild(text), 1000);
+
+  // Get enemy box size
+  const canvas = document.getElementById("enemy-canvas");
+  const rect = canvas.getBoundingClientRect();
+
+  // Calculate relative position (within canvas dimensions)
+  const offsetX = Math.random() * canvas.width * 0.8 + canvas.width * 0.1; // avoid edges
+  const offsetY = Math.random() * canvas.height * 0.2 + canvas.height * 0.1;
+
+  damageText.style.left = `${offsetX}px`;
+  damageText.style.top = `${offsetY}px`;
+
+  overlay.appendChild(damageText);
+
+  setTimeout(() => {
+    damageText.remove();
+  }, 1000);
 }
+
 
 // === Enemy ===
 function drawRandomEnemy() {
