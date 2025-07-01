@@ -169,11 +169,14 @@ function getAutoDamage() {
 }
 
 function updateUI() {
-  goldText.textContent = gold;
+//   goldText.textContent = gold;
   playerClickDamage = getPlayerClickDamage();
   damageText.textContent = `Click: ${playerClickDamage}, Auto: ${getAutoDamage()}`;
   healthFill.style.width = `${(enemyHealth / getEnemyHealth()) * 100}%`;
+  document.getElementById("gold-fixed").textContent = Math.floor(gold);
   updatePlayerText();
+  document.getElementById("prev-level").disabled = currentLevel <= 1;
+  document.getElementById("next-level").disabled = currentLevel >= maxLevel;
 }
 
 // === Player Upgrade ===
@@ -385,12 +388,17 @@ function goToNextLevel() {
     {
         currentLevel++;
         drawRandomEnemy();
+        updateUI();
     }
 }
 
 function goToPrevLevel() {
-  if (currentLevel > 1) currentLevel--;
-  drawRandomEnemy();
+  if (currentLevel > 1) 
+  {
+    currentLevel--;
+    drawRandomEnemy();
+    updateUI();
+  }
 }
 
 function saveGame() {
