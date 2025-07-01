@@ -506,6 +506,8 @@ function getTotalAutoDamage() {
 }
 
 // === Init ===
+const autoNextToggle = document.getElementById("auto-next-toggle");
+autoAdvance = autoNextToggle.checked; // ensure variable matches UI
 document.getElementById("auto-next-toggle").onchange = e => autoAdvance = e.target.checked;
 
 window.addEventListener("DOMContentLoaded", () => {
