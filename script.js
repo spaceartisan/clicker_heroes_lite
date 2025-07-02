@@ -37,6 +37,8 @@ let nameConfirm = false;
 
 const hiredMercenaries = [];
 
+let messageInterval = null;
+
 const enemyCanvas = document.getElementById("enemy-canvas");
 const ctx = enemyCanvas.getContext("2d");
 
@@ -81,6 +83,8 @@ const playerNameText = document.getElementById("player-name");
 const nameInput = document.getElementById("player-name");
 const statusSpan = document.getElementById("name-status");
 const nameConfirmButton = document.getElementById("confirm-button");
+const messageBody = document.getElementById("message-body");
+const messageStatusSpan = document.getElementById("msg-status");
 document.getElementById("enemy-box").appendChild(enemyNameText);
 
 // === Hero Abilities ===
@@ -585,6 +589,13 @@ function submitScore() {
         statusSpan.textContent = "❌ Failed to save. Try again.";
         statusSpan.style.color = "red";
     });
+    statusSpan.style.visibility = "visible";
+    statusSpan.style.opacity = "1";
+
+    setTimeout(() => {
+        statusSpan.style.opacity = "0";
+        statusSpan.style.visibility = "hidden";
+    }, 1500);
 }
 
 function showLeaderboard() {
@@ -620,6 +631,80 @@ function closeLeaderboard() {
     document.getElementById("leaderboard-popup").style.display = "none";
 }
 
+function sendMessage() {
+    if (!nameConfirm) {
+        messageStatusSpan.textContent = "❌ Please confirm your name first in leaderboard.";
+        messageStatusSpan.style.color = "red";
+        return;
+    }
+    const msg = messageBody.value.trim(); // or your desired metric
+
+    db.collection("message").add({
+        name: playerName,
+        msg: msg,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+        messageStatusSpan.textContent = "✔️ Message Send!";
+        messageStatusSpan.style.color = "#0f0";
+    }).catch((error) => {
+        console.error("Error writing message: ", error);
+        messageStatusSpan.textContent = "❌ Failed to send. Try again.";
+        messageStatusSpan.style.color = "red";
+    });
+    messageBody.value = ""; // Clear input after sending
+    messageStatusSpan.style.visibility = "visible";
+    messageStatusSpan.style.opacity = "1";
+
+    setTimeout(() => {
+        messageStatusSpan.style.opacity = "0";
+        messageStatusSpan.style.visibility = "hidden";
+    }, 1500);
+}
+
+function showMessage() {
+    const scrollDiv = document.getElementById("message-scroll");
+    scrollDiv.innerHTML = "<p>Loading message board...</p>";
+
+    if (!messageInterval) {
+        messageInterval = setInterval(() => {
+            db.collection("message")
+                .orderBy("timestamp", "desc")
+                .limit(50)
+                .get()
+                .then(querySnapshot => {
+                    const entries = [];
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        // Skip messages without a valid timestamp
+                        if (!data.timestamp) return;
+
+                        const name = data.name || "Unnamed Hero";
+                        const msg = typeof data.msg === "string" ? data.msg : "No message";
+                        const time = data.timestamp.toDate().toLocaleTimeString();
+                        entries.push(`<p><strong>${name}</strong> @ ${time}: ${msg}</p>`);
+                    });
+
+                    scrollDiv.innerHTML = entries.join("") || "<p>No entries yet.</p>";
+                })
+                .catch(error => {
+                    console.error("Error fetching message board:", error);
+                    scrollDiv.innerHTML = "<p>Error loading message board.</p>";
+                });
+        }, 1000);
+    }
+
+    document.getElementById("message-popup").style.display = "flex";
+}
+
+
+function closeMessage() {
+    document.getElementById("message-popup").style.display = "none";
+    // Clear the interval to stop updating the message board
+    if (messageInterval) {
+        clearInterval(messageInterval);
+        messageInterval = null;
+    }
+}
 
 function disableNameInput() {
     console.log("Name confirmed:", playerName);

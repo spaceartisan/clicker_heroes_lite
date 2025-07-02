@@ -75,6 +75,7 @@
 
         <h3></h3>
         <button onclick="showLeaderboard()">🏆 Leaderboard</button>
+        <button onclick="showMessage()">📜 Message</button>
         <div id="save-load-controls">
             <button onclick="saveGame()">💾 Save Game</button>
             <button onclick="deleteSave()">🗑️ Delete Save</button>
@@ -103,10 +104,27 @@
                 <label for="player-name">Name:</label>
                 <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
                 <button id="confirm-button" onclick="confirmName()">Confirm</button>
-                <span id="name-status" style="margin-left: 10px; font-size: 12px; color: #0f0;"></span>
+                <span id="name-status" style="opacity: 0;"></span>
             </div>
             <h3></h3>
             <button onclick="closeLeaderboard()">Close</button>
+        </div>
+    </div>
+
+    <div id="message-popup" class="popup">
+        <div class="popup-content">
+            <h3>📜 Message Board</h3>
+            <div id="message-scroll">
+                <!-- Scores will be injected here -->
+            </div>
+            <div id="message-entry">
+                <input type="text" id="message-body" placeholder="Enter your message" maxlength="99"
+                    style="width: 80%;">
+                <button id="confirm-button-msg" onclick="sendMessage()">Send</button>
+            </div>
+            <span id="msg-status" style="opacity: 0;"></span>
+            <h3></h3>
+            <button onclick="closeMessage()">Close</button>
         </div>
     </div>
 
