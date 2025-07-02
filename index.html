@@ -1,89 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <link rel="icon" href="https://emojicdn.elk.sh/⚔️" type="image/png">
-  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Clicker Heroes Lite</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8" />
+    <link rel="icon" href="https://emojicdn.elk.sh/⚔️" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clicker Heroes Lite</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDK (compat version, no module needed) -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 </head>
+
 <body>
-  <div id="game-container">
-    <h1>Clicker Heroes Lite</h1>
+    <div id="game-container">
+        <h1>Clicker Heroes Lite</h1>
 
-    <div id="enemy-container">
-      <button id="prev-level" onclick="goToPrevLevel()">⬅</button>
+        <div id="enemy-container">
+            <button id="prev-level" onclick="goToPrevLevel()">⬅</button>
 
-      <div id="enemy-box">
-        <div id="enemy-wrapper">
-          <canvas id="enemy-canvas" width="150" height="150"></canvas>
-          <div id="damage-overlay"></div>
+            <div id="enemy-box">
+                <div id="enemy-wrapper">
+                    <canvas id="enemy-canvas" width="150" height="150"></canvas>
+                    <div id="damage-overlay"></div>
+                </div>
+                <div id="health-bar">
+                    <div id="health-fill"></div>
+                </div>
+                <p id="enemy-level">Level: 1</p>
+            </div>
+
+
+            <button id="next-level" onclick="goToNextLevel()">➡</button>
         </div>
-        <div id="health-bar">
-          <div id="health-fill"></div>
+
+        <div id="auto-level-container">
+            <label>
+                <input type="checkbox" id="auto-next-toggle" checked>
+                Auto advance to next level
+            </label>
         </div>
-        <p id="enemy-level">Level: 1</p>
-      </div>
 
-
-      <button id="next-level" onclick="goToNextLevel()">➡</button>
-    </div>
-
-    <div id="auto-level-container">
-      <label>
-        <input type="checkbox" id="auto-next-toggle" checked>
-        Auto advance to next level
-      </label>
-    </div>
-
-    <div id="stats">
-      <!-- <p>Gold: <span id="gold">0</span></p> -->
-      <p>Damage: <span id="damage">Click: 1, Auto: 0</span></p>
-    </div>
-
-    <div id="ability-bar">
-        <div class="ability-header">
-            <h3>Hero Abilities</h3>
+        <div id="stats">
+            <!-- <p>Gold: <span id="gold">0</span></p> -->
+            <p>Damage: <span id="damage">Click: 1, Auto: 0</span></p>
         </div>
-        <div class="ability-buttons">
-            <button id="strong-attack">Strong Attack</button>
-            <button id="rally">Rally</button>
-            <button id="double-attack">Double Attack</button>
-            <button id="rage">Rage</button>
+
+        <div id="ability-bar">
+            <div class="ability-header">
+                <h3>Hero Abilities</h3>
+            </div>
+            <div class="ability-buttons">
+                <button id="strong-attack">Strong Attack</button>
+                <button id="rally">Rally</button>
+                <button id="double-attack">Double Attack</button>
+                <button id="rage">Rage</button>
+            </div>
+        </div>
+
+        <div id="shop">
+            <!-- Dynamic player upgrades added by JS -->
+        </div>
+
+        <div id="mercenary-shop">
+            <h3>Mercenaries</h3>
+            <button onclick="hireMercenary()">Hire Mercenary (Cost: <span id="auto-clicker-cost">50</span>
+                gold)</button>
+            <button onclick="increaseMercenaryCap()">Upgrade Guild (Cost: <span id="guild-cost">10000</span>
+                gold)</button>
+            <p>Mercenaries Hired: <span id="auto-clicker-count">0/5</span></p>
+            <!-- Mercenaries will populate here -->
+        </div>
+
+        <h3></h3>
+        <button onclick="showLeaderboard()">🏆 Leaderboard</button>
+        <div id="save-load-controls">
+            <button onclick="saveGame()">💾 Save Game</button>
+            <button onclick="deleteSave()">🗑️ Delete Save</button>
+        </div>
+
+        <div>
+            <span id="autosave-indicator" style="opacity: 0;">💾 Autosaved!</span>
+        </div>
+
+
+    </div>
+    <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
+        v0.1.0 – Clicker Heroes Lite
+    </p>
+    <br>
+
+    <div id="gold-bar">💰 Gold: <span id="gold-fixed">0</span></div>
+
+    <div id="leaderboard-popup" class="popup">
+        <div class="popup-content">
+            <h3>🏆 Leaderboard</h3>
+            <div id="leaderboard-scroll">
+                <!-- Scores will be injected here -->
+            </div>
+            <div id="name-entry">
+                <label for="player-name">Name:</label>
+                <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
+                <button id="confirm-button" onclick="confirmName()">Confirm</button>
+                <span id="name-status" style="margin-left: 10px; font-size: 12px; color: #0f0;"></span>
+            </div>
+            <h3></h3>
+            <button onclick="closeLeaderboard()">Close</button>
         </div>
     </div>
 
-    <div id="shop">
-      <!-- Dynamic player upgrades added by JS -->
-    </div>
-
-    <div id="mercenary-shop">
-      <h3>Mercenaries</h3>
-      <button onclick="hireMercenary()">Hire Mercenary (Cost: <span id="auto-clicker-cost">50</span> gold)</button>
-      <button onclick="increaseMercenaryCap()">Upgrade Guild (Cost: <span id="guild-cost">10000</span> gold)</button>
-      <p>Mercenaries Hired: <span id="auto-clicker-count">0/5</span></p>
-      <!-- Mercenaries will populate here -->
-    </div>
-
-    <h3></h3>
-    <div id="save-load-controls">
-        <button onclick="saveGame()">💾 Save Game</button>
-        <button onclick="deleteSave()">🗑️ Delete Save</button>
-    </div>
-
-    <div>
-        <span id="autosave-indicator" style="opacity: 0;">💾 Autosaved!</span>
-    </div>
-    
+    <!-- Firebase SDKs -->
     <script src="script.js"></script>
-  </div>
-  <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-  v0.1.0 – Clicker Heroes Lite
-  </p>
-  <br>
 
-  <div id="gold-bar">💰 Gold: <span id="gold-fixed">0</span></div>
 
 </body>
+
 </html>
