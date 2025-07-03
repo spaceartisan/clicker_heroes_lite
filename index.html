@@ -76,10 +76,7 @@
         <h3></h3>
         <button onclick="showLeaderboard()">🏆 Leaderboard</button>
         <button onclick="showMessage()">📜 Message</button>
-        <div id="save-load-controls">
-            <button onclick="saveGame()">💾 Save Game</button>
-            <button onclick="deleteSave()">🗑️ Delete Save</button>
-        </div>
+        <button onclick="showOptions()">⚙️ Game Config</button>
 
         <div>
             <span id="autosave-indicator" style="opacity: 0;">💾 Autosaved!</span>
@@ -115,7 +112,7 @@
         <div class="popup-content">
             <h3>📜 Message Board</h3>
             <div id="message-scroll">
-                <!-- Scores will be injected here -->
+                <!-- Messages will be injected here -->
             </div>
             <div id="message-entry">
                 <input type="text" id="message-body" placeholder="Enter your message" maxlength="99"
@@ -128,8 +125,32 @@
         </div>
     </div>
 
+    <div id="options-popup" class="popup">
+        <div class="popup-content">
+            <h3>⚙️ Game Config</h3>
+            <h4>Instructions:</h4>
+            <p>Click the enemy to attack it. Use abilities to gain an advantage. Upgrade your hero and hire mercenaries
+                to progress faster.</p>
+
+            <p>To join the message board or leaderboard, create a name under the leaderboard.</p>
+            <div id="save-load-controls">
+                <button onclick="saveGame()">💾 Save Game</button>
+                <button onclick="deleteSave()">🗑️ Delete Save</button>
+            </div>
+            <p></p>
+            <button onclick="closeOptions()">Close</button>
+        </div>
+    </div>
+
     <!-- Firebase SDKs -->
-    <script src="script.js"></script>
+
+    <script src="config.js"></script>
+    <script src="hero.js"></script>
+    <script src="enemy.js"></script>
+    <script src="database.js"></script>
+    <script src="ui.js"></script>
+    <script src="game.js"></script>
+
 
 
 </body>
