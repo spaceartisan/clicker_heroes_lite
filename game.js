@@ -9,6 +9,7 @@ let playerClickDamage = 1;
 
 let currentLevel = 1;
 let maxLevel = currentLevel
+let lastSubmittedScore = maxLevel;
 let baseEnemyHealth = 5;
 let enemyHealth = baseEnemyHealth;
 let autoAdvance = true;
@@ -22,6 +23,8 @@ let nameConfirm = false;
 const hiredMercenaries = [];
 
 let messageInterval = null;
+let leaderboardUnsub = null;
+let messageUnsub = null;
 
 const enemyCanvas = document.getElementById("enemy-canvas");
 const ctx = enemyCanvas.getContext("2d");
@@ -132,6 +135,7 @@ function saveGame() {
         hiredMercenaries,
         nameConfirm,
         playerName,
+        lastSubmittedScore,
         lastSaved: Date.now() // <--- new
 
     };
@@ -160,6 +164,7 @@ function loadGame() {
         nextPlayerGearLevelReq = data.nextPlayerGearLevelReq ?? 10;
         currentLevel = data.currentLevel ?? 1;
         maxLevel = data.maxLevel ?? currentLevel;
+        lastSubmittedScore = data.lastSubmittedScore ?? maxLevel;
         baseEnemyHealth = data.baseEnemyHealth ?? 5;
         guildLevel = data.guildLevel ?? 0;
         maxMercenaries = data.maxMercenaries ?? 5;
@@ -211,4 +216,4 @@ window.addEventListener("DOMContentLoaded", () => {
 setInterval(() => {
     saveGame();
     showAutosaveIndicator();
-}, 60000); // every 30 seconds
+}, 60000); // every 60 seconds

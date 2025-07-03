@@ -33,8 +33,10 @@ function deleteSave() {
     }
 }
 
+
+
 function submitScore() {
-    if (!nameConfirm) {
+    if (!nameConfirm || maxLevel <= lastSubmittedScore) {
         return;
     }
     const score = maxLevel; // or your desired metric
@@ -60,28 +62,33 @@ function submitScore() {
         statusSpan.style.opacity = "0";
         statusSpan.style.visibility = "hidden";
     }, 1500);
+
+    lastSubmittedScore = maxLevel; // Update last submitted score
 }
+
+
 
 function showLeaderboard() {
     const scrollDiv = document.getElementById("leaderboard-scroll");
     scrollDiv.innerHTML = "<p>Loading leaderboard...</p>";
 
-    db.collection("scores")
+    // Prevent multiple listeners
+    if (leaderboardUnsub) leaderboardUnsub();
+
+    leaderboardUnsub = db.collection("scores")
         .orderBy("score", "desc")
         .limit(50)
-        .get()
-        .then(querySnapshot => {
+        .onSnapshot(snapshot => {
             const entries = [];
-            let i = 0; // ✅ Manually track index
-            querySnapshot.forEach((doc) => {
+            let i = 0;
+            snapshot.forEach(doc => {
                 const data = doc.data();
                 const name = data.name || "Unnamed Hero";
                 const score = typeof data.score === "number" ? data.score : 0;
                 entries.push(`<p>${++i}. ${name} — Level ${score}</p>`);
             });
             scrollDiv.innerHTML = entries.join("") || "<p>No entries yet.</p>";
-        })
-        .catch(error => {
+        }, error => {
             console.error("Error fetching leaderboard:", error);
             scrollDiv.innerHTML = "<p>Error loading leaderboard.</p>";
         });
@@ -89,10 +96,9 @@ function showLeaderboard() {
     document.getElementById("leaderboard-popup").style.display = "flex";
 }
 
-
-
 function closeLeaderboard() {
     document.getElementById("leaderboard-popup").style.display = "none";
+    leaderboardUnsub = null; // Unsubscribe from the snapshot listener
 }
 
 function sendMessage() {
@@ -129,45 +135,34 @@ function showMessage() {
     const scrollDiv = document.getElementById("message-scroll");
     scrollDiv.innerHTML = "<p>Loading message board...</p>";
 
-    if (!messageInterval) {
-        messageInterval = setInterval(() => {
-            db.collection("message")
-                .orderBy("timestamp", "desc")
-                .limit(50)
-                .get()
-                .then(querySnapshot => {
-                    const entries = [];
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        // Skip messages without a valid timestamp
-                        if (!data.timestamp) return;
+    if (!messageUnsub) {
+        messageUnsub = db.collection("message")
+            .orderBy("timestamp", "desc")
+            .limit(50)
+            .onSnapshot(snapshot => {
+                const entries = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (!data.timestamp) return;
 
-                        const name = data.name || "Unnamed Hero";
-                        const msg = typeof data.msg === "string" ? data.msg : "No message";
-                        const time = data.timestamp.toDate().toLocaleTimeString();
-                        entries.push(`<p><strong>${name}</strong> @ ${time}: ${msg}</p>`);
-                    });
-
-                    scrollDiv.innerHTML = entries.join("") || "<p>No entries yet.</p>";
-                })
-                .catch(error => {
-                    console.error("Error fetching message board:", error);
-                    scrollDiv.innerHTML = "<p>Error loading message board.</p>";
+                    const name = data.name || "Unnamed Hero";
+                    const msg = typeof data.msg === "string" ? data.msg : "No message";
+                    const time = data.timestamp.toDate().toLocaleTimeString();
+                    entries.push(`<p><strong>${name}</strong> @ ${time}: ${msg}</p>`);
                 });
-        }, 1000);
+                scrollDiv.innerHTML = entries.join("") || "<p>No entries yet.</p>";
+            }, error => {
+                console.error("Error loading messages:", error);
+                scrollDiv.innerHTML = "<p>Error loading message board.</p>";
+            });
     }
-
     document.getElementById("message-popup").style.display = "flex";
 }
 
 
 function closeMessage() {
     document.getElementById("message-popup").style.display = "none";
-    // Clear the interval to stop updating the message board
-    if (messageInterval) {
-        clearInterval(messageInterval);
-        messageInterval = null;
-    }
+    messageUnsub = null; // Unsubscribe from the snapshot listener
 }
 
 function disableNameInput() {
