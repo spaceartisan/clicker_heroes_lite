@@ -86,7 +86,7 @@ function increaseMercenaryCap() {
 
 function levelUpMercenary(i) {
     const m = hiredMercenaries[i];
-    const cost = m.upgradeCost || 20;
+    const cost = Math.floor(20 + m.level ** 2) || 20;
     if (gold >= cost) {
         gold -= cost;
         m.level++;
