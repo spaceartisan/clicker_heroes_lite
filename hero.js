@@ -90,7 +90,7 @@ function levelUpMercenary(i) {
     if (gold >= cost) {
         gold -= cost;
         m.level++;
-        m.upgradeCost = Math.floor(cost * 1.5);
+        m.upgradeCost = Math.floor(20 + m.level ** 2);
         updateUI();
         updateMercenaryText();
     }
