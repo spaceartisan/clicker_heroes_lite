@@ -65,7 +65,7 @@ function updateMercenaryText() {
     const mercRows = hiredMercenaries.map((m, i) => {
         const row = document.createElement("div");
         row.className = "merc-row";
-        row.textContent = `${m.name} (Lv${m.level}) Gear x${2 ** m.gearLevel} Speed x${m.attackSpeedLevel}`;
+        row.textContent = `${m.name} (Lv${m.level}) Gear x${m.gearLevel} Speed x${m.attackSpeedLevel}`;
 
         const lvlBtn = document.createElement("button");
         lvlBtn.textContent = `Lv Up (${m.upgradeCost || 20}g)`;
