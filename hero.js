@@ -21,7 +21,7 @@ function getEnemyHealth() {
 
 function getAutoDamage() {
     return hiredMercenaries.reduce((sum, m) => {
-        let base = m.level * (2 ** m.gearLevel);
+        let base = m.level * (2 ** m.gearLevel) * m.attackSpeedLevel / 2.0;
         if (rallyActive) base *= 2;
         return sum + base;
     }, 0);
@@ -122,7 +122,10 @@ function upgradeMercSpeed(i) {
 
 function startMercAttack(i) {
     const m = hiredMercenaries[i];
-    setInterval(() => {
+    if (mercAttackInterval[i]) {
+        clearInterval(mercAttackInterval[i]);
+    }
+    mercAttackInterval[i] = setInterval(() => {
         const dmg = m.level * (2 ** m.gearLevel) * (rallyActive ? 2 : 1);
         enemyHealth -= dmg;
         showDamage(dmg);

@@ -304,3 +304,13 @@ h3 {
         max-height: 90vh;
     }
 }
+
+.highlight-player {
+  background-color: rgba(139, 69, 19, 0.3); /* dark wood tone */
+  color: #ffd700; /* gold */
+  font-weight: bold;
+  border-left: 5px solid #cfa75e;
+  padding-left: 8px;
+  font-family: 'MedievalSharp', serif;
+}
+

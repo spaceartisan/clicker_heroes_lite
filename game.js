@@ -21,6 +21,7 @@ let playerName = "Unnamed Hero"; // Default name
 let nameConfirm = false;
 
 const hiredMercenaries = [];
+const mercAttackInterval = [];
 
 let messageInterval = null;
 let leaderboardUnsub = null;
@@ -176,7 +177,7 @@ function loadGame() {
             const now = Date.now();
             const diffSeconds = Math.floor((now - data.lastSaved) / 1000);
             const goldPerSecond = getTotalAutoDamage(); // simple estimate
-            const offlineGold = diffSeconds * goldPerSecond;
+            const offlineGold = diffSeconds * goldPerSecond * 0.25; // 25% efficiency while offline
 
             console.log(`Offline gold earned: ${offlineGold} (calculated over ${diffSeconds} seconds) for ${goldPerSecond} gold/sec`);
 
@@ -196,6 +197,54 @@ function loadGame() {
         updateMercenaryText();
         saveGame();
     }
+}
+
+function exportGame() {
+    const saveData = localStorage.getItem("clickerHeroSave");
+    if (saveData) {
+        const encoded = btoa(unescape(encodeURIComponent(saveData))); // base64 encode
+        const blob = new Blob([encoded], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "clicker_hero_save.chs"; // use custom extension
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    } else {
+        alert("No save data found to export.");
+    }
+}
+
+function importGame() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".chs,.txt"; // custom extension
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = event => {
+                try {
+                    const decoded = decodeURIComponent(escape(atob(event.target.result)));
+                    const data = JSON.parse(decoded);
+
+                    // Simple structure check (can add more)
+                    if (!data || typeof data !== "object" || !("gold" in data && "playerLevel" in data)) {
+                        throw new Error("Invalid save structure");
+                    }
+
+                    localStorage.setItem("clickerHeroSave", JSON.stringify(data));
+                    loadGame();
+                    alert("Game imported successfully!");
+                } catch (error) {
+                    console.error("Failed to import game:", error);
+                    alert("Invalid or corrupted save file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+    input.click();
 }
 
 // === Init ===

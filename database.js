@@ -72,7 +72,6 @@ function showLeaderboard() {
     const scrollDiv = document.getElementById("leaderboard-scroll");
     scrollDiv.innerHTML = "<p>Loading leaderboard...</p>";
 
-    // Prevent multiple listeners
     if (leaderboardUnsub) leaderboardUnsub();
 
     leaderboardUnsub = db.collection("scores")
@@ -85,7 +84,11 @@ function showLeaderboard() {
                 const data = doc.data();
                 const name = data.name || "Unnamed Hero";
                 const score = typeof data.score === "number" ? data.score : 0;
-                entries.push(`<p>${++i}. ${name} — Level ${score}</p>`);
+                const isPlayer = name === playerName;
+
+                const displayName = isPlayer ? `🛡️ ${name}` : name;
+                const playerClass = isPlayer ? 'highlight-player' : '';
+                entries.push(`<p class="${playerClass}">${++i}. ${displayName} — Level ${score}</p>`);
             });
             scrollDiv.innerHTML = entries.join("") || "<p>No entries yet.</p>";
         }, error => {
@@ -95,6 +98,8 @@ function showLeaderboard() {
 
     document.getElementById("leaderboard-popup").style.display = "flex";
 }
+
+
 
 function closeLeaderboard() {
     document.getElementById("leaderboard-popup").style.display = "none";
@@ -174,6 +179,8 @@ function disableNameInput() {
 }
 
 function confirmName() {
+    localStorage.setItem("playerName", playerName);
+    localStorage.setItem("nameConfirm", true);
     const name = nameInput.value.trim();
     if (name.length === 0) {
         statusSpan.textContent = "❌ Please enter a valid name.";
