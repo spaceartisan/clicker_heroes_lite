@@ -32,6 +32,7 @@ function updateUI() {
     updatePlayerText();
     document.getElementById("prev-level").disabled = currentLevel <= 1;
     document.getElementById("next-level").disabled = currentLevel >= maxLevel;
+    checkAchievements();
 }
 
 // === Player Upgrade ===
@@ -99,4 +100,49 @@ function showOptions() {
 function closeOptions() {
     const optionsPopup = document.getElementById("options-popup");
     optionsPopup.style.display = "none";
+}
+
+
+function checkAchievements() {
+  achievements.forEach(ach => {
+    if (!unlockedAchievements.has(ach.id) && ach.condition()) {
+      unlockedAchievements.add(ach.id);
+      localStorage.setItem("achievements", JSON.stringify([...unlockedAchievements]));
+      showAchievementPopup(ach);
+    }
+  });
+}
+
+function showAchievementPopup(ach) {
+  const popup = document.getElementById("achievement-popup");
+  popup.innerHTML = `🏅 <strong>${ach.name}</strong><br>${ach.description}`;
+  popup.style.display = "block";
+  popup.style.opacity = "1";
+
+  setTimeout(() => {
+    popup.style.opacity = "0";
+    setTimeout(() => popup.style.display = "none", 500);
+  }, 2500);
+}
+
+function showAchievements() {
+  const container = document.getElementById("achievement-list");
+  container.innerHTML = "";
+
+  achievements.forEach(ach => {
+    const div = document.createElement("div");
+    div.classList.add("achievement");
+    if (unlockedAchievements.has(ach.id)) {
+      div.classList.add("unlocked");
+    }
+
+    div.innerHTML = `<strong>${ach.name}</strong><br>${ach.description}`;
+    container.appendChild(div);
+  });
+
+  document.getElementById("achievement-menu").style.display = "flex";
+}
+
+function closeAchievements() {
+  document.getElementById("achievement-menu").style.display = "none";
 }

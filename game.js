@@ -29,8 +29,60 @@ let messageUnsub = null;
 
 let upgradeMultiplier = 1;
 
+let totalClicks = 0; // Track total clicks for achievements
+let enemiesDefeated = 0; // Track defeated enemies for achievements
+let abilitiesUsed = []; // Track used abilities for achievements
+let abilitiesCount = 0; // Track amount abilities used
+
 const enemyCanvas = document.getElementById("enemy-canvas");
 const ctx = enemyCanvas.getContext("2d");
+
+const achievements = [
+    { id: "gold_100", name: "Gold Digger I", description: "Collect 100 gold", condition: () => gold >= 100 },
+    { id: "gold_100000", name: "Gold Digger II", description: "Collect 100,000 gold", condition: () => gold >= 100000 },
+    { id: "gold_1000000", name: "Gold Digger III", description: "Collect 1,000,000 gold", condition: () => gold >= 1000000 },
+    { id: "player_10", name: "Hero's Rise I", description: "Reach player level 10", condition: () => playerLevel >= 10 },
+    { id: "player_100", name: "Hero's Rise II", description: "Reach player level 100", condition: () => playerLevel >= 100 },
+    { id: "player_1000", name: "Hero's Rise III", description: "Reach player level 1000", condition: () => playerLevel >= 1000 },
+    { id: "gear_10", name: "Gear Up I", description: "Upgrade gear to level 10", condition: () => playerGearLevel >= 10 },
+    { id: "gear_50", name: "Gear Up II", description: "Upgrade gear to level 50", condition: () => playerGearLevel >= 50 },
+    { id: "gear_100", name: "Gear Up III", description: "Upgrade gear to level 100", condition: () => playerGearLevel >= 100 },
+    { id: "click_100", name: "Clicker I", description: "Click 100 times", condition: () => totalClicks >= 100 },
+    { id: "click_1000", name: "Clicker II", description: "Click 1,000 times", condition: () => totalClicks >= 1000 },
+    { id: "click_10000", name: "Clicker III", description: "Click 10,000 times", condition: () => totalClicks >= 10000 },
+    { id: "enemy_10", name: "Vanquisher I", description: "Defeat 10 enemies", condition: () => enemiesDefeated >= 10 },
+    { id: "enemy_1000", name: "Vanquisher II", description: "Defeat 1000 enemies", condition: () => enemiesDefeated >= 1000 },
+    { id: "enemy_10000", name: "Vanquisher III", description: "Defeat 10,000 enemies", condition: () => enemiesDefeated >= 10000 },
+    { id: "level_10", name: "Explorer I", description: "Reach level 10", condition: () => currentLevel >= 10 },
+    { id: "level_300", name: "Explorer II", description: "Reach level 300", condition: () => currentLevel >= 300 },
+    { id: "level_1000", name: "Explorer III", description: "Reach level 1000", condition: () => currentLevel >= 1000 },
+    { id: "merc_1", name: "First Hire", description: "Hire your first mercenary", condition: () => hiredMercenaries.length >= 1 },
+    { id: "merc_10", name: "Mercenary Captain", description: "Hire 10 mercenaries", condition: () => hiredMercenaries.length >= 10 },
+    { id: "merc_50", name: "Mercenary Commander", description: "Hire 50 mercenaries", condition: () => hiredMercenaries.length >= 50 },
+    { id: "merc_100", name: "Mercenary Overlord", description: "Hire 100 mercenaries", condition: () => hiredMercenaries.length >= 100 },
+    { id: "merc_level_10", name: "Veteran Fighter", description: "Level a mercenary to 10", condition: () => hiredMercenaries.some(m => m.level >= 10) },
+    { id: "merc_level_50", name: "Elite Warrior", description: "Level a mercenary to 50", condition: () => hiredMercenaries.some(m => m.level >= 50) },
+    { id: "gear_5", name: "Sharpened Blades", description: "Upgrade any mercenary's gear to level 5", condition: () => hiredMercenaries.some(m => m.gearLevel >= 5) },
+    { id: "gear_20", name: "Forgemaster", description: "Upgrade any mercenary's gear to level 20", condition: () => hiredMercenaries.some(m => m.gearLevel >= 20) },
+    { id: "gear_50", name: "Legendary Smith", description: "Upgrade any mercenary's gear to level 50", condition: () => hiredMercenaries.some(m => m.gearLevel >= 50) },
+    { id: "guild_1", name: "Guild Leader", description: "Upgrade the Guild to level 1", condition: () => guildLevel >= 1 },
+    { id: "guild_10", name: "Guild Master", description: "Upgrade the Guild to level 10", condition: () => guildLevel >= 10 },
+    { id: "guild_100", name: "Guild Overlord", description: "Upgrade the Guild to level 100", condition: () => guildLevel >= 100 },
+    { id: "speed_5", name: "Swift Strike I", description: "Upgrade a mercenary's attack speed to level 5", condition: () => hiredMercenaries.some(m => m.attackSpeedLevel >= 5) },
+    { id: "speed_20", name: "Swift Strike II", description: "Upgrade a mercenary's attack speed to level 20", condition: () => hiredMercenaries.some(m => m.attackSpeedLevel >= 20) },
+    { id: "speed_50", name: "Swift Strike III", description: "Upgrade a mercenary's attack speed to level 50", condition: () => hiredMercenaries.some(m => m.attackSpeedLevel >= 50) },
+    { id: "ability_strong", name: "Strong Hero", description: "Unlock Strong Attack ability", condition: () => abilitiesUsed.includes("Strong Attack") },
+    { id: "ability_rally", name: "Rallying Cry", description: "Unlock Rally ability", condition: () => abilitiesUsed.includes("Rally") },
+    { id: "ability_double", name: "Double Trouble", description: "Unlock Double Attack ability", condition: () => abilitiesUsed.includes("Double Attack") },
+    { id: "ability_rage", name: "Raging Fury", description: "Unlock Rage ability", condition: () => abilitiesUsed.includes("Rage") },
+    { id: "ability_count_10", name: "Ability Master I", description: "Use abilities 10 times", condition: () => abilitiesCount >= 10 },
+    { id: "ability_count_100", name: "Ability Master II", description: "Use abilities 100 times", condition: () => abilitiesCount >= 100 },
+    { id: "ability_count_1000", name: "Ability Master III", description: "Use abilities 1000 times", condition: () => abilitiesCount >= 1000 }
+];
+
+
+
+let unlockedAchievements = new Set(); // Use localStorage to persist
 
 const enemyNames = ["Slime", "ByteBat", "Goblink", "Rasteroid", "HexWorm", "Pixel Fiend", "Bugbear", "NullKnight", "Cryptoad", "8-Bit Dragon"];
 const levelThemes = [
@@ -139,6 +191,11 @@ function saveGame() {
         nameConfirm,
         playerName,
         lastSubmittedScore,
+        totalClicks,
+        enemiesDefeated,
+        abilitiesUsed, // convert Set to Array
+        abilitiesUnlocked, // track number of abilities unlocked
+        unlockedAchievements: Array.from(unlockedAchievements), // convert Set to Array
         lastSaved: Date.now() // <--- new
 
     };
@@ -173,6 +230,11 @@ function loadGame() {
         maxMercenaries = data.maxMercenaries ?? 5;
         nameConfirm = data.nameConfirm ?? false;
         playerName = data.playerName || "Unnamed Hero";
+        totalClicks = data.totalClicks || 0; // restore total clicks for achievements
+        enemiesDefeated = data.enemiesDefeated || 0; // restore defeated enemies for achievement
+        abilitiesUsed = data.abilitiesUsed || []; // restore used abilities
+        abilitiesUnlocked = data.abilitiesUnlocked || 0; // restore number of unlocked abilities
+        unlockedAchievements = new Set(data.unlockedAchievements || []); // restore achievements
 
         // Offline gold calc
         if (data.lastSaved) {
@@ -192,7 +254,7 @@ function loadGame() {
         if (nameConfirm) {
             disableNameInput();
         }
-        console.log("Game loaded:", data);
+        // console.log("Game loaded:", data);
         playerNameText.textContent = playerName;
         drawRandomEnemy();
         updateUI();

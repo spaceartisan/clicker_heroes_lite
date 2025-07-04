@@ -14,6 +14,7 @@ function attack(isRageAttack = false) {
     enemyHealth -= dmg;
     if (enemyHealth <= 0) handleEnemyDefeat();
     updateUI();
+    totalClicks++; // Increment total clicks for achievements
 }
 
 // === Damage and UI ===
@@ -172,6 +173,11 @@ function activateAbility(ability) {
     const btn = state.button;
     btn.disabled = true;
     state.cooldown = true;
+
+    if (!abilitiesUsed.includes(ability.name)) {
+        abilitiesUsed.push(ability.name);
+    }
+    abilitiesCount++;
 
     if (ability.name === "Strong Attack") strongAttack();
     else if (ability.name === "Rally") {

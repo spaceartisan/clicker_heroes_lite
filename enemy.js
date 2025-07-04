@@ -34,6 +34,7 @@ function drawRandomEnemy() {
 
 // === Enemy Logic ===
 function handleEnemyDefeat() {
+    enemiesDefeated++;
     gold += Math.floor(currentLevel * 2);
     if (currentLevel == maxLevel) maxLevel++
         if (autoAdvance) currentLevel++;

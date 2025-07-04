@@ -81,6 +81,7 @@
         <div>
             <span id="autosave-indicator" style="opacity: 0;">💾 Autosaved!</span>
         </div>
+        <div id="achievement-popup" class="popup-toast" style="display:none;"></div>
 
 
     </div>
@@ -149,19 +150,33 @@
                 <button onclick="exportGame()">📦 Export Save</button>
                 <button onclick="importGame()">📥 Import Save</button>
                 <p></p>
+                <button onclick="showAchievements()">📜 View Achievements</button>
                 <h3></h3>
                 <button onclick="closeOptions()">Close</button>
             </div>
         </div>
+    </div>
 
-        <!-- Firebase SDKs -->
+    <div id="achievement-menu" class="popup">
+        <div class="popup-content">
+            <h3>🏆 Achievements</h3>
+            <div id="achievement-list" class="scrollable-list">
+                <!-- Achievements will be populated here -->
+            </div>
+            <button onclick="closeAchievements()">Close</button>
+        </div>
+    </div>
 
-        <script src="config.js"></script>
-        <script src="hero.js"></script>
-        <script src="enemy.js"></script>
-        <script src="database.js"></script>
-        <script src="ui.js"></script>
-        <script src="game.js"></script>
+
+
+    <!-- Firebase SDKs -->
+
+    <script src="config.js"></script>
+    <script src="hero.js"></script>
+    <script src="enemy.js"></script>
+    <script src="database.js"></script>
+    <script src="ui.js"></script>
+    <script src="game.js"></script>
 
 
 

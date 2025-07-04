@@ -348,3 +348,47 @@ h3 {
   color: #fffbea;
   border: 2px solid #d4af7f; /* optional: gold accent border */
 }
+
+.popup-toast {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: #222;
+  border: 2px solid gold;
+  padding: 10px 20px;
+  color: white;
+  font-family: 'MedievalSharp', serif;
+  z-index: 999;
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+#achievement-menu .popup-content {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.scrollable-list {
+  max-height: 300px;
+  overflow-y: auto;
+  text-align: left;
+  padding: 10px;
+  border: 2px solid #a67c52;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.achievement {
+  padding: 8px;
+  margin-bottom: 6px;
+  background-color: #3a2a1a;
+  border-left: 5px solid gray;
+  border-radius: 4px;
+  color: #ccc;
+}
+
+.achievement.unlocked {
+  border-left-color: gold;
+  color: #fff;
+}
