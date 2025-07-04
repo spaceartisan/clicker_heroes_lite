@@ -44,7 +44,7 @@
 
         <div id="stats">
             <!-- <p>Gold: <span id="gold">0</span></p> -->
-            <p>Damage: <span id="damage">Click: 1, Auto: 0</span></p>
+            <p><span id="damage">Hero Damage: 0, Merc DPS: 0</span></p>
         </div>
 
         <div id="ability-bar">
@@ -89,7 +89,15 @@
     </p>
     <br>
 
-    <div id="gold-bar">💰 Gold: <span id="gold-fixed">0</span></div>
+    <div id="gold-bar">
+        💰 Gold: <span id="gold-fixed">0</span>
+        <div class="upgrade-multiplier">
+            <button class="mult-btn" onclick="setUpgradeMultiplier(1)">×1</button>
+            <button class="mult-btn" onclick="setUpgradeMultiplier(10)">×10</button>
+            <button class="mult-btn" onclick="setUpgradeMultiplier(100)">×100</button>
+        </div>
+    </div>
+
 
     <div id="leaderboard-popup" class="popup">
         <div class="popup-content">
@@ -140,19 +148,20 @@
             <div id="export-import-controls">
                 <button onclick="exportGame()">📦 Export Save</button>
                 <button onclick="importGame()">📥 Import Save</button>
-            <p></p>
-            <button onclick="closeOptions()">Close</button>
+                <p></p>
+                <h3></h3>
+                <button onclick="closeOptions()">Close</button>
+            </div>
         </div>
-    </div>
 
-    <!-- Firebase SDKs -->
+        <!-- Firebase SDKs -->
 
-    <script src="config.js"></script>
-    <script src="hero.js"></script>
-    <script src="enemy.js"></script>
-    <script src="database.js"></script>
-    <script src="ui.js"></script>
-    <script src="game.js"></script>
+        <script src="config.js"></script>
+        <script src="hero.js"></script>
+        <script src="enemy.js"></script>
+        <script src="database.js"></script>
+        <script src="ui.js"></script>
+        <script src="game.js"></script>
 
 
 

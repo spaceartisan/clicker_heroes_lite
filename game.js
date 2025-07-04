@@ -27,6 +27,8 @@ let messageInterval = null;
 let leaderboardUnsub = null;
 let messageUnsub = null;
 
+let upgradeMultiplier = 1;
+
 const enemyCanvas = document.getElementById("enemy-canvas");
 const ctx = enemyCanvas.getContext("2d");
 
@@ -247,6 +249,19 @@ function importGame() {
     input.click();
 }
 
+function setUpgradeMultiplier(x) {
+    upgradeMultiplier = x;
+    document.querySelectorAll('.upgrade-multiplier button').forEach(btn =>
+        btn.classList.remove('active')
+    );
+    const btn = Array.from(document.querySelectorAll('.upgrade-multiplier button'))
+        .find(b => b.textContent.trim() === `×${x}`);
+    if (btn) btn.classList.add('active');
+    updateUI();
+    updatePlayerLevelGearText();
+    updateMercenaryText();
+}
+
 // === Init ===
 const autoNextToggle = document.getElementById("auto-next-toggle");
 autoAdvance = autoNextToggle.checked; // ensure variable matches UI
@@ -260,6 +275,7 @@ window.addEventListener("DOMContentLoaded", () => {
         updateUI();
     }
     updatePlayerLevelGearText();
+    setUpgradeMultiplier(upgradeMultiplier);
 });
 
 setInterval(() => {

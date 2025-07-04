@@ -1,4 +1,10 @@
+let lastClickTime = 0;
+
 function attack() {
+    const now = Date.now();
+    console.log("Attack clicked at", now - lastClickTime, "ms since last click");
+    if (now - lastClickTime < 100) return; // Prevent spamming clicks
+    lastClickTime = now;
     let dmg = playerClickDamage;
     if (doubleAttackReady) {
         dmg *= 2;
@@ -27,12 +33,23 @@ function getAutoDamage() {
     }, 0);
 }
 
-
+function levelUpPlayerCost() {
+    // Create the upgrade equation as a lambda function
+    const upgradeEquation = (plvl) => Math.floor(10 + plvl ** 1.5);
+    let totalCost = 0;
+    for (let i = 0; i < upgradeMultiplier; i++) {
+        totalCost += upgradeEquation(playerLevel + i);
+    }
+    return totalCost;
+}
 
 function levelUpPlayer() {
-    if (gold >= playerUpgradeCost) {
-        gold -= playerUpgradeCost;
-        playerLevel++;
+    // Create the upgrade equation as a lambda function
+    let cost = levelUpPlayerCost();
+    // 
+    if (gold >= cost) {
+        gold -= cost;
+        playerLevel += upgradeMultiplier;
         playerUpgradeCost = Math.floor(10 + playerLevel ** 1.5);
         updateUI();
         updatePlayerLevelGearText()
@@ -40,8 +57,9 @@ function levelUpPlayer() {
 }
 
 function gearUpPlayer() {
-    if (gold >= playerGearCost && playerLevel >= nextPlayerGearLevelReq) {
-        gold -= playerGearCost;
+    let cost = playerGearCost;
+    if (gold >= cost && playerLevel >= nextPlayerGearLevelReq) {
+        gold -= cost;
         playerGearLevel++;
         playerGearCost = Math.floor(playerGearCost * 2);
         nextPlayerGearLevelReq += 40;
@@ -82,14 +100,26 @@ function increaseMercenaryCap() {
     }
 }
 
+function levelUpMercenaryCost(i) {
+    // Create the upgrade equation as a lambda function
+    const m = hiredMercenaries[i];
+    const upgradeEquation = (mlvl) => Math.floor(20 + mlvl ** 2);
+    let totalCost = 0;
+    for (let i = 0; i < upgradeMultiplier; i++) {
+        totalCost += upgradeEquation(m.level + i);
+    }
+    return totalCost;
+}
 
+let tempCost = 0;
 
 function levelUpMercenary(i) {
     const m = hiredMercenaries[i];
-    const cost = Math.floor(20 + m.level ** 2) || 20;
+    const cost = levelUpMercenaryCost(i);
     if (gold >= cost) {
         gold -= cost;
-        m.level++;
+        tempCost += cost;
+        m.level += upgradeMultiplier;
         m.upgradeCost = Math.floor(20 + m.level ** 2);
         updateUI();
         updateMercenaryText();

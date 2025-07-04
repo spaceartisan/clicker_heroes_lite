@@ -314,3 +314,37 @@ h3 {
   font-family: 'MedievalSharp', serif;
 }
 
+#upgrade-multiplier {
+  display: inline-block;
+  margin-left: 20px;
+  font-size: 14px;
+}
+
+.upgrade-multiplier {
+  display: inline-block;
+  margin-left: 20px;
+  font-size: 14px;
+}
+
+.upgrade-multiplier button {
+  font-size: 12px;
+  padding: 4px 8px;
+  margin-left: 4px;
+  border: 1px solid #a67c52;
+  background-color: #5c3b20;
+  color: #fdf6e3;
+  border-radius: 4px;
+  font-family: 'MedievalSharp', serif;
+  cursor: pointer;
+}
+
+.upgrade-multiplier button:hover {
+  background-color: #7b4b26;
+  transform: scale(1.05);
+}
+
+.upgrade-multiplier button.active {
+  background: #a67c52;  /* Warm leather/golden tone */
+  color: #fffbea;
+  border: 2px solid #d4af7f; /* optional: gold accent border */
+}

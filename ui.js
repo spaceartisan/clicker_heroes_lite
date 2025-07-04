@@ -26,7 +26,7 @@ function showDamage(amount) {
 function updateUI() {
     //   goldText.textContent = gold;
     playerClickDamage = getPlayerClickDamage();
-    damageText.textContent = `Click: ${playerClickDamage}, Auto: ${getAutoDamage()}`;
+    damageText.textContent = `Hero Damage: ${playerClickDamage}, Merc DPS: ${getAutoDamage()}`;
     healthFill.style.width = `${(enemyHealth / getEnemyHealth()) * 100}%`;
     document.getElementById("gold-fixed").textContent = Math.floor(gold);
     updatePlayerText();
@@ -52,7 +52,7 @@ function updatePlayerLevelGearText() {
     const shop = document.getElementById("shop");
     shop.innerHTML = `
     <h3>Hero Upgrades</h3>
-    <button onclick="levelUpPlayer()">Level Up (${playerUpgradeCost}g)</button>
+    <button onclick="levelUpPlayer()">Level Up (${levelUpPlayerCost()}g)</button>
     <button ${playerLevel < nextPlayerGearLevelReq ? 'disabled' : ''} onclick="gearUpPlayer()">Upgrade Gear (${playerGearCost}g)</button>
     <p>Player Lv: ${playerLevel}, Gear x${playerGearLevel}</p>
   `;
@@ -68,7 +68,7 @@ function updateMercenaryText() {
         row.textContent = `${m.name} (Lv${m.level}) Gear x${m.gearLevel} Speed x${m.attackSpeedLevel}`;
 
         const lvlBtn = document.createElement("button");
-        lvlBtn.textContent = `Lv Up (${m.upgradeCost || 20}g)`;
+        lvlBtn.textContent = `Lv Up (${levelUpMercenaryCost(i)}g)`;
         lvlBtn.onclick = () => levelUpMercenary(i);
         row.appendChild(lvlBtn);
 
