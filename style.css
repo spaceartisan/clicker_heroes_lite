@@ -432,8 +432,9 @@ h3 {
 
 
 #kingdom-box {
-    width: 400px;
-    height: 400px;
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 1 / 1; /* Keeps square */
     background: #222 url('https://www.transparenttextures.com/patterns/skulls.png') repeat;
     padding: 10px;
     border: 3px double #c9b79c;
@@ -442,6 +443,13 @@ h3 {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin : 20px auto;
-    color: #3b1e01;
+    margin: 20px auto;
+    box-sizing: border-box;
 }
+
+#kingdom-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
