@@ -54,7 +54,7 @@ function updatePlayerLevelGearText() {
     <h3>Hero Upgrades</h3>
     <button onclick="levelUpPlayer()">Level Up (${playerUpgradeCost}g)</button>
     <button ${playerLevel < nextPlayerGearLevelReq ? 'disabled' : ''} onclick="gearUpPlayer()">Upgrade Gear (${playerGearCost}g)</button>
-    <p>Player Lv: ${playerLevel}, Gear x${2 ** playerGearLevel}</p>
+    <p>Player Lv: ${playerLevel}, Gear x${playerGearLevel}</p>
   `;
 }
 
