@@ -17,60 +17,98 @@
     <div id="game-container">
         <h1>Clicker Heroes Lite</h1>
 
-        <div id="enemy-container">
-            <button id="prev-level" onclick="goToPrevLevel()">⬅</button>
+        <div id="hero-view">
+            <div id="enemy-container">
+                <button id="prev-level" onclick="goToPrevLevel()">⬅</button>
 
-            <div id="enemy-box">
-                <div id="enemy-wrapper">
-                    <canvas id="enemy-canvas" width="150" height="150"></canvas>
-                    <div id="damage-overlay"></div>
+                <div id="enemy-box">
+                    <div id="enemy-wrapper">
+                        <canvas id="enemy-canvas" width="150" height="150"></canvas>
+                        <div id="damage-overlay"></div>
+                    </div>
+                    <div id="health-bar">
+                        <div id="health-fill"></div>
+                    </div>
+                    <p id="enemy-level">Level: 1</p>
                 </div>
-                <div id="health-bar">
-                    <div id="health-fill"></div>
+
+
+                <button id="next-level" onclick="goToNextLevel()">➡</button>
+            </div>
+
+            <div id="auto-level-container">
+                <label>
+                    <input type="checkbox" id="auto-next-toggle" checked>
+                    Auto advance to next level
+                </label>
+            </div>
+
+            <div id="stats">
+                <!-- <p>Gold: <span id="gold">0</span></p> -->
+                <p><span id="damage">Hero Damage: 0, Merc DPS: 0</span></p>
+            </div>
+
+            <div id="ability-bar">
+                <div class="ability-header">
+                    <h3>Hero Abilities</h3>
                 </div>
-                <p id="enemy-level">Level: 1</p>
+                <div class="ability-buttons">
+                    <button id="strong-attack">Strong Attack</button>
+                    <button id="rally">Rally</button>
+                    <button id="double-attack">Double Attack</button>
+                    <button id="rage">Rage</button>
+                </div>
             </div>
 
-
-            <button id="next-level" onclick="goToNextLevel()">➡</button>
-        </div>
-
-        <div id="auto-level-container">
-            <label>
-                <input type="checkbox" id="auto-next-toggle" checked>
-                Auto advance to next level
-            </label>
-        </div>
-
-        <div id="stats">
-            <!-- <p>Gold: <span id="gold">0</span></p> -->
-            <p><span id="damage">Hero Damage: 0, Merc DPS: 0</span></p>
-        </div>
-
-        <div id="ability-bar">
-            <div class="ability-header">
-                <h3>Hero Abilities</h3>
+            <div id="shop">
+                <!-- Dynamic player upgrades added by JS -->
             </div>
-            <div class="ability-buttons">
-                <button id="strong-attack">Strong Attack</button>
-                <button id="rally">Rally</button>
-                <button id="double-attack">Double Attack</button>
-                <button id="rage">Rage</button>
+
+            <div id="mercenary-shop">
+                <h3>Mercenaries</h3>
+                <button onclick="hireMercenary()">Hire Mercenary (Cost: <span id="auto-clicker-cost">50</span>
+                    gold)</button>
+                <button onclick="increaseMercenaryCap()">Upgrade Guild (Cost: <span id="guild-cost">10000</span>
+                    gold)</button>
+                <p>Mercenaries Hired: <span id="auto-clicker-count">0/5</span></p>
+                <!-- Mercenaries will populate here -->
             </div>
         </div>
 
-        <div id="shop">
-            <!-- Dynamic player upgrades added by JS -->
-        </div>
+        <div id="kingdom-view" style="display:none;">
+            <h2>🏰 Your Kingdom</h2>
 
-        <div id="mercenary-shop">
-            <h3>Mercenaries</h3>
-            <button onclick="hireMercenary()">Hire Mercenary (Cost: <span id="auto-clicker-cost">50</span>
-                gold)</button>
-            <button onclick="increaseMercenaryCap()">Upgrade Guild (Cost: <span id="guild-cost">10000</span>
-                gold)</button>
-            <p>Mercenaries Hired: <span id="auto-clicker-count">0/5</span></p>
-            <!-- Mercenaries will populate here -->
+            <div id="kingdom-box">
+                <canvas id="kingdom-canvas" width="400" height="400"></canvas>
+            </div>
+            <h3>Structures</h3>
+            <div class="structure-row">
+                <span>Castle — Lv <span id="castle-lvl">0</span></span>
+                <button onclick="upgradeStructure('castle')"><span id="castle-cost">1000</span></button>
+            </div>
+            <p>Upgrade your castle to unlock new buildings and increase hero damage.</p>
+            <div class="structure-row">
+                <span>Tavern — Lv <span id="tavern-lvl">0</span></span>
+                <button onclick="upgradeStructure('tavern')"><span id="tavern-cost">1000</span></button>
+            </div>
+            <p>Upgrade your tavern to increase the amount of mercenaries hired.</p>
+            <div class="structure-row">
+                <span>Blacksmith — Lv <span id="blacksmith-lvl">0</span></span>
+                <button onclick="upgradeStructure('blacksmith')"><span id="blacksmith-cost">1000</span></button>
+            </div>
+            <p>Upgrade your blacksmith to improve mercenary and hero gear level.</p>
+            <div class="structure-row">
+                <span>Barracks — Lv <span id="barracks-lvl">0</span></span>
+                <button onclick="upgradeStructure('barracks')"><span id="barracks-cost">1000</span></button>
+            </div>
+            <p>Upgrade your barracks to increase the level of your mercenaries.</p>
+            <div class="structure-row">
+                <span>Market — Lv <span id="market-lvl">0</span></span>
+                <button onclick="upgradeStructure('market')"><span id="market-cost">1000</span></button>
+            </div>
+            <p>Upgrade your market to increase the amount of gold earned from each defeated enemy.</p>
+            <h3>Note</h3>
+            <p>Currently this does not impact the game.</p>
         </div>
 
         <h3></h3>
@@ -82,15 +120,18 @@
             <span id="autosave-indicator" style="opacity: 0;">💾 Autosaved!</span>
         </div>
         <div id="achievement-popup" class="popup-toast" style="display:none;"></div>
-
-
     </div>
+
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
         v0.1.0 – Clicker Heroes Lite
     </p>
     <br>
 
     <div id="gold-bar">
+        <div id="view-switch">
+            <button onclick="switchView('hero')">🏹 Hero</button>
+            <button onclick="switchView('kingdom')">🏰 Kingdom</button>
+        </div>
         💰 Gold: <span id="gold-fixed">0</span>
         <div class="upgrade-multiplier">
             <button class="mult-btn" onclick="setUpgradeMultiplier(1)">×1</button>
@@ -173,6 +214,7 @@
 
     <script src="config.js"></script>
     <script src="hero.js"></script>
+    <script src="kingdom.js"></script>
     <script src="enemy.js"></script>
     <script src="database.js"></script>
     <script src="ui.js"></script>

@@ -174,6 +174,7 @@ button:disabled {
     cursor: pointer;
     font-size: 14px;
     transition: background 0.3s;
+    min-width: 150px;
 }
 
 #ability-bar button:hover {
@@ -249,6 +250,12 @@ h3 {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
 }
 
+#gold-fixed {
+    display: inline-block;
+    min-width: 80px;
+    text-align: right;
+}
+
 #prev-level:disabled,
 #next-level:disabled {
     background-color: #222;
@@ -306,89 +313,135 @@ h3 {
 }
 
 .highlight-player {
-  background-color: rgba(139, 69, 19, 0.3); /* dark wood tone */
-  color: #ffd700; /* gold */
-  font-weight: bold;
-  border-left: 5px solid #cfa75e;
-  padding-left: 8px;
-  font-family: 'MedievalSharp', serif;
+    background-color: rgba(139, 69, 19, 0.3);
+    /* dark wood tone */
+    color: #ffd700;
+    /* gold */
+    font-weight: bold;
+    border-left: 5px solid #cfa75e;
+    padding-left: 8px;
+    font-family: 'MedievalSharp', serif;
 }
 
 #upgrade-multiplier {
-  display: inline-block;
-  margin-left: 20px;
-  font-size: 14px;
+    display: inline-block;
+    margin-left: 20px;
+    font-size: 14px;
 }
 
 .upgrade-multiplier {
-  display: inline-block;
-  margin-left: 20px;
-  font-size: 14px;
+    display: inline-block;
+    margin-left: 20px;
+    font-size: 14px;
 }
 
 .upgrade-multiplier button {
-  font-size: 12px;
-  padding: 4px 8px;
-  margin-left: 4px;
-  border: 1px solid #a67c52;
-  background-color: #5c3b20;
-  color: #fdf6e3;
-  border-radius: 4px;
-  font-family: 'MedievalSharp', serif;
-  cursor: pointer;
+    font-size: 12px;
+    padding: 4px 8px;
+    margin-left: 4px;
+    border: 1px solid #a67c52;
+    background-color: #5c3b20;
+    color: #fdf6e3;
+    border-radius: 6px;
+    font-family: 'MedievalSharp', serif;
+    cursor: pointer;
 }
 
 .upgrade-multiplier button:hover {
-  background-color: #7b4b26;
-  transform: scale(1.05);
+    background-color: #7b4b26;
+    transform: scale(1.05);
 }
 
 .upgrade-multiplier button.active {
-  background: #a67c52;  /* Warm leather/golden tone */
-  color: #fffbea;
-  border: 2px solid #d4af7f; /* optional: gold accent border */
+    background: #a67c52;
+    /* Warm leather/golden tone */
+    color: #fffbea;
+    border: 2px solid #d4af7f;
+    /* optional: gold accent border */
 }
 
 .popup-toast {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background: #222;
-  border: 2px solid gold;
-  padding: 10px 20px;
-  color: white;
-  font-family: 'MedievalSharp', serif;
-  z-index: 999;
-  border-radius: 6px;
-  opacity: 0;
-  transition: opacity 0.5s ease;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #222;
+    border: 2px solid gold;
+    padding: 10px 20px;
+    color: white;
+    font-family: 'MedievalSharp', serif;
+    z-index: 999;
+    border-radius: 6px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
 }
 
 #achievement-menu .popup-content {
-  max-height: 80vh;
-  overflow-y: auto;
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .scrollable-list {
-  max-height: 300px;
-  overflow-y: auto;
-  text-align: left;
-  padding: 10px;
-  border: 2px solid #a67c52;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    text-align: left;
+    padding: 10px;
+    border: 2px solid #a67c52;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
 }
 
 .achievement {
-  padding: 8px;
-  margin-bottom: 6px;
-  background-color: #3a2a1a;
-  border-left: 5px solid gray;
-  border-radius: 4px;
-  color: #ccc;
+    padding: 8px;
+    margin-bottom: 6px;
+    background-color: #3a2a1a;
+    border-left: 5px solid gray;
+    border-radius: 4px;
+    color: #ccc;
 }
 
 .achievement.unlocked {
-  border-left-color: gold;
-  color: #fff;
+    border-left-color: gold;
+    color: #fff;
+}
+
+#view-switch {
+    display: inline-block;
+}
+
+#view-switch button {
+    margin: 0 5px;
+    padding: 4px 10px;
+    font-size: 14px;
+    background: linear-gradient(#5c3b20, #3a2414);
+    border: 2px solid #a67c52;
+    color: #fdf6e3;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+#view-switch button:hover {
+    background: linear-gradient(#996633, #5c3b20);
+}
+
+.structure-row button.locked {
+  background-color: #222;
+  color: #777;
+  border: 1px solid #555;
+  cursor: not-allowed;
+}
+
+
+#kingdom-box {
+    width: 400px;
+    height: 400px;
+    background: #222 url('https://www.transparenttextures.com/patterns/skulls.png') repeat;
+    padding: 10px;
+    border: 3px double #c9b79c;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #8b4513;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin : 20px auto;
+    color: #3b1e01;
 }

@@ -175,6 +175,7 @@ function goToPrevLevel() {
 
 function saveGame() {
     submitScore();
+    console.log(structures);
     const saveData = {
         gold,
         playerLevel,
@@ -195,6 +196,7 @@ function saveGame() {
         enemiesDefeated,
         abilitiesUsed, // convert Set to Array
         abilitiesUnlocked, // track number of abilities unlocked
+        structures,
         unlockedAchievements: Array.from(unlockedAchievements), // convert Set to Array
         lastSaved: Date.now() // <--- new
 
@@ -235,6 +237,10 @@ function loadGame() {
         abilitiesUsed = data.abilitiesUsed || []; // restore used abilities
         abilitiesUnlocked = data.abilitiesUnlocked || 0; // restore number of unlocked abilities
         unlockedAchievements = new Set(data.unlockedAchievements || []); // restore achievements
+        if (typeof data.structures === 'object') {
+            structures = data.structures;
+        }
+
 
         // Offline gold calc
         if (data.lastSaved) {
@@ -337,6 +343,8 @@ window.addEventListener("DOMContentLoaded", () => {
         updateUI();
     }
     updatePlayerLevelGearText();
+    updateStructureUI();
+    drawKingdom();
     setUpgradeMultiplier(upgradeMultiplier);
 });
 

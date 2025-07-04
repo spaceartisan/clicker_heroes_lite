@@ -1,7 +1,31 @@
+function formatDigits(value, digits = 2, padding = 10) {
+    const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+    let tier = 0;
+
+    while (value >= 1000 && tier < suffixes.length - 1) {
+        value /= 1000;
+        tier++;
+    }
+
+    if (tier === 0) {
+        digits = 0;
+    }
+    const formatted = value.toFixed(digits);
+    const display = formatted + suffixes[tier];
+
+    // Pad to 7 characters using non-breaking space
+    return display.padStart(padding, "\u00A0");
+}
+
+function switchView(view) {
+    document.getElementById("hero-view").style.display = view === "hero" ? "block" : "none";
+    document.getElementById("kingdom-view").style.display = view === "kingdom" ? "block" : "none";
+}
+
 function showDamage(amount) {
     const damageText = document.createElement("div");
     damageText.className = "floating-damage";
-    damageText.textContent = amount;
+    damageText.textContent = formatDigits(amount, 0, 5);
 
     const overlay = document.getElementById("damage-overlay");
 
@@ -23,12 +47,13 @@ function showDamage(amount) {
     }, 1000);
 }
 
+
 function updateUI() {
     //   goldText.textContent = gold;
     playerClickDamage = getPlayerClickDamage();
-    damageText.textContent = `Hero Damage: ${playerClickDamage}, Merc DPS: ${getAutoDamage()}`;
+    damageText.textContent = `Hero Damage: ${formatDigits(playerClickDamage,2,5)}, Merc DPS: ${formatDigits(getAutoDamage(),2, 5)}`;
     healthFill.style.width = `${(enemyHealth / getEnemyHealth()) * 100}%`;
-    document.getElementById("gold-fixed").textContent = Math.floor(gold);
+    document.getElementById("gold-fixed").textContent = formatDigits(gold);
     updatePlayerText();
     document.getElementById("prev-level").disabled = currentLevel <= 1;
     document.getElementById("next-level").disabled = currentLevel >= maxLevel;
@@ -53,35 +78,35 @@ function updatePlayerLevelGearText() {
     const shop = document.getElementById("shop");
     shop.innerHTML = `
     <h3>Hero Upgrades</h3>
-    <button onclick="levelUpPlayer()">Level Up (${levelUpPlayerCost()}g)</button>
-    <button ${playerLevel < nextPlayerGearLevelReq ? 'disabled' : ''} onclick="gearUpPlayer()">Upgrade Gear (${playerGearCost}g)</button>
-    <p>Player Lv: ${playerLevel}, Gear x${playerGearLevel}</p>
+    <button onclick="levelUpPlayer()">Level Up (${formatDigits(levelUpPlayerCost(),2,5)}g)</button>
+    <button ${playerLevel < nextPlayerGearLevelReq ? 'disabled' : ''} onclick="gearUpPlayer()">Upgrade Gear (${formatDigits(playerGearCost,2,5)}g)</button>
+    <p>Player Lv: ${formatDigits(playerLevel,2,0)}, Gear x${formatDigits(playerGearLevel,2,0)}</p>
   `;
 }
 
 function updateMercenaryText() {
-    guildCostText.textContent = Math.floor(10000 * guildLevel ** 2.0);
+    guildCostText.textContent = formatDigits(Math.floor(10000 * guildLevel ** 2.0),2,5);
     autoClickerCountText.textContent = hiredMercenaries.length + "/" + maxMercenaries;
-    autoClickerCostText.textContent = Math.floor(100 * hiredMercenaries.length ** 2.0);
+    autoClickerCostText.textContent = formatDigits(Math.floor(100 * hiredMercenaries.length ** 2.0),2,5);
     const mercRows = hiredMercenaries.map((m, i) => {
         const row = document.createElement("div");
         row.className = "merc-row";
-        row.textContent = `${m.name} (Lv${m.level}) Gear x${m.gearLevel} Speed x${m.attackSpeedLevel}`;
+        row.textContent = `${m.name} (Lv${formatDigits(m.level,2,0)}) Gear x${formatDigits(m.gearLevel,2,0)} Speed x${formatDigits(m.attackSpeedLevel,2,0)}`;
 
         const lvlBtn = document.createElement("button");
-        lvlBtn.textContent = `Lv Up (${levelUpMercenaryCost(i)}g)`;
+        lvlBtn.textContent = `Lv Up (${formatDigits(levelUpMercenaryCost(i),2,5)}g)`;
         lvlBtn.onclick = () => levelUpMercenary(i);
         row.appendChild(lvlBtn);
 
         if (m.level >= m.nextGearLevelReq) {
             const gearBtn = document.createElement("button");
-            gearBtn.textContent = `Gear (${m.gearCost}g)`;
+            gearBtn.textContent = `Gear (${formatDigits(m.gearCost,2,5)}g)`;
             gearBtn.onclick = () => upgradeMercGear(i);
             row.appendChild(gearBtn);
         }
 
         const speedBtn = document.createElement("button");
-        speedBtn.textContent = `Speed (${m.attackSpeedCost}g)`;
+        speedBtn.textContent = `Speed (${formatDigits(m.attackSpeedCost,2,5)}g)`;
         speedBtn.onclick = () => upgradeMercSpeed(i);
         row.appendChild(speedBtn);
 
@@ -104,45 +129,45 @@ function closeOptions() {
 
 
 function checkAchievements() {
-  achievements.forEach(ach => {
-    if (!unlockedAchievements.has(ach.id) && ach.condition()) {
-      unlockedAchievements.add(ach.id);
-      localStorage.setItem("achievements", JSON.stringify([...unlockedAchievements]));
-      showAchievementPopup(ach);
-    }
-  });
+    achievements.forEach(ach => {
+        if (!unlockedAchievements.has(ach.id) && ach.condition()) {
+            unlockedAchievements.add(ach.id);
+            localStorage.setItem("achievements", JSON.stringify([...unlockedAchievements]));
+            showAchievementPopup(ach);
+        }
+    });
 }
 
 function showAchievementPopup(ach) {
-  const popup = document.getElementById("achievement-popup");
-  popup.innerHTML = `🏅 <strong>${ach.name}</strong><br>${ach.description}`;
-  popup.style.display = "block";
-  popup.style.opacity = "1";
+    const popup = document.getElementById("achievement-popup");
+    popup.innerHTML = `🏅 <strong>${ach.name}</strong><br>${ach.description}`;
+    popup.style.display = "block";
+    popup.style.opacity = "1";
 
-  setTimeout(() => {
-    popup.style.opacity = "0";
-    setTimeout(() => popup.style.display = "none", 500);
-  }, 2500);
+    setTimeout(() => {
+        popup.style.opacity = "0";
+        setTimeout(() => popup.style.display = "none", 500);
+    }, 2500);
 }
 
 function showAchievements() {
-  const container = document.getElementById("achievement-list");
-  container.innerHTML = "";
+    const container = document.getElementById("achievement-list");
+    container.innerHTML = "";
 
-  achievements.forEach(ach => {
-    const div = document.createElement("div");
-    div.classList.add("achievement");
-    if (unlockedAchievements.has(ach.id)) {
-      div.classList.add("unlocked");
-    }
+    achievements.forEach(ach => {
+        const div = document.createElement("div");
+        div.classList.add("achievement");
+        if (unlockedAchievements.has(ach.id)) {
+            div.classList.add("unlocked");
+        }
 
-    div.innerHTML = `<strong>${ach.name}</strong><br>${ach.description}`;
-    container.appendChild(div);
-  });
+        div.innerHTML = `<strong>${ach.name}</strong><br>${ach.description}`;
+        container.appendChild(div);
+    });
 
-  document.getElementById("achievement-menu").style.display = "flex";
+    document.getElementById("achievement-menu").style.display = "flex";
 }
 
 function closeAchievements() {
-  document.getElementById("achievement-menu").style.display = "none";
+    document.getElementById("achievement-menu").style.display = "none";
 }
