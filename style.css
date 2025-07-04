@@ -453,3 +453,19 @@ h3 {
     display: block;
 }
 
+#switch-mode {
+    position: fixed;
+    top: 0px;
+    left: 0;
+    width: 100%;
+    background: #3e1f0d;
+    color: #ffde9e;
+    padding: 10px;
+    font-size: 16px;
+    font-family: 'MedievalSharp', serif;
+    z-index: 1000;
+    border-bottom: 2px solid #a67c52;
+    border-top: 2px solid #a67c52;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
