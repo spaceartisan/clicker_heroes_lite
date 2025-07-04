@@ -101,7 +101,7 @@ abilities.forEach(ability => {
     btn.textContent = `${ability.name} (Unlocks at Lv ${ability.unlockLevel})`;
 });
 
-enemyCanvas.onclick = attack;
+enemyCanvas.onclick = () => attack(false);
 
 // === Level Controls ===
 function goToNextLevel() {

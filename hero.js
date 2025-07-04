@@ -1,10 +1,10 @@
 let lastClickTime = 0;
 
-function attack() {
+function attack(isRageAttack = false) {
     const now = Date.now();
-    console.log("Attack clicked at", now - lastClickTime, "ms since last click");
-    if (now - lastClickTime < 100) return; // Prevent spamming clicks
-    lastClickTime = now;
+    // console.log("Attack clicked at", now - lastClickTime, "ms since last click");
+    if (now - lastClickTime < 100 && !isRageAttack) return; // Prevent spamming clicks
+    if (!isRageAttack) lastClickTime = now;
     let dmg = playerClickDamage;
     if (doubleAttackReady) {
         dmg *= 2;
@@ -180,7 +180,7 @@ function activateAbility(ability) {
     } else if (ability.name === "Double Attack") {
         doubleAttackReady = true;
     } else if (ability.name === "Rage") {
-        rageInterval = setInterval(() => attack(), 500);
+        rageInterval = setInterval(() => attack(true), 500);
         setTimeout(() => clearInterval(rageInterval), ability.duration);
     }
 
