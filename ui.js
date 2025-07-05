@@ -88,6 +88,7 @@ function updateMercenaryText() {
     guildCostText.textContent = formatDigits(Math.floor(10000 * guildLevel ** 2.0),2,5);
     autoClickerCountText.textContent = hiredMercenaries.length + "/" + maxMercenaries;
     autoClickerCostText.textContent = formatDigits(Math.floor(100 * hiredMercenaries.length ** 2.0),2,5);
+    guildLevelText.textContent = guildLevel;
     const mercRows = hiredMercenaries.map((m, i) => {
         const row = document.createElement("div");
         row.className = "merc-row";

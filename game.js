@@ -116,6 +116,7 @@ const goldText = document.getElementById("gold");
 const damageText = document.getElementById("damage");
 const autoClickerCountText = document.getElementById("auto-clicker-count");
 const autoClickerCostText = document.getElementById("auto-clicker-cost");
+const guildLevelText = document.getElementById("guild-level");
 const mercenaryList = document.getElementById("mercenary-shop");
 const healthFill = document.getElementById("health-fill");
 const enemyNameText = document.createElement("p");
