@@ -369,7 +369,7 @@ h3 {
     padding: 10px 20px;
     color: white;
     font-family: 'MedievalSharp', serif;
-    z-index: 999;
+    z-index: 99999;
     border-radius: 6px;
     opacity: 0;
     transition: opacity 0.5s ease;
