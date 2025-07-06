@@ -191,7 +191,7 @@ function saveGame() {
         currentLevel,
         maxLevel,
         baseEnemyHealth,
-        guildLevel,
+        // guildLevel,
         // maxMercenaries,
         hiredMercenaries,
         nameConfirm,
@@ -244,7 +244,7 @@ function loadGame() {
         maxLevel = data.maxLevel ?? currentLevel;
         lastSubmittedScore = data.lastSubmittedScore ?? maxLevel;
         baseEnemyHealth = data.baseEnemyHealth ?? 5;
-        guildLevel = data.guildLevel ?? 0;
+        // guildLevel = data.guildLevel ?? 0;
         // maxMercenaries = data.maxMercenaries ?? 5;
         nameConfirm = data.nameConfirm ?? false;
         playerName = data.playerName || "Unnamed Hero";
