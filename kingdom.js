@@ -569,6 +569,7 @@ function BarracksUpgradeUI(menu, upgradeButtons, container, multContainer) {
         container.appendChild(row);
     }
 
+    addLabeledParagraph(upgradeButtons, "Max Speed", `${(structures.barracks.level - 1) * 2 + 5}`, "max-speed-cap");
     // Add a listener to the multiplier buttons
     const multButtons = multContainer.querySelectorAll(".mult-btn");
     multButtons.forEach(btn => {
@@ -637,6 +638,7 @@ function BlacksmithUpgradeUI(menu, upgradeButtons, container, multContainer) {
         container.appendChild(row);
     }
 
+    addLabeledParagraph(upgradeButtons, "Max Gear Tier", `${(structures.blacksmith.level - 1) * 2 + 5}`, "max-gear-cap");
     // Add a listener to the multiplier buttons
     const multButtons = multContainer.querySelectorAll(".mult-btn");
     multButtons.forEach(btn => {
