@@ -30,7 +30,7 @@
                 <div id="enemy-box">
                     <div id="enemy-wrapper">
                         <canvas id="enemy-canvas" width="150" height="150"></canvas>
-                        <div id="damage-overlay"></div>
+                        <div id="gold-earned-overlay"></div>
                     </div>
                     <div id="health-bar">
                         <div id="health-fill"></div>
@@ -69,16 +69,8 @@
             <div id="shop">
                 <!-- Dynamic player upgrades added by JS -->
             </div>
+            
 
-            <div id="mercenary-shop">
-                <h3>Mercenaries</h3>
-                <button onclick="hireMercenary()">Hire Mercenary (Cost: <span id="auto-clicker-cost">50</span>
-                    gold)</button>
-                <button onclick="increaseMercenaryCap()">Upgrade Guild (Cost: <span id="guild-cost">10000</span>
-                    gold)</button>
-                <p>Mercenaries Hired: <span id="auto-clicker-count">0/5</span>, Guild Level <span id="guild-level">1</span></p>
-                <!-- Mercenaries will populate here -->
-            </div>
         </div>
 
         <div id="kingdom-view" style="display:none;">
@@ -87,6 +79,7 @@
             <div id="kingdom-box">
                 <canvas id="kingdom-canvas" width="400" height="400"></canvas>
             </div>
+            <p>Click on the buildings to interact with them on the map when they appear.</p>
             <h3>Structures</h3>
             <div class="structure-row">
                 <span>Castle — Lv <span id="castle-lvl">0</span></span>
@@ -113,8 +106,6 @@
                 <button onclick="upgradeStructure('market')"><span id="market-cost">1000</span></button>
             </div>
             <p>Upgrade your market to increase the amount of gold earned from each defeated enemy.</p>
-            <h3>Note</h3>
-            <p>Currently this does not impact the game.</p>
         </div>
 
         <h3></h3>
@@ -135,11 +126,6 @@
 
     <div id="gold-bar">
         💰 Gold: <span id="gold-fixed">0</span>
-        <div class="upgrade-multiplier">
-            <button class="mult-btn" onclick="setUpgradeMultiplier(1)">×1</button>
-            <button class="mult-btn" onclick="setUpgradeMultiplier(10)">×10</button>
-            <button class="mult-btn" onclick="setUpgradeMultiplier(100)">×100</button>
-        </div>
     </div>
 
 
@@ -206,7 +192,30 @@
             <div id="achievement-list" class="scrollable-list">
                 <!-- Achievements will be populated here -->
             </div>
+            <h3></h3>
             <button onclick="closeAchievements()">Close</button>
+        </div>
+    </div>
+
+    <div id="upgrade-menu" class="popup">
+        <div class="popup-content">
+            <h3><span id="upgrade-name">None</span></h3>
+            <div id="upgrade-empty-message">
+                <p>No squads. Hire mercenaries in the tavern.</p>
+            </div>
+            <div id="upgrade-buttons">
+            </div>
+            <p></p>
+            <div id="upgrade-list" class="scrollable-list">
+            </div>
+            <div id="upgrade-buttons-2">
+            </div>
+            <div id="upgrade-list-2" class="scrollable-list">
+            </div>
+            <p></p>
+            <div class="upgrade-multiplier">
+            </div>
+            <h3></h3>
         </div>
     </div>
 

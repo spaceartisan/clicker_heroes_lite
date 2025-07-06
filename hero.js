@@ -10,7 +10,7 @@ function attack(isRageAttack = false) {
         dmg *= 2;
         doubleAttackReady = false;
     }
-    showDamage(dmg);
+    // showDamage(dmg);
     enemyHealth -= dmg;
     if (enemyHealth <= 0) handleEnemyDefeat();
     updateUI();
@@ -34,6 +34,24 @@ function getAutoDamage() {
     }, 0);
 }
 
+function upgradeSkillCost(ability) {
+    const upgradeEquation = (lvl) => Math.floor(ability.cost * lvl ** 2);
+    let totalCost = 0;
+    for (let i = 0; i < 1; i++) { // upgradeMultiplier is always 1 for skills
+        totalCost += upgradeEquation(ability.level + i);
+    }
+    return totalCost;
+}
+
+function upgradeSkill(ability) {
+    const cost = upgradeSkillCost(ability);
+    if (gold >= cost && ability.level < ability.maxLevel) {
+        gold -= cost;
+        ability.level += upgradeMultiplier;
+    }
+    updateUI();
+}
+
 function levelUpPlayerCost() {
     // Create the upgrade equation as a lambda function
     const upgradeEquation = (plvl) => Math.floor(10 + plvl ** 1.5);
@@ -48,7 +66,7 @@ function levelUpPlayer() {
     // Create the upgrade equation as a lambda function
     let cost = levelUpPlayerCost();
     // 
-    if (gold >= cost) {
+    if (gold >= cost && structures.castle.level * 10 + 100 >= playerLevel + upgradeMultiplier) {
         gold -= cost;
         playerLevel += upgradeMultiplier;
         playerUpgradeCost = Math.floor(10 + playerLevel ** 1.5);
@@ -57,13 +75,21 @@ function levelUpPlayer() {
     }
 }
 
+function gearUpPlayerCost() {
+    const upgradeEquation = (glvl) => Math.floor(100 * (glvl + 1) ** 2);
+    let totalCost = 0;
+    for (let i = 0; i < upgradeMultiplier; i++) {
+        totalCost += upgradeEquation(playerGearLevel + i);
+    }
+    return totalCost;
+}
+
 function gearUpPlayer() {
-    let cost = playerGearCost;
-    if (gold >= cost && playerLevel >= nextPlayerGearLevelReq) {
+    let cost = gearUpPlayerCost();
+    if (gold >= cost && (structures.blacksmith.level - 1) * 2 + 5 >= playerGearLevel + upgradeMultiplier) {
         gold -= cost;
-        playerGearLevel++;
-        playerGearCost = Math.floor(playerGearCost * 2);
-        nextPlayerGearLevelReq += 40;
+        playerGearLevel += upgradeMultiplier;
+        nextPlayerGearLevelReq += 0;
         updateUI();
         updatePlayerLevelGearText()
     }
@@ -71,9 +97,11 @@ function gearUpPlayer() {
 
 // === Mercenaries ===
 function hireMercenary() {
-    const cost = parseInt(autoClickerCostText.textContent);
-    if (gold >= cost && hiredMercenaries.length < maxMercenaries) {
+    const cost = hireMercenaryCost();
+    if (gold >= cost && hiredMercenaries.length < structures.tavern.level * 5) {
         gold -= cost;
+        let length = hiredMercenaries.length;
+        let squad = Math.ceil((length + 1) / 5); // Assign squad based on current length
         const name = generateName();
         hiredMercenaries.push({
             name,
@@ -82,29 +110,24 @@ function hireMercenary() {
             gearCost: 100,
             nextGearLevelReq: 10,
             attackSpeedLevel: 1,
-            attackSpeedCost: 100
+            attackSpeedCost: 100,
+            squad: squad
         });
-        updateMercenaryText();
         updateUI();
-        startMercAttack(hiredMercenaries.length - 1);
+        startSquadAttack(squad);
+        return true;
     }
+    return false;
 }
 
-function increaseMercenaryCap() {
-    const guildCost = parseInt(document.getElementById("guild-cost").textContent);
-    if (gold >= guildCost) {
-        gold -= guildCost;
-        maxMercenaries += 5; // Increase cap by 5
-        guildLevel++;
-        updateMercenaryText();
-        updateUI();
-    }
+function hireMercenaryCost() {
+    return Math.floor(100 * hiredMercenaries.length ** 2.0);
 }
 
 function levelUpMercenaryCost(i) {
     // Create the upgrade equation as a lambda function
     const m = hiredMercenaries[i];
-    const upgradeEquation = (mlvl) => Math.floor(20 + mlvl ** 2);
+    const upgradeEquation = (mlvl) => Math.floor(20 * mlvl ** 2);
     let totalCost = 0;
     for (let i = 0; i < upgradeMultiplier; i++) {
         totalCost += upgradeEquation(m.level + i);
@@ -112,57 +135,86 @@ function levelUpMercenaryCost(i) {
     return totalCost;
 }
 
-let tempCost = 0;
-
 function levelUpMercenary(i) {
     const m = hiredMercenaries[i];
     const cost = levelUpMercenaryCost(i);
-    if (gold >= cost) {
+    if (gold >= cost && (passiveAbilities[0].level - 1) * 10 + 20 >= m.level + upgradeMultiplier) {
         gold -= cost;
-        tempCost += cost;
         m.level += upgradeMultiplier;
         m.upgradeCost = Math.floor(20 + m.level ** 2);
         updateUI();
-        updateMercenaryText();
     }
+}
+
+function upgradeMercenaryGearCost(m) {
+    const upgradeEquation = (glvl) => Math.floor(100 * ((glvl + 1) ** 2));
+    let totalCost = 0;
+    for (let i = 0; i < upgradeMultiplier; i++) {
+        totalCost += upgradeEquation(m.gearLevel + i);
+    }
+    return totalCost;
 }
 
 function upgradeMercGear(i) {
-    const m = hiredMercenaries[i];
-    if (gold >= m.gearCost) {
-        gold -= m.gearCost;
-        m.gearLevel++;
-        m.gearCost = Math.floor(m.gearCost * 2);
-        m.nextGearLevelReq += 40;
+    const squadMercs = hiredMercenaries.filter(m => m.squad === i);
+    if (squadMercs.length === 0) return; // No mercenaries in this squad
+    const m = squadMercs[0]; // Use the first mercenary in the squad for cost
+    const cost = upgradeMercenaryGearCost(m);
+    if (gold >= cost && (structures.blacksmith.level - 1) * 2 + 5 >= m.gearLevel + upgradeMultiplier) {
+        gold -= cost;
+        for (let _m of squadMercs) {
+            _m.gearLevel += upgradeMultiplier;
+            _m.gearCost = Math.floor(_m.gearCost * 2);
+            _m.nextGearLevelReq += 40;
+        }
         updateUI();
-        updateMercenaryText();
     }
+}
+
+function upgradeMercenarySpeedCost(m) {
+    const upgradeEquation = (slvl) => Math.floor(100 * slvl ** 2);
+    let totalCost = 0;
+    for (let i = 0; i < upgradeMultiplier; i++) {
+        totalCost += upgradeEquation(m.attackSpeedLevel + i);
+    }
+    return totalCost;
 }
 
 function upgradeMercSpeed(i) {
-    const m = hiredMercenaries[i];
-    if (gold >= m.attackSpeedCost) {
-        gold -= m.attackSpeedCost;
-        m.attackSpeedLevel++;
-        m.attackSpeedCost = Math.floor(m.attackSpeedCost * 2);
-        startMercAttack(i)
+    // Get all mercenaries who share the same squad
+    const squadMercs = hiredMercenaries.filter(m => m.squad === i);
+    if (squadMercs.length === 0) return; // No mercenaries in this squad
+    const m = squadMercs[0]; // Use the first mercenary in the squad for cost
+    const cost = upgradeMercenarySpeedCost(m);
+    if (gold >= cost && (structures.barracks.level - 1) * 2 + 5 >= m.attackSpeedLevel + upgradeMultiplier) {
+        gold -= cost;
+        for (let _m of squadMercs) {
+            {
+                _m.attackSpeedLevel += upgradeMultiplier;
+                _m.attackSpeedCost = Math.floor(_m.attackSpeedCost * 2);
+            }
+        }
+        startSquadAttack(i)
         updateUI();
-        updateMercenaryText();
     }
 }
 
-function startMercAttack(i) {
-    const m = hiredMercenaries[i];
-    if (mercAttackInterval[i]) {
-        clearInterval(mercAttackInterval[i]);
+
+function startSquadAttack(i) {
+    const squadMercs = hiredMercenaries.filter(m => m.squad === i);
+    if (squadAttackInterval[i]) {
+        clearInterval(squadAttackInterval[i]);
     }
-    mercAttackInterval[i] = setInterval(() => {
-        const dmg = m.level * (2 ** m.gearLevel) * (rallyActive ? 2 : 1);
+    squadAttackInterval[i] = setInterval(() => {
+        let dmg = 0
+        squadMercs.forEach((m, idx) => {
+            dmg += m.level * (2 ** m.gearLevel) * (rallyActive ? 2 : 1);
+        });
         enemyHealth -= dmg;
-        showDamage(dmg);
+        // showDamage(dmg);
         if (enemyHealth <= 0) handleEnemyDefeat();
         updateUI();
-    }, 2000 / m.attackSpeedLevel);
+    }, 2000 / squadMercs[0].attackSpeedLevel);
 }
 
 // === Hero Abilities ===
@@ -210,7 +262,7 @@ function strongAttack() {
         dmg *= 2;
         doubleAttackReady = false;
     }
-    showDamage(dmg);
+    // showDamage(dmg);
     enemyHealth -= dmg;
     if (enemyHealth <= 0) handleEnemyDefeat();
     updateUI();

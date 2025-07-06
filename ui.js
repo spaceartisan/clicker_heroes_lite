@@ -17,9 +17,36 @@ function formatDigits(value, digits = 2, padding = 10) {
     return display.padStart(padding, "\u00A0");
 }
 
+function AddMultiplierButtons(menu) {
+    const multContainer = menu.querySelector(".upgrade-multiplier");
+    if (!multContainer) return;
+
+    multContainer.innerHTML = ""; // Clear previous buttons
+
+    const multipliers = [1, 10, 100];
+    multipliers.forEach(mult => {
+        const btn = document.createElement("button");
+        btn.className = "mult-btn";
+        btn.textContent = `×${mult}`;
+        btn.onclick = () => {
+            setUpgradeMultiplier(menu,mult);
+        };
+        multContainer.appendChild(btn);
+        if (mult === upgradeMultiplier) {
+            btn.classList.add("active");
+        }
+    });
+    return multContainer;
+}
+
 function switchView(view) {
     document.getElementById("hero-view").style.display = view === "hero" ? "block" : "none";
     document.getElementById("kingdom-view").style.display = view === "kingdom" ? "block" : "none";
+    if (view === "hero") {
+        updatePlayerLevelGearText();
+    } else {
+        updateStructureUI();
+    }
 }
 
 function showDamage(amount) {
@@ -47,11 +74,36 @@ function showDamage(amount) {
     }, 1000);
 }
 
+function showGoldEarned(amount) {
+    const damageText = document.createElement("div");
+    damageText.className = "floating-gold-earned";
+    damageText.textContent = formatDigits(amount, 0, 5);
+
+    const overlay = document.getElementById("gold-earned-overlay");
+
+    // Get enemy box size
+    const canvas = document.getElementById("enemy-canvas");
+    const rect = canvas.getBoundingClientRect();
+
+    // Calculate relative position (within canvas dimensions)
+    const offsetX = Math.random() * canvas.width * 0.8 + canvas.width * 0.1; // avoid edges
+    const offsetY = Math.random() * canvas.height * 0.2 + canvas.height * 0.1;
+
+    damageText.style.left = `${offsetX}px`;
+    damageText.style.top = `${offsetY}px`;
+
+    overlay.appendChild(damageText);
+
+    setTimeout(() => {
+        damageText.remove();
+    }, 1000);
+}
+
 
 function updateUI() {
     //   goldText.textContent = gold;
     playerClickDamage = getPlayerClickDamage();
-    damageText.textContent = `Hero Damage: ${formatDigits(playerClickDamage,2,5)}, Merc DPS: ${formatDigits(getAutoDamage(),2, 5)}`;
+    damageText.textContent = `Hero Damage: ${formatDigits(playerClickDamage, 2, 5)}, Merc DPS: ${formatDigits(getAutoDamage(), 2, 5)}`;
     healthFill.style.width = `${(enemyHealth / getEnemyHealth()) * 100}%`;
     document.getElementById("gold-fixed").textContent = formatDigits(gold);
     updatePlayerText();
@@ -76,46 +128,15 @@ function updatePlayerText() {
 
 function updatePlayerLevelGearText() {
     const shop = document.getElementById("shop");
+    shop.innerHTML = ""; // Clear previous content
     shop.innerHTML = `
     <h3>Hero Upgrades</h3>
-    <button onclick="levelUpPlayer()">Level Up (${formatDigits(levelUpPlayerCost(),2,5)}g)</button>
-    <button ${playerLevel < nextPlayerGearLevelReq ? 'disabled' : ''} onclick="gearUpPlayer()">Upgrade Gear (${formatDigits(playerGearCost,2,5)}g)</button>
-    <p>Player Lv: ${formatDigits(playerLevel,2,0)}, Gear x${formatDigits(playerGearLevel,2,0)}</p>
+    <button onclick="levelUpPlayer()">Level Up (${formatDigits(levelUpPlayerCost(), 2, 5)}g)</button>
+    <button onclick="gearUpPlayer()">Upgrade Gear (${formatDigits(gearUpPlayerCost(), 2, 5)}g)</button>
+    <p>Player Lv: ${formatDigits(playerLevel, 2, 0)}, Gear x${formatDigits(playerGearLevel, 2, 0)}</p>
+    <div class="upgrade-multiplier"></div>
   `;
-}
-
-function updateMercenaryText() {
-    guildCostText.textContent = formatDigits(Math.floor(10000 * guildLevel ** 2.0),2,5);
-    autoClickerCountText.textContent = hiredMercenaries.length + "/" + maxMercenaries;
-    autoClickerCostText.textContent = formatDigits(Math.floor(100 * hiredMercenaries.length ** 2.0),2,5);
-    guildLevelText.textContent = guildLevel;
-    const mercRows = hiredMercenaries.map((m, i) => {
-        const row = document.createElement("div");
-        row.className = "merc-row";
-        row.textContent = `${m.name} (Lv${formatDigits(m.level,2,0)}) Gear x${formatDigits(m.gearLevel,2,0)} Speed x${formatDigits(m.attackSpeedLevel,2,0)}`;
-
-        const lvlBtn = document.createElement("button");
-        lvlBtn.textContent = `Lv Up (${formatDigits(levelUpMercenaryCost(i),2,5)}g)`;
-        lvlBtn.onclick = () => levelUpMercenary(i);
-        row.appendChild(lvlBtn);
-
-        if (m.level >= m.nextGearLevelReq) {
-            const gearBtn = document.createElement("button");
-            gearBtn.textContent = `Gear (${formatDigits(m.gearCost,2,5)}g)`;
-            gearBtn.onclick = () => upgradeMercGear(i);
-            row.appendChild(gearBtn);
-        }
-
-        const speedBtn = document.createElement("button");
-        speedBtn.textContent = `Speed (${formatDigits(m.attackSpeedCost,2,5)}g)`;
-        speedBtn.onclick = () => upgradeMercSpeed(i);
-        row.appendChild(speedBtn);
-
-        return row;
-    });
-
-    mercenaryList.querySelectorAll(".merc-row").forEach(el => el.remove());
-    mercRows.forEach(row => mercenaryList.appendChild(row));
+    AddMultiplierButtons(shop);
 }
 
 function showOptions() {

@@ -54,6 +54,13 @@ body {
     pointer-events: none;
 }
 
+.floating-gold-earned {
+    position: absolute;
+    color: rgb(9, 226, 82);
+    font-size: 20px;
+    animation: floatUp 1s ease-out forwards;
+}
+
 .floating-damage {
     position: absolute;
     color: red;
@@ -234,6 +241,7 @@ h3 {
 }
 
 #gold-bar {
+    align-items: center;
     position: fixed;
     bottom: 0;
     left: 0;
@@ -335,6 +343,13 @@ h3 {
     font-size: 14px;
 }
 
+button.mult-btn-tiny {
+    font-size: 10px;
+    padding: 2px 6px;
+}
+
+
+
 .upgrade-multiplier button {
     font-size: 12px;
     padding: 4px 8px;
@@ -390,6 +405,7 @@ h3 {
     border-radius: 8px;
 }
 
+.upgrade-row,
 .achievement {
     padding: 8px;
     margin-bottom: 6px;
@@ -468,4 +484,8 @@ h3 {
     border-top: 2px solid #a67c52;
     text-align: center;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.upgrade-row > div {
+    align-items: center;
 }

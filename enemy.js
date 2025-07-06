@@ -35,8 +35,11 @@ function drawRandomEnemy() {
 // === Enemy Logic ===
 function handleEnemyDefeat() {
     enemiesDefeated++;
-    gold += Math.floor(currentLevel * 2);
+    const goldGain = Math.floor(currentLevel * 2);
+    gold += goldGain;
+    showGoldEarned(goldGain);
     if (currentLevel == maxLevel) maxLevel++
         if (autoAdvance) currentLevel++;
     drawRandomEnemy();
+    updateStructureUI();
 }

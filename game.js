@@ -14,14 +14,14 @@ let baseEnemyHealth = 5;
 let enemyHealth = baseEnemyHealth;
 let autoAdvance = true;
 
-let maxMercenaries = 5;
-let guildLevel = 1;
+// let maxMercenaries = 5;
+// let guildLevel = 1;
 
 let playerName = "Unnamed Hero"; // Default name
 let nameConfirm = false;
 
 const hiredMercenaries = [];
-const mercAttackInterval = [];
+const squadAttackInterval = [];
 
 let messageInterval = null;
 let leaderboardUnsub = null;
@@ -36,6 +36,9 @@ let abilitiesCount = 0; // Track amount abilities used
 
 const enemyCanvas = document.getElementById("enemy-canvas");
 const ctx = enemyCanvas.getContext("2d");
+
+const kingdomCanvas = document.getElementById("kingdom-canvas");
+const kingdomCtx = kingdomCanvas.getContext("2d");
 
 const achievements = [
     { id: "gold_100", name: "Gold Digger I", description: "Collect 100 gold", condition: () => gold >= 100 },
@@ -65,9 +68,9 @@ const achievements = [
     { id: "gear_5", name: "Sharpened Blades", description: "Upgrade any mercenary's gear to level 5", condition: () => hiredMercenaries.some(m => m.gearLevel >= 5) },
     { id: "gear_20", name: "Forgemaster", description: "Upgrade any mercenary's gear to level 20", condition: () => hiredMercenaries.some(m => m.gearLevel >= 20) },
     { id: "gear_50", name: "Legendary Smith", description: "Upgrade any mercenary's gear to level 50", condition: () => hiredMercenaries.some(m => m.gearLevel >= 50) },
-    { id: "guild_1", name: "Guild Leader", description: "Upgrade the Guild to level 1", condition: () => guildLevel >= 1 },
-    { id: "guild_10", name: "Guild Master", description: "Upgrade the Guild to level 10", condition: () => guildLevel >= 10 },
-    { id: "guild_100", name: "Guild Overlord", description: "Upgrade the Guild to level 100", condition: () => guildLevel >= 100 },
+    { id: "guild_1", name: "Bar Tender", description: "Upgrade the Tavern to level 1", condition: () => structures.tavern.level >= 1 },
+    { id: "guild_10", name: "Bar Keeper", description: "Upgrade the Tavern to level 10", condition: () => structures.tavern.level >= 10 },
+    { id: "guild_100", name: "Tavern Owner", description: "Upgrade the Tavern to level 100", condition: () => structures.tavern.level >= 100 },
     { id: "speed_5", name: "Swift Strike I", description: "Upgrade a mercenary's attack speed to level 5", condition: () => hiredMercenaries.some(m => m.attackSpeedLevel >= 5) },
     { id: "speed_20", name: "Swift Strike II", description: "Upgrade a mercenary's attack speed to level 20", condition: () => hiredMercenaries.some(m => m.attackSpeedLevel >= 20) },
     { id: "speed_50", name: "Swift Strike III", description: "Upgrade a mercenary's attack speed to level 50", condition: () => hiredMercenaries.some(m => m.attackSpeedLevel >= 50) },
@@ -138,6 +141,10 @@ const abilities = [
     { name: "Rage", cooldown: 60000, duration: 30000, unlockLevel: 20 }
 ];
 
+const passiveAbilities = [
+    { name: "Leadership", description: "Increases mercenary level cap.", level: 1, maxLevel: 10, unlockLevel: 10 , cost: 1000 }
+];
+
 let abilityStates = {};
 let rallyActive = false;
 let doubleAttackReady = false;
@@ -153,8 +160,6 @@ abilities.forEach(ability => {
     btn.classList.add("locked");
     btn.textContent = `${ability.name} (Unlocks at Lv ${ability.unlockLevel})`;
 });
-
-enemyCanvas.onclick = () => attack(false);
 
 // === Level Controls ===
 function goToNextLevel() {
@@ -176,7 +181,6 @@ function goToPrevLevel() {
 
 function saveGame() {
     submitScore();
-    console.log(structures);
     const saveData = {
         gold,
         playerLevel,
@@ -188,7 +192,7 @@ function saveGame() {
         maxLevel,
         baseEnemyHealth,
         guildLevel,
-        maxMercenaries,
+        // maxMercenaries,
         hiredMercenaries,
         nameConfirm,
         playerName,
@@ -196,7 +200,7 @@ function saveGame() {
         totalClicks,
         enemiesDefeated,
         abilitiesUsed, // convert Set to Array
-        abilitiesUnlocked, // track number of abilities unlocked
+        abilitiesCount,
         structures,
         unlockedAchievements: Array.from(unlockedAchievements), // convert Set to Array
         lastSaved: Date.now() // <--- new
@@ -214,8 +218,19 @@ function loadGame() {
         if (Array.isArray(data.hiredMercenaries)) {
             data.hiredMercenaries.forEach((m, i) => {
                 hiredMercenaries.push(m);
-                startMercAttack(i);
+                // startMercAttack(i);
+                // Check to see is mercenary has a squad, if not assign one
+                if (!m.squad) {
+                    m.squad = Math.ceil((hiredMercenaries.length) / 5); // Assign squad based on current length
+                }
             });
+        }
+
+        // Iterate over all squads and start their attack
+        // Get total squads
+        const totalSquads = Math.ceil(hiredMercenaries.length / 5);
+        for (let i = 1; i <= totalSquads; i++) {
+            startSquadAttack(i);
         }
 
         // restore everything else...
@@ -230,13 +245,13 @@ function loadGame() {
         lastSubmittedScore = data.lastSubmittedScore ?? maxLevel;
         baseEnemyHealth = data.baseEnemyHealth ?? 5;
         guildLevel = data.guildLevel ?? 0;
-        maxMercenaries = data.maxMercenaries ?? 5;
+        // maxMercenaries = data.maxMercenaries ?? 5;
         nameConfirm = data.nameConfirm ?? false;
         playerName = data.playerName || "Unnamed Hero";
         totalClicks = data.totalClicks || 0; // restore total clicks for achievements
         enemiesDefeated = data.enemiesDefeated || 0; // restore defeated enemies for achievement
         abilitiesUsed = data.abilitiesUsed || []; // restore used abilities
-        abilitiesUnlocked = data.abilitiesUnlocked || 0; // restore number of unlocked abilities
+        abilitiesCount = data.abilitiesCount || 0; // restore ability usage count
         unlockedAchievements = new Set(data.unlockedAchievements || []); // restore achievements
         if (typeof data.structures === 'object') {
             structures = data.structures;
@@ -265,7 +280,6 @@ function loadGame() {
         playerNameText.textContent = playerName;
         drawRandomEnemy();
         updateUI();
-        updateMercenaryText();
         saveGame();
     }
 }
@@ -306,6 +320,10 @@ function importGame() {
 
                     localStorage.setItem("clickerHeroSave", JSON.stringify(data));
                     loadGame();
+                    updateUI();
+                    updatePlayerLevelGearText();
+                    updateStructureUI();
+                    drawKingdom();
                     alert("Game imported successfully!");
                 } catch (error) {
                     console.error("Failed to import game:", error);
@@ -318,20 +336,21 @@ function importGame() {
     input.click();
 }
 
-function setUpgradeMultiplier(x) {
+function setUpgradeMultiplier(menu,x) {
     upgradeMultiplier = x;
-    document.querySelectorAll('.upgrade-multiplier button').forEach(btn =>
-        btn.classList.remove('active')
-    );
-    const btn = Array.from(document.querySelectorAll('.upgrade-multiplier button'))
+    menu.querySelectorAll('.upgrade-multiplier button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    const btn = Array.from(menu.querySelectorAll('.upgrade-multiplier button'))
         .find(b => b.textContent.trim() === `×${x}`);
     if (btn) btn.classList.add('active');
     updateUI();
     updatePlayerLevelGearText();
-    updateMercenaryText();
 }
 
 // === Init ===
+enemyCanvas.onclick = () => attack(false);
+kingdomCanvas.onclick = (event) => checkClickLocation(event);
 const autoNextToggle = document.getElementById("auto-next-toggle");
 autoAdvance = autoNextToggle.checked; // ensure variable matches UI
 document.getElementById("auto-next-toggle").onchange = e => autoAdvance = e.target.checked;
@@ -346,7 +365,7 @@ window.addEventListener("DOMContentLoaded", () => {
     updatePlayerLevelGearText();
     updateStructureUI();
     drawKingdom();
-    setUpgradeMultiplier(upgradeMultiplier);
+    setUpgradeMultiplier(document.getElementById("shop"), upgradeMultiplier);
 });
 
 setInterval(() => {

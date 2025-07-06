@@ -6,13 +6,24 @@ let structures = {
     market: { level: 0, baseCost: 10000, upgradeType: 2 }
 };
 
+const structurePositions = {
+    castle: { x: 9, y: 3 },
+    tavern: { x: 2, y: 10 },
+    blacksmith: { x: 6, y: 14 },
+    barracks: { x: 12, y: 14 },
+    market: { x: 16, y: 10 }
+};
+
 function getStructureCost(structure) {
     return Math.floor(structure.baseCost * Math.pow(1.5, structure.level));
 }
 
 function upgradeStructure(name) {
     const s = structures[name];
-    const cost = getStructureCost(s);
+    let cost = getStructureCost(s);
+    if (name === "tavern" && s.level < 1) {
+        cost = 0;
+    }
     if (gold >= cost) {
         gold -= cost;
         s.level++;
@@ -32,7 +43,7 @@ function updateStructureUI() {
         const nameLvl = structures[name].level * structures[name].upgradeType + structures[name].upgradeType + 1;
         const castLvl = structures.castle.level;
 
-        if (castLvl < nameLvl && name !== "castle") {
+        if ((castLvl < nameLvl && name !== "castle")) {
             if (btn) {
                 btn.classList.add("locked");
                 btn.disabled = true;
@@ -43,12 +54,28 @@ function updateStructureUI() {
                 btn.disabled = false;
             }
         }
+        if (name === "tavern" && structures.tavern.level < 1 && maxLevel >= 10) {
+            if (btn) {
+                btn.classList.remove("locked");
+                btn.disabled = false;
+            }
+            console.log("tavern is unlocked")
+        }
         if (el) el.textContent = structures[name].level;
         if (costEl) {
             if (btn.disabled) {
-                costEl.textContent = "Required Level: " + (nameLvl);
+                if (name !== "tavern" || (name === "tavern" && maxLevel >= 10)) {
+                    costEl.textContent = "Required Castle Level: " + (nameLvl);
+                } else {
+                    costEl.textContent = "Req Enemy Level: 10";
+                }
             } else {
-                costEl.textContent = "Upgrade (" + formatDigits(getStructureCost(structures[name]), 2, 5) + "g)";
+                if (name === "tavern" && structures.tavern.level < 1) {
+                    costEl.textContent = "Upgrade (Free)";
+                }
+                else {
+                    costEl.textContent = "Upgrade (" + formatDigits(getStructureCost(structures[name]), 2, 5) + "g)";
+                }
             }
         }
     });
@@ -103,86 +130,86 @@ function drawKingdom() {
         const extraTiers = Math.floor((castleLevel - 15) / 5) + 1;
 
         const possiblePositions = [
-{ x: 96, y: 42 },
-{ x: 169, y: 13 },
-{ x: 284, y: 181 },
-{ x: 303, y: 352 },
-{ x: 160, y: 200 },
-{ x: 12, y: 308 },
-{ x: 201, y: 10 },
-{ x: 344, y: 90 },
-{ x: 40, y: 108 },
-{ x: 240, y: 165 },
-{ x: 302, y: 120 },
-{ x: 81, y: 332 },
-{ x: 88, y: 114 },
-{ x: 270, y: 350 },
-{ x: 53, y: 159 },
-{ x: 365, y: 25 },
-{ x: 62, y: 359 },
-{ x: 144, y: 153 },
-{ x: 106, y: 158 },
-{ x: 165, y: 363 },
-{ x: 89, y: 305 },
-{ x: 82, y: 85 },
-{ x: 63, y: 50 },
-{ x: 39, y: 266 },
-{ x: 24, y: 136 },
-{ x: 306, y: 147 },
-{ x: 352, y: 305 },
-{ x: 112, y: 195 },
-{ x: 333, y: 176 },
-{ x: 364, y: 134 },
-{ x: 12, y: 345 },
-{ x: 166, y: 256 },
-{ x: 131, y: 361 },
-{ x: 350, y: 67 },
-{ x: 365, y: 350 },
-{ x: 245, y: 368 },
-{ x: 313, y: 75 },
-{ x: 308, y: 297 },
-{ x: 32, y: 61 },
-{ x: 252, y: 191 },
-{ x: 339, y: 19 },
-{ x: 34, y: 36 },
-{ x: 58, y: 300 },
-{ x: 17, y: 159 },
-{ x: 330, y: 353 },
-{ x: 88, y: 264 },
-{ x: 63, y: 26 },
-{ x: 34, y: 11 },
-{ x: 300, y: 322 },
-{ x: 333, y: 274 },
-{ x: 328, y: 118 },
-{ x: 230, y: 142 },
-{ x: 14, y: 195 },
-{ x: 34, y: 84 },
-{ x: 231, y: 12 },
-{ x: 139, y: 177 },
-{ x: 11, y: 231 },
-{ x: 366, y: 271 },
-{ x: 237, y: 255 },
-{ x: 166, y: 176 },
-{ x: 278, y: 256 },
-{ x: 244, y: 343 },
-{ x: 315, y: 39 },
-{ x: 102, y: 361 },
-{ x: 274, y: 156 },
-{ x: 111, y: 11 },
-{ x: 361, y: 171 },
-{ x: 77, y: 172 },
-{ x: 10, y: 280 },
-{ x: 50, y: 323 },
-{ x: 57, y: 132 },
-{ x: 298, y: 12 },
-{ x: 10, y: 34 },
-{ x: 82, y: 137 },
-{ x: 262, y: 13 },
-{ x: 304, y: 261 },
-{ x: 10, y: 113 },
-{ x: 330, y: 330 },
-{ x: 36, y: 361 },
-{ x: 334, y: 147 }];
+            { x: 96, y: 42 },
+            { x: 169, y: 13 },
+            { x: 284, y: 181 },
+            { x: 303, y: 352 },
+            { x: 160, y: 200 },
+            { x: 12, y: 308 },
+            { x: 201, y: 10 },
+            { x: 344, y: 90 },
+            { x: 40, y: 108 },
+            { x: 240, y: 165 },
+            { x: 302, y: 120 },
+            { x: 81, y: 332 },
+            { x: 88, y: 114 },
+            { x: 270, y: 350 },
+            { x: 53, y: 159 },
+            { x: 365, y: 25 },
+            { x: 62, y: 359 },
+            { x: 144, y: 153 },
+            { x: 106, y: 158 },
+            { x: 165, y: 363 },
+            { x: 89, y: 305 },
+            { x: 82, y: 85 },
+            { x: 63, y: 50 },
+            { x: 39, y: 266 },
+            { x: 24, y: 136 },
+            { x: 306, y: 147 },
+            { x: 352, y: 305 },
+            { x: 112, y: 195 },
+            { x: 333, y: 176 },
+            { x: 364, y: 134 },
+            { x: 12, y: 345 },
+            { x: 166, y: 256 },
+            { x: 131, y: 361 },
+            { x: 350, y: 67 },
+            { x: 365, y: 350 },
+            { x: 245, y: 368 },
+            { x: 313, y: 75 },
+            { x: 308, y: 297 },
+            { x: 32, y: 61 },
+            { x: 252, y: 191 },
+            { x: 339, y: 19 },
+            { x: 34, y: 36 },
+            { x: 58, y: 300 },
+            { x: 17, y: 159 },
+            { x: 330, y: 353 },
+            { x: 88, y: 264 },
+            { x: 63, y: 26 },
+            { x: 34, y: 11 },
+            { x: 300, y: 322 },
+            { x: 333, y: 274 },
+            { x: 328, y: 118 },
+            { x: 230, y: 142 },
+            { x: 14, y: 195 },
+            { x: 34, y: 84 },
+            { x: 231, y: 12 },
+            { x: 139, y: 177 },
+            { x: 11, y: 231 },
+            { x: 366, y: 271 },
+            { x: 237, y: 255 },
+            { x: 166, y: 176 },
+            { x: 278, y: 256 },
+            { x: 244, y: 343 },
+            { x: 315, y: 39 },
+            { x: 102, y: 361 },
+            { x: 274, y: 156 },
+            { x: 111, y: 11 },
+            { x: 361, y: 171 },
+            { x: 77, y: 172 },
+            { x: 10, y: 280 },
+            { x: 50, y: 323 },
+            { x: 57, y: 132 },
+            { x: 298, y: 12 },
+            { x: 10, y: 34 },
+            { x: 82, y: 137 },
+            { x: 262, y: 13 },
+            { x: 304, y: 261 },
+            { x: 10, y: 113 },
+            { x: 330, y: 330 },
+            { x: 36, y: 361 },
+            { x: 334, y: 147 }];
 
 
 
@@ -204,7 +231,7 @@ function drawKingdom() {
         const miniBuildingColor = "#8b5e3c";
 
         persistentMiniBuildings.forEach((pos, i) => {
-            console.log(`Mini Building ${i + 1}:`, pos);
+            // console.log(`Mini Building ${i + 1}:`, pos);
             const size = cellSize * 1.1;
             const offset = (cellSize - size) / 2;
             const x = pos.x
@@ -358,13 +385,6 @@ function drawKingdom() {
     });
 }
 
-
-
-
-
-
-
-
 function drawStructure(ctx, x, y, width, height, color) {
     for (let i = 0; i < width; i++) {
         for (let j = 0; j < height; j++) {
@@ -373,3 +393,408 @@ function drawStructure(ctx, x, y, width, height, color) {
         }
     }
 }
+
+function checkClickLocation(event) {
+    const canvas = document.getElementById("kingdom-canvas");
+    const rect = canvas.getBoundingClientRect();
+    const rescale_x = canvas.width / (rect.width); // Assuming canvas is 400x400
+    const rescale_y = canvas.height / (rect.height); // Assuming canvas is 400x400
+    const x = Math.floor((event.clientX - rect.left) / 20 * rescale_x);
+    const y = Math.floor((event.clientY - rect.top) / 20 * rescale_y);
+
+    // Check if click is on a structure
+    for (const [name, element] of Object.entries(structurePositions)) {
+        let deltaX = Math.abs(x - element.x);
+        let deltaY = Math.abs(y - element.y);
+        if (structures[name].level > 0 && deltaX <= 2 && deltaY <= 2) {
+            showMenu(name);
+            return;
+        }
+    }
+}
+
+function addLabeledParagraph(parent, label, value, className) {
+    const p = document.createElement("p");
+    if (label === "" && value === "") {
+        p.textContent = "";
+    }
+    else {
+        p.textContent = `${label}: ${value}`;
+    }
+    if (className) {
+        p.className = className + "-upgrade-menu-popup";
+    }
+    parent.appendChild(p);
+}
+
+function updateLabeledParagraph(parent, label, value, className) {
+    const p = parent.querySelector(`p.${className}-upgrade-menu-popup`);
+    if (p) {
+        p.textContent = `${label}: ${value}`;
+    }
+}
+
+function createButton(parent, text, ...listeners) {
+    const btn = document.createElement("button");
+    btn.textContent = text;
+    listeners.forEach(listener => btn.addEventListener("click", listener));
+    parent.appendChild(btn);
+}
+
+
+function TavernUpgradeUI(menu, upgradeButtons, container, multContainer) {
+    levelUpCostTextArray = [];
+
+    function UpdateMercenaryList(merc, i) {
+        const row = document.createElement("div");
+        if (hiredMercenaries.length > 0) {
+            container.style.display = "block";
+            document.getElementById("upgrade-empty-message").style.display = "none";
+        }
+        row.className = "upgrade-row";
+        row.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <span id="merc-name-${i}">${merc.name} (Lv ${merc.level}) — Squad ${merc.squad}</span>
+                            <span><button class="mult-btn-tiny" onclick="levelUpMercenary(${i})">Lvl Up ${formatDigits(levelUpMercenaryCost(i), 2, 5)} g</button></span>
+                        </div>
+                        `;
+        container.appendChild(row);
+        levelUpCostTextArray[i] = row.querySelector("button");
+        if (levelUpMercenaryCost(i) < gold) {
+            levelUpCostTextArray[i].classList.remove("locked");
+            levelUpCostTextArray[i].disabled = false;
+        } else {
+            levelUpCostTextArray[i].classList.add("locked");
+            levelUpCostTextArray[i].disabled = true;
+        }
+        const lvlBtn = row.querySelector("button");
+        const mercStats = row.querySelector(`#merc-name-${i}`);
+        lvlBtn.addEventListener("click", () => {
+            lvlBtn.textContent = `Lvl Up ${formatDigits(levelUpMercenaryCost(i), 2, 5)} g`;
+            mercStats.textContent = `${merc.name} (Lv ${merc.level}) — Squad ${merc.squad}`;
+            if (levelUpMercenaryCost(i) < gold) {
+                levelUpCostTextArray[i].classList.remove("locked");
+                levelUpCostTextArray[i].disabled = false;
+            } else {
+                levelUpCostTextArray[i].classList.add("locked");
+                levelUpCostTextArray[i].disabled = true;
+            }
+        });
+        updateLabeledParagraph(upgradeButtons, "Hired Mercenaries", `${hiredMercenaries.length}/${structures.tavern.level * 5}`, "mercenary-count");
+        updateLabeledParagraph(upgradeButtons, "Next Mercenary", `${formatDigits(hireMercenaryCost(), 2, 5)} g`, "next-mercenary");
+    }
+
+    addLabeledParagraph(upgradeButtons, "Hired Mercenaries", `${hiredMercenaries.length}/${structures.tavern.level * 5}`, "mercenary-count");
+    addLabeledParagraph(upgradeButtons, "Next Mercenary", `${formatDigits(hireMercenaryCost(), 2, 5)} g`, "next-mercenary");
+    addLabeledParagraph(upgradeButtons, "Max Level Cap", `${(passiveAbilities[0].level - 1) * 10 + 20}`, "max-level-cap");
+    createButton(upgradeButtons, "Hire",
+        () => {
+            let success = hireMercenary();
+            if (success) {
+                const lastMerc = hiredMercenaries[hiredMercenaries.length - 1];
+                UpdateMercenaryList(lastMerc, hiredMercenaries.length - 1);
+            }
+        }
+    );
+
+
+    hiredMercenaries.forEach((merc, i) => {
+        UpdateMercenaryList(merc, i);
+    });
+
+    // Add a listener to the multiplier buttons
+    const multButtons = multContainer.querySelectorAll(".mult-btn");
+    multButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            levelUpCostTextArray.forEach((costText, index) => {
+                const merc = hiredMercenaries[index];
+                if (merc) {
+                    const cost = levelUpMercenaryCost(index);
+                    costText.textContent = `Lvl Up ${formatDigits(cost, 2, 5)} g`;
+                    if (cost < gold) {
+                        levelUpCostTextArray[index].classList.remove("locked");
+                        levelUpCostTextArray[index].disabled = false;
+                    } else {
+                        levelUpCostTextArray[index].classList.add("locked");
+                        levelUpCostTextArray[index].disabled = true;
+                    }
+                }
+            });
+        });
+    });
+}
+
+function BarracksUpgradeUI(menu, upgradeButtons, container, multContainer) {
+    speedUpgradeCostTextArray = [];
+
+    const totalSquads = Math.ceil(hiredMercenaries.length / 5);
+    if (totalSquads === 0) {
+        addLabeledParagraph(upgradeButtons, "", "", "total-squads");
+    } else {
+        addLabeledParagraph(upgradeButtons, "Total Squads", `${totalSquads}`, "total-squads");
+    }
+    const merc = hiredMercenaries;
+    for (let i = 1; i <= totalSquads; i++) {
+        const squadMercs = merc.filter(m => m.squad === i);
+        if (squadMercs.length === 0) continue;
+        const row = document.createElement("div");
+        row.className = "upgrade-row";
+        row.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <span id="squad-${i}-speed">Squad ${i} - Speed Tier ×${squadMercs[0].attackSpeedLevel}</span>
+                            <span><button class="mult-btn-tiny" onclick="upgradeMercSpeed(${i})">Lvl Up ${formatDigits(upgradeMercenarySpeedCost(squadMercs[0]), 2, 5)} g</button></span>
+                        </div>
+                        `;
+        const speedBtn = row.querySelector("button");
+        const speedText = row.querySelector(`#squad-${i}-speed`);
+        speedUpgradeCostTextArray[i] = speedBtn;
+        if (upgradeMercenarySpeedCost(squadMercs[0]) < gold) {
+            speedUpgradeCostTextArray[i].classList.remove("locked");
+            speedUpgradeCostTextArray[i].disabled = false;
+        } else {
+            speedUpgradeCostTextArray[i].classList.add("locked");
+            speedUpgradeCostTextArray[i].disabled = true;
+        }
+        speedBtn.addEventListener("click", () => {
+            speedBtn.textContent = `Lvl Up ${formatDigits(upgradeMercenarySpeedCost(squadMercs[0]), 2, 5)} g`;
+            speedText.textContent = `Squad ${i} - Speed Tier ×${squadMercs[0].attackSpeedLevel}`;
+            if (upgradeMercenarySpeedCost(squadMercs[0]) < gold) {
+                speedUpgradeCostTextArray[i].classList.remove("locked");
+                speedUpgradeCostTextArray[i].disabled = false;
+            } else {
+                speedUpgradeCostTextArray[i].classList.add("locked");
+                speedUpgradeCostTextArray[i].disabled = true;
+            }
+        });
+        container.appendChild(row);
+    }
+
+    // Add a listener to the multiplier buttons
+    const multButtons = multContainer.querySelectorAll(".mult-btn");
+    multButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            speedUpgradeCostTextArray.forEach((costText, index) => {
+                const squadMercs = hiredMercenaries.filter(m => m.squad === index);
+                if (squadMercs.length > 0) {
+                    const cost = upgradeMercenarySpeedCost(squadMercs[0]);
+                    costText.textContent = `Lvl Up ${formatDigits(cost, 2, 5)} g`;
+                    if (cost < gold) {
+                        speedUpgradeCostTextArray[index].classList.remove("locked");
+                        speedUpgradeCostTextArray[index].disabled = false;
+                    } else {
+                        speedUpgradeCostTextArray[index].classList.add("locked");
+                        speedUpgradeCostTextArray[index].disabled = true;
+                    }
+                }
+            });
+        });
+    });
+}
+
+function BlacksmithUpgradeUI(menu, upgradeButtons, container, multContainer) {
+    gearUpgradeCostTextArray = [];
+
+    const totalSquads = Math.ceil(hiredMercenaries.length / 5);
+    if (totalSquads === 0) {
+        addLabeledParagraph(upgradeButtons, "", "", "total-squads");
+    } else {
+        addLabeledParagraph(upgradeButtons, "Total Squads", `${totalSquads}`, "total-squads");
+    }
+
+    const merc = hiredMercenaries;
+    for (let i = 1; i <= totalSquads; i++) {
+        const squadMercs = merc.filter(m => m.squad === i);
+        if (squadMercs.length === 0) continue;
+        const row = document.createElement("div");
+        row.className = "upgrade-row";
+        row.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <span id="squad-${i}-gear">Squad ${i} - Gear Tier ×${squadMercs[0].gearLevel}</span>
+                            <span><button class="mult-btn-tiny" onclick="upgradeMercGear(${i})">Lvl Up ${formatDigits(upgradeMercenaryGearCost(squadMercs[0]), 2, 5)} g</button></span>
+                        </div>
+                        `;
+        const gearBtn = row.querySelector("button");
+        const gearText = row.querySelector(`#squad-${i}-gear`);
+        gearUpgradeCostTextArray[i] = gearBtn;
+        if (upgradeMercenaryGearCost(squadMercs[0]) < gold) {
+            gearUpgradeCostTextArray[i].classList.remove("locked");
+            gearUpgradeCostTextArray[i].disabled = false;
+        } else {
+            gearUpgradeCostTextArray[i].classList.add("locked");
+            gearUpgradeCostTextArray[i].disabled = true;
+        }
+        gearBtn.addEventListener("click", () => {
+            gearBtn.textContent = `Lvl Up ${formatDigits(upgradeMercenaryGearCost(squadMercs[0]), 2, 5)} g`;
+            gearText.textContent = `Squad ${i} - Gear Tier ×${squadMercs[0].gearLevel}`;
+            if (upgradeMercenaryGearCost(squadMercs[0]) < gold) {
+                gearBtn.classList.remove("locked");
+                gearBtn.disabled = false;
+            } else {
+                gearBtn.classList.add("locked");
+                gearBtn.disabled = true;
+            }
+        });
+        container.appendChild(row);
+    }
+
+    // Add a listener to the multiplier buttons
+    const multButtons = multContainer.querySelectorAll(".mult-btn");
+    multButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            gearUpgradeCostTextArray.forEach((costText, index) => {
+                const squadMercs = hiredMercenaries.filter(m => m.squad === index);
+                if (squadMercs.length > 0) {
+                    const cost = upgradeMercenaryGearCost(squadMercs[0]);
+                    costText.textContent = `Lvl Up ${formatDigits(cost, 2, 5)} g`;
+                    if (cost < gold) {
+                        gearUpgradeCostTextArray[index].classList.remove("locked");
+                        gearUpgradeCostTextArray[index].disabled = false;
+                    } else {
+                        gearUpgradeCostTextArray[index].classList.add("locked");
+                        gearUpgradeCostTextArray[index].disabled = true;
+                    }
+                }
+            });
+        });
+    });
+}
+
+function CastleUpgradeUI(menu, upgradeButtons, upgradeButtons2, container, container2, multContainer) {
+    // Implement Castle upgrade UI elements
+    addLabeledParagraph(upgradeButtons, "Active Skills", "", "active-skills-list");
+    container.innerHTML = ""; // Clear previous content
+    abilities.forEach((ability, index) => {
+        const row = document.createElement("div");
+        row.className = "upgrade-row";
+        row.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <span>${ability.name} (Required Lvl ${ability.unlockLevel})</span>
+                        </div>
+                        `;
+        container.appendChild(row);
+    });
+    addLabeledParagraph(upgradeButtons2, "Passive Skills", "", "passive-skills-list");
+    container2.innerHTML = ""; // Clear previous content
+    passiveAbilities.forEach((ability, index) => {
+        const row = document.createElement("div");
+        row.className = "upgrade-row";
+        let upBtn = "";
+        if (ability.maxLevel) {
+            upBtn = `<span><button class="mult-btn-tiny">${formatDigits(upgradeSkillCost(ability), 2, 5)} g</button></span>`;
+        }
+        row.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <span id="passive-skill-${index}">${ability.name} (Required Lvl ${ability.unlockLevel}) - ${ability.description}</span>
+                            ${ability.maxLevel ? upBtn : ""}
+                        </div>
+                        `;
+        const passiveSkillText = row.querySelector(`#passive-skill-${index}`);
+        if (upBtn !== "") {
+            row.querySelector(".mult-btn-tiny").onclick = () => {
+                upgradeSkill(ability);
+                passiveSkillText.textContent = `${ability.name} (lvl ${ability.level}) - ${ability.description}`;
+                row.querySelector(".mult-btn-tiny").textContent = `${formatDigits(upgradeSkillCost(ability), 2, 5)} g`;
+            };
+        }
+        if (playerLevel >= ability.unlockLevel) {
+            row.classList.remove("locked");
+            passiveSkillText.textContent = `${ability.name} (lvl ${ability.level}) - ${ability.description}`;
+
+        } else {
+            row.classList.add("locked");
+        }
+        container2.appendChild(row);
+    });
+}
+
+function testThisOut(a, b) {
+    console.log("Test function called with:", a, b);
+}
+
+function showMenu(name) {
+    const menu = document.getElementById("upgrade-menu");
+    menu.style.display = "flex";
+    const upgradeName = document.getElementById("upgrade-name");
+    upgradeName.textContent = `${name.charAt(0).toUpperCase() + name.slice(1)} Upgrade`;
+    const popupContent = document.querySelector("#upgrade-menu .popup-content");
+
+    const upgradeButtons = document.getElementById("upgrade-buttons");
+    upgradeButtons.innerHTML = ""; // Clear previous buttons
+    const container = document.getElementById("upgrade-list");
+    container.innerHTML = "";
+    const upgradeButtons2 = document.getElementById("upgrade-buttons-2");
+    upgradeButtons2.innerHTML = ""; // Clear previous buttons
+    const container2 = document.getElementById("upgrade-list-2");
+    container.innerHTML = "";
+
+    const multContainer = AddMultiplierButtons(menu);
+    container.style.display = "block";
+
+    const emptyMessage = document.getElementById("upgrade-empty-message");
+
+    if (hiredMercenaries.length > 0) {
+        emptyMessage.style.display = "none";
+    } else {
+        emptyMessage.style.display = "block";
+    }
+
+    if (name === "tavern") {
+        // Hide container2
+        container2.style.display = "none";
+        if (hiredMercenaries.length === 0) {
+            container.style.display = "none";
+        }
+        TavernUpgradeUI(menu, upgradeButtons, container, multContainer);
+    }
+    else if (name === "barracks") {
+        container2.style.display = "none";
+        if (hiredMercenaries.length === 0) {
+            container.style.display = "none";
+        }
+        BarracksUpgradeUI(menu, upgradeButtons, container, multContainer);
+    }
+    else if (name === "blacksmith") {
+        container2.style.display = "none";
+        if (hiredMercenaries.length === 0) {
+            container.style.display = "none";
+        }
+        BlacksmithUpgradeUI(menu, upgradeButtons, container, multContainer);
+    }
+    else if (name === "castle") {
+        // Show container2
+        container2.style.display = "block";
+        CastleUpgradeUI(menu, upgradeButtons, upgradeButtons2, container, container2, multContainer);
+    }
+    else if (name === "market") {
+        // Market doesn't have a specific upgrade UI, just show the buttons
+        container.style.display = "none";
+        container2.style.display = "none";
+        emptyMessage.style.display = "none";
+        // Add message under constructions
+        const message = document.createElement("p");
+        message.textContent = "Market is under construction. Stay tuned for future updates!";
+        upgradeButtons.appendChild(message);
+    }
+
+    if (!document.getElementById("close-upgrade-menu")) {
+        const closeButton = document.createElement("button");
+        closeButton.textContent = "Close";
+        closeButton.id = "close-upgrade-menu";
+        closeButton.onclick = () => closeMenu(name);
+        popupContent.appendChild(closeButton);
+    }
+
+
+}
+
+function closeMenu(name) {
+    const menu = document.getElementById("upgrade-menu");
+    const closeButton = document.getElementById("close-upgrade-menu");
+
+    if (closeButton && closeButton.parentElement) {
+        closeButton.parentElement.removeChild(closeButton);
+    }
+
+    menu.style.display = "none";
+}
+
