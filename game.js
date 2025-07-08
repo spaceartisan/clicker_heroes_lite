@@ -289,10 +289,12 @@ function loadGame() {
         if (typeof data.marketUpgrades === 'object') {
             marketUpgrades = data.marketUpgrades;
         }
-        Object.keys(data.passiveAbilities).forEach((key) => {
-            const ability = data.passiveAbilities[key];
-            passiveAbilities[key].level = ability.level || 1; // restore passive abilities
-        });
+        if (data.passiveAbilities) {
+            Object.keys(data.passiveAbilities).forEach((key) => {
+                const ability = data.passiveAbilities[key];
+                passiveAbilities[key].level = ability.level || 1; // restore passive abilities
+            });
+        }
         // console.log(marketUpgrades);
         // Restore equation for market upgrades
 
