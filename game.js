@@ -1,5 +1,5 @@
 // === Game State ===
-let gold = 0;
+let gold = 9e9;
 let playerLevel = 1;
 let playerGearLevel = 0;
 let playerUpgradeCost = 10;
@@ -13,6 +13,7 @@ let lastSubmittedScore = maxLevel;
 let baseEnemyHealth = 5;
 let enemyHealth = baseEnemyHealth;
 let autoAdvance = true;
+let scientificNotation = false;
 
 // let maxMercenaries = 5;
 // let guildLevel = 1;
@@ -132,28 +133,49 @@ const nameConfirmButton = document.getElementById("confirm-button");
 const messageBody = document.getElementById("message-body");
 const messageStatusSpan = document.getElementById("msg-status");
 document.getElementById("enemy-box").appendChild(enemyNameText);
+const scientificCheckbox = document.getElementById("use-scientific");
 
 // === Hero Abilities ===
 const abilities = [
     { name: "Strong Attack", cooldown: 30000, duration: 0, unlockLevel: 5 },
     { name: "Rally", cooldown: 60000, duration: 30000, unlockLevel: 10 },
+    { name: "Gold Rush", cooldown: 60000, duration: 30000, unlockLevel: 12 },
     { name: "Double Attack", cooldown: 60000, duration: 0, unlockLevel: 15 },
     { name: "Rage", cooldown: 60000, duration: 30000, unlockLevel: 20 }
 ];
 
 const passiveAbilities = [
-    { name: "Leadership", description: "Increases mercenary level cap.", level: 1, maxLevel: 10, unlockLevel: 10 , cost: 1000 }
+    { name: "Leadership", description: "Increases mercenary level cap.", level: 1, maxLevel: 10, unlockLevel: 10, cost: 1000 }
 ];
+
+let marketUpgrades = {
+    mkt1: { name: "Treasure Hunter", description: "Increases gold gained from enemies.", cost: 1000, level: 0, maxLevel: 10, unlockLevel: 1 }, // 10% per level
+    mkt2: { name: "Bargain Hunter", description: "Reduces upgrade costs.", cost: 500, level: 0, maxLevel: 10, unlockLevel: 1 }, // 5% per level
+    mkt3: { name: "Blacksmith's Touch", description: "Increases gear upgrade efficiency.", cost: 2000, level: 0, maxLevel: 10, unlockLevel: 5 }, // 10% per level
+    mkt4: { name: "Better Bunks", description: "Increases mercenary attack speed.", cost: 1500, level: 0, maxLevel: 10, unlockLevel: 5 }, // 5% per level
+    mkt5: { name: "Offline Gold", description: "Increases gold earned while offline.", cost: 3000, level: 0, maxLevel: 10, unlockLevel: 3 }, // 5% per level
+};
+
+const marketUpgradeEquation = [
+    (level) => Math.pow(1.15, level), // Treasure Hunter
+    (level) => Math.pow(0.98, level), // Bargain Hunter
+    (level) => Math.pow(1.05, level), // Blacksmith's Touch
+    (level) => Math.pow(1.05, level), // Better Bunks
+    (level) => Math.pow(1.05, level) // Offline Gold
+]
 
 let abilityStates = {};
 let rallyActive = false;
 let doubleAttackReady = false;
 let rageInterval = null;
+let goldRushActive = false;
+let goldRushInterval = null;
 
 abilities.forEach(ability => {
     const btn = document.getElementById(ability.name.toLowerCase().replace(/ /g, '-'));
     abilityStates[ability.name] = { cooldown: false, button: btn, unlocked: false };
     btn.onclick = () => {
+        console.log(`Activating ability: ${ability.name}`);
         if (abilityStates[ability.name].unlocked) activateAbility(ability);
     };
     btn.disabled = true;
@@ -178,6 +200,10 @@ function goToPrevLevel() {
     }
 }
 
+function mktUp(idx) {
+    const key = Object.keys(marketUpgrades)[idx];
+    return marketUpgradeEquation[idx](marketUpgrades[key].level);
+}
 
 function saveGame() {
     submitScore();
@@ -202,8 +228,11 @@ function saveGame() {
         abilitiesUsed, // convert Set to Array
         abilitiesCount,
         structures,
+        marketUpgrades,
+        passiveAbilities,
         unlockedAchievements: Array.from(unlockedAchievements), // convert Set to Array
-        lastSaved: Date.now() // <--- new
+        lastSaved: Date.now() + 60000, // <--- new
+        scientificNotation
 
     };
     localStorage.setItem("clickerHeroSave", JSON.stringify(saveData));
@@ -253,23 +282,34 @@ function loadGame() {
         abilitiesUsed = data.abilitiesUsed || []; // restore used abilities
         abilitiesCount = data.abilitiesCount || 0; // restore ability usage count
         unlockedAchievements = new Set(data.unlockedAchievements || []); // restore achievements
+        scientificNotation = data.scientificNotation ?? false; // restore scientific notation preference
         if (typeof data.structures === 'object') {
             structures = data.structures;
         }
-
+        if (typeof data.marketUpgrades === 'object') {
+            marketUpgrades = data.marketUpgrades;
+        }
+        Object.keys(data.passiveAbilities).forEach((key) => {
+            const ability = data.passiveAbilities[key];
+            passiveAbilities[key].level = ability.level || 1; // restore passive abilities
+        });
+        // console.log(marketUpgrades);
+        // Restore equation for market upgrades
 
         // Offline gold calc
         if (data.lastSaved) {
             const now = Date.now();
             const diffSeconds = Math.floor((now - data.lastSaved) / 1000);
-            const goldPerSecond = getTotalAutoDamage(); // simple estimate
-            const offlineGold = diffSeconds * goldPerSecond * 0.25; // 25% efficiency while offline
+            if (diffSeconds > 0) {
+                const goldPerSecond = getTotalAutoDamage(); // simple estimate
+                const offlineGold = diffSeconds * goldPerSecond * 0.25; // 25% efficiency while offline
 
-            console.log(`Offline gold earned: ${offlineGold} (calculated over ${diffSeconds} seconds) for ${goldPerSecond} gold/sec`);
+                console.log(`Offline gold earned: ${formatDigits(offlineGold, 2, 5)} (calculated over ${diffSeconds} seconds) for ${formatDigits(goldPerSecond, 2, 5)} gold/sec`);
 
-            if (offlineGold > 0) {
-                gold += offlineGold;
-                alert(`While you were away, your mercenaries earned ${offlineGold} gold!`);
+                if (offlineGold > 0) {
+                    gold += offlineGold * mktUp(4); // apply Offline Gold multiplier
+                    alert(`While you were away, your mercenaries earned ${formatDigits(offlineGold, 2, 5)} gold!`);
+                }
             }
         }
 
@@ -336,7 +376,7 @@ function importGame() {
     input.click();
 }
 
-function setUpgradeMultiplier(menu,x) {
+function setUpgradeMultiplier(menu, x) {
     upgradeMultiplier = x;
     menu.querySelectorAll('.upgrade-multiplier button').forEach(btn => {
         btn.classList.remove('active');
@@ -353,7 +393,10 @@ enemyCanvas.onclick = () => attack(false);
 kingdomCanvas.onclick = (event) => checkClickLocation(event);
 const autoNextToggle = document.getElementById("auto-next-toggle");
 autoAdvance = autoNextToggle.checked; // ensure variable matches UI
-document.getElementById("auto-next-toggle").onchange = e => autoAdvance = e.target.checked;
+scientificNotation = scientificCheckbox.checked; // ensure variable matches UI
+autoNextToggle.onchange = e => autoAdvance = e.target.checked;
+scientificCheckbox.onchange = e => scientificNotation = e.target.checked;
+scientificCheckbox.addEventListener("change", () => {updateUI();});
 
 window.addEventListener("DOMContentLoaded", () => {
     if (localStorage.getItem("clickerHeroSave")) {

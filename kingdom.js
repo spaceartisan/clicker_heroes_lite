@@ -71,10 +71,10 @@ function updateStructureUI() {
                 }
             } else {
                 if (name === "tavern" && structures.tavern.level < 1) {
-                    costEl.textContent = "Upgrade (Free)";
+                    costEl.textContent = "Upgrade Free";
                 }
                 else {
-                    costEl.textContent = "Upgrade (" + formatDigits(getStructureCost(structures[name]), 2, 5) + "g)";
+                    costEl.textContent = "Upgrade " + formatDigits(getStructureCost(structures[name]), 2, 5) + " g";
                 }
             }
         }
@@ -458,6 +458,8 @@ function TavernUpgradeUI(menu, upgradeButtons, container, multContainer) {
                             <span><button class="mult-btn-tiny" onclick="levelUpMercenary(${i})">Lvl Up ${formatDigits(levelUpMercenaryCost(i), 2, 5)} g</button></span>
                         </div>
                         `;
+        row.style.borderLeft = "5px solid #4CAF50"; // Green color
+        row.style.color = "#fff"; // Text color
         container.appendChild(row);
         levelUpCostTextArray[i] = row.querySelector("button");
         if (levelUpMercenaryCost(i) < gold) {
@@ -525,6 +527,12 @@ function TavernUpgradeUI(menu, upgradeButtons, container, multContainer) {
 }
 
 function BarracksUpgradeUI(menu, upgradeButtons, container, multContainer) {
+    function romNum(num) {
+        let val = weaponQualities[Math.floor(num / 3)] || -1;
+        if (val === -1) return num - weaponQualities.length * 3;
+        return romanNumerals[num % 3];
+    }
+
     speedUpgradeCostTextArray = [];
 
     const totalSquads = Math.ceil(hiredMercenaries.length / 5);
@@ -541,10 +549,12 @@ function BarracksUpgradeUI(menu, upgradeButtons, container, multContainer) {
         row.className = "upgrade-row";
         row.innerHTML = `
                         <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span id="squad-${i}-speed">Squad ${i} - Speed Tier ×${squadMercs[0].attackSpeedLevel}</span>
+                            <span id="squad-${i}-speed">Squad ${i} - ${soldierRanks[Math.floor(squadMercs[0].attackSpeedLevel / 3)] || "Infinity"} Unit ${romNum(squadMercs[0].attackSpeedLevel)}</span>
                             <span><button class="mult-btn-tiny" onclick="upgradeMercSpeed(${i})">Lvl Up ${formatDigits(upgradeMercenarySpeedCost(squadMercs[0]), 2, 5)} g</button></span>
                         </div>
                         `;
+        row.style.borderLeft = `5px solid ${weaponQualityColors[Math.floor(squadMercs[0].attackSpeedLevel / 3)] || "#ff0000"}`; // red border color
+        row.style.color = weaponQualityColors[Math.floor(squadMercs[0].attackSpeedLevel / 3)] || "#ff0000"; // Text color // red text color
         const speedBtn = row.querySelector("button");
         const speedText = row.querySelector(`#squad-${i}-speed`);
         speedUpgradeCostTextArray[i] = speedBtn;
@@ -557,7 +567,9 @@ function BarracksUpgradeUI(menu, upgradeButtons, container, multContainer) {
         }
         speedBtn.addEventListener("click", () => {
             speedBtn.textContent = `Lvl Up ${formatDigits(upgradeMercenarySpeedCost(squadMercs[0]), 2, 5)} g`;
-            speedText.textContent = `Squad ${i} - Speed Tier ×${squadMercs[0].attackSpeedLevel}`;
+            speedText.textContent = `Squad ${i} - ${soldierRanks[Math.floor(squadMercs[0].attackSpeedLevel / 3)] || "Infinity"} Unit ${romNum(squadMercs[0].attackSpeedLevel)}`;
+            speedText.parentElement.parentElement.style.borderLeft = `5px solid ${weaponQualityColors[Math.floor(squadMercs[0].attackSpeedLevel / 3)] || "#ff0000"}`; // red border color
+            speedText.parentElement.parentElement.style.color = weaponQualityColors[Math.floor(squadMercs[0].attackSpeedLevel / 3)] || "#ff0000"; // Text color // red text color
             if (upgradeMercenarySpeedCost(squadMercs[0]) < gold) {
                 speedUpgradeCostTextArray[i].classList.remove("locked");
                 speedUpgradeCostTextArray[i].disabled = false;
@@ -593,6 +605,13 @@ function BarracksUpgradeUI(menu, upgradeButtons, container, multContainer) {
 }
 
 function BlacksmithUpgradeUI(menu, upgradeButtons, container, multContainer) {
+    function romNum(num) {
+
+        let val = weaponQualities[Math.floor(num / 3)] || -1;
+        if (val === -1) return num - weaponQualities.length * 3;
+        return romanNumerals[num % 3];
+    }
+
     gearUpgradeCostTextArray = [];
 
     const totalSquads = Math.ceil(hiredMercenaries.length / 5);
@@ -610,10 +629,12 @@ function BlacksmithUpgradeUI(menu, upgradeButtons, container, multContainer) {
         row.className = "upgrade-row";
         row.innerHTML = `
                         <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span id="squad-${i}-gear">Squad ${i} - Gear Tier ×${squadMercs[0].gearLevel}</span>
+                            <span id="squad-${i}-gear">Squad ${i} - ${weaponQualities[Math.floor(squadMercs[0].gearLevel / 3)] || "Ascendant"} Gear ${romNum(squadMercs[0].gearLevel)}</span>
                             <span><button class="mult-btn-tiny" onclick="upgradeMercGear(${i})">Lvl Up ${formatDigits(upgradeMercenaryGearCost(squadMercs[0]), 2, 5)} g</button></span>
                         </div>
                         `;
+        row.style.borderLeft = `5px solid ${weaponQualityColors[Math.floor(squadMercs[0].gearLevel / 3)] || "#ff0000"}`; // red border color
+        row.style.color = weaponQualityColors[Math.floor(squadMercs[0].gearLevel / 3)] || "#ff0000"; // Text color // red text color
         const gearBtn = row.querySelector("button");
         const gearText = row.querySelector(`#squad-${i}-gear`);
         gearUpgradeCostTextArray[i] = gearBtn;
@@ -625,8 +646,12 @@ function BlacksmithUpgradeUI(menu, upgradeButtons, container, multContainer) {
             gearUpgradeCostTextArray[i].disabled = true;
         }
         gearBtn.addEventListener("click", () => {
+            // Modulus 3 to get the correct gear level
+            console.log(10 % 3);
             gearBtn.textContent = `Lvl Up ${formatDigits(upgradeMercenaryGearCost(squadMercs[0]), 2, 5)} g`;
-            gearText.textContent = `Squad ${i} - Gear Tier ×${squadMercs[0].gearLevel}`;
+            gearText.textContent = `Squad ${i} - ${weaponQualities[Math.floor(squadMercs[0].gearLevel / 3)] || "Ascendant"} Gear ${romNum(squadMercs[0].gearLevel)}`;
+            gearText.parentElement.parentElement.style.borderLeft = `5px solid ${weaponQualityColors[Math.floor(squadMercs[0].gearLevel / 3)] || "#ff0000"}`;
+            gearText.parentElement.parentElement.style.color = weaponQualityColors[Math.floor(squadMercs[0].gearLevel / 3)] || "#ff0000"; // Text color // red text color
             if (upgradeMercenaryGearCost(squadMercs[0]) < gold) {
                 gearBtn.classList.remove("locked");
                 gearBtn.disabled = false;
@@ -673,6 +698,11 @@ function CastleUpgradeUI(menu, upgradeButtons, upgradeButtons2, container, conta
                             <span>${ability.name} (Required Lvl ${ability.unlockLevel})</span>
                         </div>
                         `;
+        // Change the left border color
+        if (playerLevel >= ability.unlockLevel) {
+            row.style.borderLeft = "5px solid #4CAF50"; // Green color
+            row.style.color = "#fff"; // Text color
+        }
         container.appendChild(row);
     });
     addLabeledParagraph(upgradeButtons2, "Passive Skills", "", "passive-skills-list");
@@ -705,12 +735,107 @@ function CastleUpgradeUI(menu, upgradeButtons, upgradeButtons2, container, conta
         } else {
             row.classList.add("locked");
         }
+        if (playerLevel >= ability.unlockLevel) {
+            row.style.borderLeft = "5px solid #4CAF50"; // Green color
+            row.style.color = "#fff"; // Text color
+        }
         container2.appendChild(row);
     });
 }
 
-function testThisOut(a, b) {
-    console.log("Test function called with:", a, b);
+function marketUpgradeCost(m) {
+    const key = Object.keys(marketUpgrades)[m];
+    let totalCost = 0;
+    const base = marketUpgrades[key].cost;
+    for (let i = 0; i < upgradeMultiplier; i++) {
+        totalCost += Math.ceil(base * Math.pow(2, marketUpgrades[key].level + 1));
+    }
+    return totalCost;
+}
+
+function upgradeMarket(i) {
+    const key = Object.keys(marketUpgrades)[i];
+    const cost = marketUpgradeCost(i);
+    let s = marketUpgrades[key];
+    if (gold >= cost && structures.market.level >= s.unlockLevel && s.level < s.maxLevel) {
+        gold -= cost;
+        s.level++;
+    }
+}
+
+function MarketUpgradeUI(menu, upgradeButtons, container, multContainer) {
+    marketUpgradeCostTextArray = [];
+
+    addLabeledParagraph(upgradeButtons, "Market Research", "", "active-skills-list");
+    container.innerHTML = ""; // Clear previous content
+    Object.entries(marketUpgrades).forEach(([key, market], index) => {
+        const row = document.createElement("div");
+        row.className = "upgrade-row";
+        row.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <span id="market-upgrade-${index}">${market.name} (Required Lvl ${market.unlockLevel}) - ${market.description}</span>
+                            <span><button class="mult-btn-tiny" onclick="upgradeMarket(${index})">${formatDigits(marketUpgradeCost(index), 2, 5)} g</button></span>
+                        </div>
+                        `;
+        const costBtn = row.querySelector("button");
+        const marketText = row.querySelector(`#market-upgrade-${index}`);
+        costBtn.textContent = `${formatDigits(marketUpgradeCost(index), 2, 5)} g`;
+        if (structures.market.level >= market.unlockLevel) {
+            row.style.borderLeft = "5px solid #4CAF50"; // Green color
+            row.style.color = "#fff"; // Text color
+        }
+        let isLocked = false;
+        if (structures.market.level > market.level && structures.market.level >= market.unlockLevel) {
+            marketText.textContent = `${market.name} (Level ${market.level}) - ${market.description}`;
+        } else {
+            let val = market.level + 1;
+            if (structures.market.level < market.unlockLevel) {
+                val = market.unlockLevel;
+            }
+            marketText.textContent = `${market.name} (Required Lvl ${val}) - ${market.description}`;
+            isLocked = true;
+        }
+        marketUpgradeCostTextArray[index] = costBtn;
+        if (marketUpgradeCost(index) < gold && !isLocked) {
+            marketUpgradeCostTextArray[index].classList.remove("locked");
+            marketUpgradeCostTextArray[index].disabled = false;
+        } else {
+            marketUpgradeCostTextArray[index].classList.add("locked");
+            marketUpgradeCostTextArray[index].disabled = true;
+        }
+        costBtn.addEventListener("click", () => {
+            costBtn.textContent = `${formatDigits(marketUpgradeCost(index), 2, 5)} g`;
+            if (structures.market.level >= market.unlockLevel) {
+                row.style.borderLeft = "5px solid #4CAF50"; // Green color
+                row.style.color = "#fff"; // Text color
+            }
+            let islocked = false;
+            if (structures.market.level > market.level && structures.market.level >= market.unlockLevel) {
+                marketText.textContent = `${market.name} (Level ${market.level}) - ${market.description}`;
+            } else {
+                let val = market.level + 1;
+                if (structures.market.level < market.unlockLevel) {
+                    val = market.unlockLevel;
+                }
+                marketText.textContent = `${market.name} (Required Lvl ${val}) - ${market.description}`;
+                islocked = true;
+            }
+            if (marketUpgradeCost(index) < gold && !islocked) {
+                costBtn.classList.remove("locked");
+                costBtn.disabled = false;
+            } else {
+                costBtn.classList.add("locked");
+                costBtn.disabled = true;
+            }
+            if (market.name === "Better Bunks") {
+                // For each squad restart attack interval
+                for (let i = 1; i <= Math.ceil(hiredMercenaries.length / 5); i++) {
+                    startSquadAttack(i);
+                }
+            }
+        });
+        container.appendChild(row);
+    });
 }
 
 function showMenu(name) {
@@ -731,6 +856,7 @@ function showMenu(name) {
 
     const multContainer = AddMultiplierButtons(menu);
     container.style.display = "block";
+    multContainer.style.display = "block";
 
     const emptyMessage = document.getElementById("upgrade-empty-message");
 
@@ -765,17 +891,14 @@ function showMenu(name) {
     else if (name === "castle") {
         // Show container2
         container2.style.display = "block";
+        multContainer.style.display = "none";
         CastleUpgradeUI(menu, upgradeButtons, upgradeButtons2, container, container2, multContainer);
     }
     else if (name === "market") {
-        // Market doesn't have a specific upgrade UI, just show the buttons
-        container.style.display = "none";
-        container2.style.display = "none";
         emptyMessage.style.display = "none";
-        // Add message under constructions
-        const message = document.createElement("p");
-        message.textContent = "Market is under construction. Stay tuned for future updates!";
-        upgradeButtons.appendChild(message);
+        container2.style.display = "none";
+        multContainer.style.display = "none";
+        MarketUpgradeUI(menu, upgradeButtons, container, "multContainer");
     }
 
     if (!document.getElementById("close-upgrade-menu")) {

@@ -36,10 +36,14 @@ function drawRandomEnemy() {
 function handleEnemyDefeat() {
     enemiesDefeated++;
     const goldGain = Math.floor(currentLevel * 2);
-    gold += goldGain;
-    showGoldEarned(goldGain);
-    if (currentLevel == maxLevel) maxLevel++
-        if (autoAdvance) currentLevel++;
+    let goldMult =  mktUp(0);
+    if (goldRushActive) {
+        goldMult *= 2;
+    }
+    gold += Math.ceil(goldGain * goldMult);
+    showGoldEarned(goldGain * goldMult);
+    if (currentLevel == maxLevel) maxLevel++;
+    if (autoAdvance) currentLevel++;
     drawRandomEnemy();
     updateStructureUI();
 }

@@ -1,11 +1,16 @@
 let lastClickTime = 0;
 
+function marketEffect(i) {
+    const market = marketUpgrades[i];
+    return market.effect(market.level);
+}
+
 function attack(isRageAttack = false) {
     const now = Date.now();
     // console.log("Attack clicked at", now - lastClickTime, "ms since last click");
     if (now - lastClickTime < 100 && !isRageAttack) return; // Prevent spamming clicks
     if (!isRageAttack) lastClickTime = now;
-    let dmg = playerClickDamage;
+    let dmg = playerClickDamage * mktUp(2);
     if (doubleAttackReady) {
         dmg *= 2;
         doubleAttackReady = false;
@@ -28,7 +33,7 @@ function getEnemyHealth() {
 
 function getAutoDamage() {
     return hiredMercenaries.reduce((sum, m) => {
-        let base = m.level * (2 ** m.gearLevel) * m.attackSpeedLevel / 2.0;
+        let base = m.level * (2 ** m.gearLevel) * (m.attackSpeedLevel+1) * mktUp(3) * mktUp(2) / 2.0;
         if (rallyActive) base *= 2;
         return sum + base;
     }, 0);
@@ -37,17 +42,18 @@ function getAutoDamage() {
 function upgradeSkillCost(ability) {
     const upgradeEquation = (lvl) => Math.floor(ability.cost * lvl ** 2);
     let totalCost = 0;
-    for (let i = 0; i < 1; i++) { // upgradeMultiplier is always 1 for skills
-        totalCost += upgradeEquation(ability.level + i);
-    }
-    return totalCost;
+    return upgradeEquation(ability.level);
+    // for (let i = 0; i < 1; i++) { // upgradeMultiplier is always 1 for skills
+    //     totalCost += upgradeEquation(ability.level + i);
+    // }
+    // return totalCost;
 }
 
 function upgradeSkill(ability) {
     const cost = upgradeSkillCost(ability);
     if (gold >= cost && ability.level < ability.maxLevel) {
         gold -= cost;
-        ability.level += upgradeMultiplier;
+        ability.level += 1; // Still unsure if I want the upgradeMultiplier here
     }
     updateUI();
 }
@@ -76,7 +82,7 @@ function levelUpPlayer() {
 }
 
 function gearUpPlayerCost() {
-    const upgradeEquation = (glvl) => Math.floor(100 * (glvl + 1) ** 2);
+    const upgradeEquation = (glvl) => Math.floor(100 * (glvl + 1) ** 2 * mktUp(1));
     let totalCost = 0;
     for (let i = 0; i < upgradeMultiplier; i++) {
         totalCost += upgradeEquation(playerGearLevel + i);
@@ -109,7 +115,7 @@ function hireMercenary() {
             gearLevel: 0,
             gearCost: 100,
             nextGearLevelReq: 10,
-            attackSpeedLevel: 1,
+            attackSpeedLevel: 0,
             attackSpeedCost: 100,
             squad: squad
         });
@@ -147,7 +153,7 @@ function levelUpMercenary(i) {
 }
 
 function upgradeMercenaryGearCost(m) {
-    const upgradeEquation = (glvl) => Math.floor(100 * ((glvl + 1) ** 2));
+    const upgradeEquation = (glvl) => Math.floor(100 * ((glvl + 1) ** 2) * mktUp(1));
     let totalCost = 0;
     for (let i = 0; i < upgradeMultiplier; i++) {
         totalCost += upgradeEquation(m.gearLevel + i);
@@ -208,13 +214,13 @@ function startSquadAttack(i) {
     squadAttackInterval[i] = setInterval(() => {
         let dmg = 0
         squadMercs.forEach((m, idx) => {
-            dmg += m.level * (2 ** m.gearLevel) * (rallyActive ? 2 : 1);
+            dmg += m.level * (2 ** m.gearLevel) * (rallyActive ? 2 : 1) * mktUp(2);
         });
         enemyHealth -= dmg;
         // showDamage(dmg);
         if (enemyHealth <= 0) handleEnemyDefeat();
         updateUI();
-    }, 2000 / squadMercs[0].attackSpeedLevel);
+    }, Math.floor(2000 / (squadMercs[0].attackSpeedLevel + 1) / mktUp(3))); // Adjust attack speed based on the first mercenary in the squad
 }
 
 // === Hero Abilities ===
@@ -240,6 +246,9 @@ function activateAbility(ability) {
     } else if (ability.name === "Rage") {
         rageInterval = setInterval(() => attack(true), 500);
         setTimeout(() => clearInterval(rageInterval), ability.duration);
+    } else if (ability.name === "Gold Rush") {
+        goldRushActive = true;
+        setTimeout(() => clearInterval(goldRushInterval), ability.duration);
     }
 
     let timeLeft = ability.cooldown / 1000;

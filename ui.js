@@ -1,19 +1,99 @@
+const romanNumerals = [
+    "I",  // 1
+    "II", // 2
+    "III", // 3
+    "IV", // 4
+    "V",  // 5
+    "VI", // 6
+    "VII", // 7
+    "VIII", // 8
+    "IX", // 9
+    "X",  // 10
+];
+
+const weaponQualities = [
+  "Crude",        // 0
+  "Common",       // 1
+  "Uncommon",     // 2
+  "Rare",         // 3
+  "Epic",         // 4
+  "Legendary",    // 5
+  "Mythic",       // 6
+  "Divine",       // 7
+  "Ethereal",     // 8
+  "Godforged"     // 9
+];
+
+const weaponQualityColors = [
+  "#888888", // Crude (gray)
+  "#ffffff", // Common (white)
+  "#1eff00", // Uncommon (green)
+  "#0070dd", // Rare (blue)
+  "#a335ee", // Epic (purple)
+  "#ff8000", // Legendary (orange)
+  "#e5cc80", // Mythic (light gold)
+  "#00ffff", // Divine (cyan)
+  "#ff69b4", // Ethereal (pink)
+  "#ff0000"  // Godforged (red)
+];
+
+const soldierRanks = [
+  "Recruit",       // raw new soldier
+  "Footman",       // basic infantry
+  "Guard",         // lightly trained, city or garrison duty
+  "Veteran",       // seen battle, reliable
+  "Seasoned",      // hardened in multiple campaigns
+  "Elite",         // among the best regular troops
+  "Champion",      // stands out even among elites
+  "Commander",     // leads squads, tactical mind
+  "Warlord",       // battlefield dominance, fearsome reputation
+  "Paragon"        // mythical figure, symbol of martial perfection
+];
+
+
 function formatDigits(value, digits = 2, padding = 10) {
-    const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+    const useScientificNotation = scientificNotation ?? false;
+
+    if (useScientificNotation && value >= 1e3) {
+        // Use scientific notation (e.g., 1.23e+12)
+        const expFormatted = value.toExponential(digits);
+        return expFormatted.padStart(padding, "\u00A0");
+    }
+
+    const suffixes = [
+        "", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc",
+        "Ud", "Dd", "Td", "Qad", "Qid", "Sxd", "Spd", "Ocd", "Nod", "Vg",
+        "Uvg", "Dvg", "Tvg", "Qavg", "Qivg", "Sxvg", "Spvg", "Ocvg", "Novg", "Tg",
+        // After this, we switch to 2-letter base-26 system
+    ];
+
     let tier = 0;
 
-    while (value >= 1000 && tier < suffixes.length - 1) {
+    while (value >= 1000){// && tier < suffixes.length - 1) {
         value /= 1000;
         tier++;
     }
 
+    // Dynamically generate suffixes like 'aa', 'ab', ... if needed
+    if (tier >= suffixes.length) {
+        const baseTier = tier - suffixes.length;
+        const alphabet = "abcdefghijklmnopqrstuvwxyz";
+        const first = alphabet[Math.floor(baseTier / 26) % 26];
+        const second = alphabet[baseTier % 26];
+        suffixes[tier] = first + second;
+        // console.log(first, second, suffixes[tier]);
+    }
+
+    if (value > 1e165) {
+        console.log("value: ", value, " - Suffix: ", suffixes.length, " - Tier: ", tier);
+    }
     if (tier === 0) {
         digits = 0;
     }
+
     const formatted = value.toFixed(digits);
     const display = formatted + suffixes[tier];
 
-    // Pad to 7 characters using non-breaking space
     return display.padStart(padding, "\u00A0");
 }
 
@@ -29,7 +109,7 @@ function AddMultiplierButtons(menu) {
         btn.className = "mult-btn";
         btn.textContent = `×${mult}`;
         btn.onclick = () => {
-            setUpgradeMultiplier(menu,mult);
+            setUpgradeMultiplier(menu, mult);
         };
         multContainer.appendChild(btn);
         if (mult === upgradeMultiplier) {
@@ -101,7 +181,7 @@ function showGoldEarned(amount) {
 
 
 function updateUI() {
-    //   goldText.textContent = gold;
+    // TODO: playerClickDamage should not be calculated here, but rather somewhere else
     playerClickDamage = getPlayerClickDamage();
     damageText.textContent = `Hero Damage: ${formatDigits(playerClickDamage, 2, 5)}, Merc DPS: ${formatDigits(getAutoDamage(), 2, 5)}`;
     healthFill.style.width = `${(enemyHealth / getEnemyHealth()) * 100}%`;
@@ -131,8 +211,8 @@ function updatePlayerLevelGearText() {
     shop.innerHTML = ""; // Clear previous content
     shop.innerHTML = `
     <h3>Hero Upgrades</h3>
-    <button onclick="levelUpPlayer()">Level Up (${formatDigits(levelUpPlayerCost(), 2, 5)}g)</button>
-    <button onclick="gearUpPlayer()">Upgrade Gear (${formatDigits(gearUpPlayerCost(), 2, 5)}g)</button>
+    <button onclick="levelUpPlayer()">Level Up ${formatDigits(levelUpPlayerCost(), 2, 5)} g</button>
+    <button onclick="gearUpPlayer()">Upgrade Gear ${formatDigits(gearUpPlayerCost(), 2, 5)} g</button>
     <p>Player Lv: ${formatDigits(playerLevel, 2, 0)}, Gear x${formatDigits(playerGearLevel, 2, 0)}</p>
     <div class="upgrade-multiplier"></div>
   `;

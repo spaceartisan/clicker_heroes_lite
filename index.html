@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="https://emojicdn.elk.sh/⚔️" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Clicker Heroes Lite</title>
     <link rel="stylesheet" href="style.css">
     <!-- Firebase SDK (compat version, no module needed) -->
@@ -60,6 +60,7 @@
                 </div>
                 <div class="ability-buttons">
                     <button id="strong-attack">Strong Attack</button>
+                    <button id="gold-rush">Gold Rush</button>
                     <button id="rally">Rally</button>
                     <button id="double-attack">Double Attack</button>
                     <button id="rage">Rage</button>
@@ -180,6 +181,9 @@
                 <button onclick="importGame()">📥 Import Save</button>
                 <p></p>
                 <button onclick="showAchievements()">📜 View Achievements</button>
+                <p></p>
+                <input type="checkbox" id="use-scientific" unchecked>
+                <label for="use-scientific">Use Scientific Notation</label>
                 <h3></h3>
                 <button onclick="closeOptions()">Close</button>
             </div>
