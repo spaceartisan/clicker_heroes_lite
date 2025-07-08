@@ -248,7 +248,10 @@ function activateAbility(ability) {
         setTimeout(() => clearInterval(rageInterval), ability.duration);
     } else if (ability.name === "Gold Rush") {
         goldRushActive = true;
-        setTimeout(() => clearInterval(goldRushInterval), ability.duration);
+        setTimeout(() => {
+            clearInterval(goldRushInterval);
+            goldRushActive = false;
+        }, ability.duration);
     }
 
     let timeLeft = ability.cooldown / 1000;
