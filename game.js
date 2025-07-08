@@ -1,5 +1,5 @@
 // === Game State ===
-let gold = 9e9;
+let gold = 0;
 let playerLevel = 1;
 let playerGearLevel = 0;
 let playerUpgradeCost = 10;
