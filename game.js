@@ -29,6 +29,7 @@ let leaderboardUnsub = null;
 let messageUnsub = null;
 
 let upgradeMultiplier = 1;
+let underfillEnabled = false; // Track underfill state
 
 let totalClicks = 0; // Track total clicks for achievements
 let enemiesDefeated = 0; // Track defeated enemies for achievements
@@ -134,6 +135,7 @@ const messageBody = document.getElementById("message-body");
 const messageStatusSpan = document.getElementById("msg-status");
 document.getElementById("enemy-box").appendChild(enemyNameText);
 const scientificCheckbox = document.getElementById("use-scientific");
+const underfillCheckbox = document.getElementById("underfill-toggle");
 
 // === Hero Abilities ===
 const abilities = [
@@ -310,7 +312,8 @@ function loadGame() {
 
                 if (offlineGold > 0) {
                     gold += offlineGold * mktUp(4); // apply Offline Gold multiplier
-                    alert(`While you were away, your mercenaries earned ${formatDigits(offlineGold, 2, 5)} gold!`);
+                    showPopupMessage(`Offline Gold Earned. You earned ${formatDigits(offlineGold, 2, 5)} gold while you were away!`);
+                    // alert(`While you were away, your mercenaries earned ${formatDigits(offlineGold, 2, 5)} gold!`);
                 }
             }
         }
@@ -399,6 +402,8 @@ scientificNotation = scientificCheckbox.checked; // ensure variable matches UI
 autoNextToggle.onchange = e => autoAdvance = e.target.checked;
 scientificCheckbox.onchange = e => scientificNotation = e.target.checked;
 scientificCheckbox.addEventListener("change", () => {updateUI();});
+underfillEnabled = underfillCheckbox.checked; // ensure variable matches UI
+underfillCheckbox.onchange = e => underfillEnabled = e.target.checked;
 
 window.addEventListener("DOMContentLoaded", () => {
     if (localStorage.getItem("clickerHeroSave")) {

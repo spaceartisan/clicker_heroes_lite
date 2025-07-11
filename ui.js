@@ -12,42 +12,42 @@ const romanNumerals = [
 ];
 
 const weaponQualities = [
-  "Crude",        // 0
-  "Common",       // 1
-  "Uncommon",     // 2
-  "Rare",         // 3
-  "Epic",         // 4
-  "Legendary",    // 5
-  "Mythic",       // 6
-  "Divine",       // 7
-  "Ethereal",     // 8
-  "Godforged"     // 9
+    "Crude",        // 0
+    "Common",       // 1
+    "Uncommon",     // 2
+    "Rare",         // 3
+    "Epic",         // 4
+    "Legendary",    // 5
+    "Mythic",       // 6
+    "Divine",       // 7
+    "Ethereal",     // 8
+    "Godforged"     // 9
 ];
 
 const weaponQualityColors = [
-  "#888888", // Crude (gray)
-  "#ffffff", // Common (white)
-  "#1eff00", // Uncommon (green)
-  "#0070dd", // Rare (blue)
-  "#a335ee", // Epic (purple)
-  "#ff8000", // Legendary (orange)
-  "#e5cc80", // Mythic (light gold)
-  "#00ffff", // Divine (cyan)
-  "#ff69b4", // Ethereal (pink)
-  "#ff0000"  // Godforged (red)
+    "#888888", // Crude (gray)
+    "#ffffff", // Common (white)
+    "#1eff00", // Uncommon (green)
+    "#0070dd", // Rare (blue)
+    "#a335ee", // Epic (purple)
+    "#ff8000", // Legendary (orange)
+    "#e5cc80", // Mythic (light gold)
+    "#00ffff", // Divine (cyan)
+    "#ff69b4", // Ethereal (pink)
+    "#ff0000"  // Godforged (red)
 ];
 
 const soldierRanks = [
-  "Recruit",       // raw new soldier
-  "Footman",       // basic infantry
-  "Guard",         // lightly trained, city or garrison duty
-  "Veteran",       // seen battle, reliable
-  "Seasoned",      // hardened in multiple campaigns
-  "Elite",         // among the best regular troops
-  "Champion",      // stands out even among elites
-  "Commander",     // leads squads, tactical mind
-  "Warlord",       // battlefield dominance, fearsome reputation
-  "Paragon"        // mythical figure, symbol of martial perfection
+    "Recruit",       // raw new soldier
+    "Footman",       // basic infantry
+    "Guard",         // lightly trained, city or garrison duty
+    "Veteran",       // seen battle, reliable
+    "Seasoned",      // hardened in multiple campaigns
+    "Elite",         // among the best regular troops
+    "Champion",      // stands out even among elites
+    "Commander",     // leads squads, tactical mind
+    "Warlord",       // battlefield dominance, fearsome reputation
+    "Paragon"        // mythical figure, symbol of martial perfection
 ];
 
 
@@ -69,7 +69,7 @@ function formatDigits(value, digits = 2, padding = 10) {
 
     let tier = 0;
 
-    while (value >= 1000){// && tier < suffixes.length - 1) {
+    while (value >= 1000) {// && tier < suffixes.length - 1) {
         value /= 1000;
         tier++;
     }
@@ -272,4 +272,66 @@ function showAchievements() {
 
 function closeAchievements() {
     document.getElementById("achievement-menu").style.display = "none";
+}
+
+function closeGeneralMenu() {
+    document.getElementById("general-menu").style.display = "none";
+}
+
+function generalMenu(menuType) {
+    const menu = document.getElementById("general-menu");
+    const content = menu.querySelector(".popup-content");
+    const genHeader = menu.querySelector("#general-menu-header");
+    const genBody = menu.querySelector("#general-menu-content"); 
+    genHeader.innerHTML = ""; // Clear previous content
+    genBody.innerHTML = ""; // Clear previous content
+    if (menuType === 'stats') {
+        statsMenu(menu, content, genHeader, genBody);
+    }
+    menu.style.display = "flex";
+}
+
+function statsMenu(menu, content, genHeader, genBody) {
+    genHeader.innerHTML = `<h3>📊 Game Stats</h3>`;
+    genBody.innerHTML = `
+        <p>Player Level: ${formatDigits(playerLevel, 2, 0)}</p>
+        <p>Gear Level: ${formatDigits(playerGearLevel, 2, 0)}</p>
+        <p>Gold: ${formatDigits(gold, 2, 0)}</p>
+        <p>Ability Count: ${abilitiesCount}</p>
+        <p>Enemies Defeated: ${formatDigits(enemiesDefeated, 2, 0)}</p>
+        <p>Total Clicks: ${formatDigits(totalClicks, 2, 0)}</p>
+        <h3></h3>`;
+    // Add a small asterisk to mention some stats may be inaccurate for older saves. Decrease font size and italicize it
+    genBody.innerHTML += `<p style="font-size: 0.8em; font-style: italic;">* Some stats may be inaccurate for older saves</p>`;
+}
+
+function showPopupMessage(message, showCloseButton = true, autoDismissTime = null, zorder = 20000) {
+    // Create popup container
+    const popup = document.createElement("div");
+    popup.className = "popup-message";
+    popup.textContent = message;
+    popup.style.zIndex = zorder;
+
+    // Add close button if requested
+    if (showCloseButton) {
+        const linebreak = document.createElement("h3");
+        popup.appendChild(linebreak);
+        const closeBtn = document.createElement("button");
+        closeBtn.className = "popup-close-btn";
+        closeBtn.textContent = "Close";
+        closeBtn.onclick = () => popup.remove();
+        popup.appendChild(closeBtn);
+    }
+
+    // Append to body
+    document.body.appendChild(popup);
+
+    if (autoDismissTime) {
+        setTimeout(() => fadeAndRemove(popup), autoDismissTime);
+    }
+}
+
+function fadeAndRemove(element) {
+    element.classList.add("fade-out");
+    setTimeout(() => element.remove(), 400); // Match CSS transition time
 }

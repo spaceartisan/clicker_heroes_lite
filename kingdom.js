@@ -30,8 +30,8 @@ function upgradeStructure(name) {
         updateStructureUI();
         updateUI();
         drawKingdom();
-    } else {
-        alert("Not enough gold!");
+    } else if (gold < cost) {
+        showPopupMessage("Not enough gold!", false, 700);
     }
 }
 

@@ -109,7 +109,7 @@ body {
     background: linear-gradient(to right, #8b0000, #b22222);
     box-shadow: inset 0 0 4px #400;
     width: 100%;
-    transition: width 0.3s ease;
+    transition: width 0.01s ease;
 }
 
 
@@ -501,4 +501,33 @@ button.mult-btn-tiny {
 
 .upgrade-row > div {
     align-items: center;
+}
+
+.popup-message {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #3e1f0d;
+    color: #ffde9e;
+    border: 2px solid #a67c52;
+    padding: 12px 20px;
+    font-family: 'MedievalSharp', serif;
+    font-size: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    max-width: 80%;
+    text-align: center;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.popup-message.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.popup-message button {
+    padding: 2px 6px;
 }

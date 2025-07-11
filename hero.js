@@ -33,7 +33,7 @@ function getEnemyHealth() {
 
 function getAutoDamage() {
     return hiredMercenaries.reduce((sum, m) => {
-        let base = m.level * (2 ** m.gearLevel) * (m.attackSpeedLevel+1) * mktUp(3) * mktUp(2) / 2.0;
+        let base = m.level * (2 ** m.gearLevel) * (m.attackSpeedLevel + 1) * mktUp(3) * mktUp(2) / 2.0;
         if (rallyActive) base *= 2;
         return sum + base;
     }, 0);
@@ -54,51 +54,12 @@ function upgradeSkill(ability) {
     if (gold >= cost && ability.level < ability.maxLevel) {
         gold -= cost;
         ability.level += 1; // Still unsure if I want the upgradeMultiplier here
+    } else if (gold < cost) {
+        showPopupMessage("Not enough gold!", null, 700);
+    } else if ((ability.level + 1 >= ability.maxLevel)) {
+        showPopupMessage("You have reached the level cap!", null, 700);
     }
     updateUI();
-}
-
-function levelUpPlayerCost() {
-    // Create the upgrade equation as a lambda function
-    const upgradeEquation = (plvl) => Math.floor(10 + plvl ** 1.5);
-    let totalCost = 0;
-    for (let i = 0; i < upgradeMultiplier; i++) {
-        totalCost += upgradeEquation(playerLevel + i);
-    }
-    return totalCost;
-}
-
-function levelUpPlayer() {
-    // Create the upgrade equation as a lambda function
-    let cost = levelUpPlayerCost();
-    // 
-    if (gold >= cost && structures.castle.level * 10 + 100 >= playerLevel + upgradeMultiplier) {
-        gold -= cost;
-        playerLevel += upgradeMultiplier;
-        playerUpgradeCost = Math.floor(10 + playerLevel ** 1.5);
-        updateUI();
-        updatePlayerLevelGearText()
-    }
-}
-
-function gearUpPlayerCost() {
-    const upgradeEquation = (glvl) => Math.floor(100 * (glvl + 1) ** 2 * mktUp(1));
-    let totalCost = 0;
-    for (let i = 0; i < upgradeMultiplier; i++) {
-        totalCost += upgradeEquation(playerGearLevel + i);
-    }
-    return totalCost;
-}
-
-function gearUpPlayer() {
-    let cost = gearUpPlayerCost();
-    if (gold >= cost && (structures.blacksmith.level - 1) * 2 + 5 >= playerGearLevel + upgradeMultiplier) {
-        gold -= cost;
-        playerGearLevel += upgradeMultiplier;
-        nextPlayerGearLevelReq += 0;
-        updateUI();
-        updatePlayerLevelGearText()
-    }
 }
 
 // === Mercenaries ===
@@ -122,6 +83,10 @@ function hireMercenary() {
         updateUI();
         startSquadAttack(squad);
         return true;
+    } else if (gold < cost) {
+        showPopupMessage("Not enough gold!", null, 500);
+    } else if (hiredMercenaries.length + 1 >= structures.tavern.level * 5) {
+        showPopupMessage("You have reached the maximum number of mercenaries!", null, 500);
     }
     return false;
 }
@@ -129,82 +94,6 @@ function hireMercenary() {
 function hireMercenaryCost() {
     return Math.floor(100 * hiredMercenaries.length ** 2.0);
 }
-
-function levelUpMercenaryCost(i) {
-    // Create the upgrade equation as a lambda function
-    const m = hiredMercenaries[i];
-    const upgradeEquation = (mlvl) => Math.floor(20 * mlvl ** 2);
-    let totalCost = 0;
-    for (let i = 0; i < upgradeMultiplier; i++) {
-        totalCost += upgradeEquation(m.level + i);
-    }
-    return totalCost;
-}
-
-function levelUpMercenary(i) {
-    const m = hiredMercenaries[i];
-    const cost = levelUpMercenaryCost(i);
-    if (gold >= cost && (passiveAbilities[0].level - 1) * 10 + 20 >= m.level + upgradeMultiplier) {
-        gold -= cost;
-        m.level += upgradeMultiplier;
-        m.upgradeCost = Math.floor(20 + m.level ** 2);
-        updateUI();
-    }
-}
-
-function upgradeMercenaryGearCost(m) {
-    const upgradeEquation = (glvl) => Math.floor(100 * ((glvl + 1) ** 2) * mktUp(1));
-    let totalCost = 0;
-    for (let i = 0; i < upgradeMultiplier; i++) {
-        totalCost += upgradeEquation(m.gearLevel + i);
-    }
-    return totalCost;
-}
-
-function upgradeMercGear(i) {
-    const squadMercs = hiredMercenaries.filter(m => m.squad === i);
-    if (squadMercs.length === 0) return; // No mercenaries in this squad
-    const m = squadMercs[0]; // Use the first mercenary in the squad for cost
-    const cost = upgradeMercenaryGearCost(m);
-    if (gold >= cost && (structures.blacksmith.level - 1) * 2 + 5 >= m.gearLevel + upgradeMultiplier) {
-        gold -= cost;
-        for (let _m of squadMercs) {
-            _m.gearLevel += upgradeMultiplier;
-            _m.gearCost = Math.floor(_m.gearCost * 2);
-            _m.nextGearLevelReq += 40;
-        }
-        updateUI();
-    }
-}
-
-function upgradeMercenarySpeedCost(m) {
-    const upgradeEquation = (slvl) => Math.floor(100 * slvl ** 2);
-    let totalCost = 0;
-    for (let i = 0; i < upgradeMultiplier; i++) {
-        totalCost += upgradeEquation(m.attackSpeedLevel + i);
-    }
-    return totalCost;
-}
-
-function upgradeMercSpeed(i) {
-    // Get all mercenaries who share the same squad
-    const squadMercs = hiredMercenaries.filter(m => m.squad === i);
-    if (squadMercs.length === 0) return; // No mercenaries in this squad
-    const m = squadMercs[0]; // Use the first mercenary in the squad for cost
-    const cost = upgradeMercenarySpeedCost(m);
-    if (gold >= cost && (structures.barracks.level - 1) * 2 + 5 >= m.attackSpeedLevel + upgradeMultiplier) {
-        gold -= cost;
-        for (let _m of squadMercs) {
-            {
-                _m.attackSpeedLevel += upgradeMultiplier;
-                _m.attackSpeedCost = Math.floor(_m.attackSpeedCost * 2);
-            }
-        }
-        startSquadAttack(i)
-        updateUI();
-    }
-}
-
 
 function startSquadAttack(i) {
     const squadMercs = hiredMercenaries.filter(m => m.squad === i);
@@ -278,4 +167,184 @@ function strongAttack() {
     enemyHealth -= dmg;
     if (enemyHealth <= 0) handleEnemyDefeat();
     updateUI();
+}
+
+
+// Attempt to refactor the cost functions
+
+function estimateUpgradeCost({ baseLevel, upgradeEquation, cap, resourceAvailable, multiplier, underfill = false, query = false }) {
+    let totalCost = 0;
+    let unitsAffordable = multiplier;
+
+    for (let i = 0; i < multiplier; i++) {
+        if (baseLevel + i >= cap) break;
+
+        const cost = upgradeEquation(baseLevel + i);
+        if (underfill && query && totalCost + cost > resourceAvailable) {
+            break;
+        }
+        totalCost += cost;
+        unitsAffordable = i + 1;
+    }
+
+    return query ? [totalCost, unitsAffordable] : totalCost;
+}
+
+function levelUpPlayerCost(query = false) {
+    return estimateUpgradeCost({
+        baseLevel: playerLevel,
+        upgradeEquation: (lvl) => Math.floor(10 + lvl ** 1.5),
+        cap: structures.castle.level * 10 + 100,
+        resourceAvailable: gold,
+        multiplier: upgradeMultiplier,
+        underfill: underfillEnabled,
+        query
+    });
+}
+
+function levelUpPlayer() {
+    // Create the upgrade equation as a lambda function
+    let costReturn = levelUpPlayerCost(true);
+    let cost = costReturn[0];
+    let _upgradeMultiplier = upgradeMultiplier;
+    if (underfillEnabled && costReturn[1] > 0) {
+        _upgradeMultiplier = costReturn[1];
+    }
+    // 
+    if (gold >= cost && structures.castle.level * 10 + 100 >= playerLevel + _upgradeMultiplier) {
+        gold -= cost;
+        playerLevel += _upgradeMultiplier;
+        playerUpgradeCost = Math.floor(10 + playerLevel ** 1.5);
+        updateUI();
+        updatePlayerLevelGearText()
+    } else if (gold < cost) {
+        showPopupMessage("Not enough gold!", null, 500);
+    } else if ((structures.castle.level * 10 + 100 < playerLevel + 1)) {
+        showPopupMessage("You have reached the level cap!", null, 500);
+    }
+}
+
+function gearUpPlayerCost(query = false) {
+    return estimateUpgradeCost({
+        baseLevel: playerGearLevel,
+        upgradeEquation: (lvl) => Math.floor(100 * (lvl + 1) ** 2 * mktUp(1)),
+        cap: (structures.blacksmith.level - 1) * 2 + 5,
+        resourceAvailable: gold,
+        multiplier: upgradeMultiplier,
+        underfill: underfillEnabled,
+        query
+    });
+}
+
+function gearUpPlayer() {
+    let cost = gearUpPlayerCost(true);
+    if (gold >= cost[0] && (structures.blacksmith.level - 1) * 2 + 5 >= playerGearLevel + cost[1]) {
+        gold -= cost[0];
+        playerGearLevel += cost[1];
+        nextPlayerGearLevelReq += 0;
+        updateUI();
+        updatePlayerLevelGearText()
+    } else if (gold < cost[0]) {
+        showPopupMessage("Not enough gold!", null, 500);
+    } else if ((structures.blacksmith.level - 1) * 2 + 5 < playerGearLevel + 1) {
+        showPopupMessage("You have reached the gear cap!", null, 500);
+    }
+}
+
+
+function levelUpMercenaryCost(i, query = false) {
+    const m = hiredMercenaries[i];
+    return estimateUpgradeCost({
+        baseLevel: m.level,
+        upgradeEquation: (mlvl) => Math.floor(20 * mlvl ** 2),
+        cap: (passiveAbilities[0].level - 1) * 10 + 20,
+        resourceAvailable: gold,
+        multiplier: upgradeMultiplier,
+        underfill: underfillEnabled,
+        query
+    });
+}
+
+function levelUpMercenary(i) {
+    const m = hiredMercenaries[i];
+    const cost = levelUpMercenaryCost(i,true);
+    if (gold >= cost[0] && (passiveAbilities[0].level - 1) * 10 + 20 >= m.level + cost[1]) {
+        gold -= cost[0];
+        m.level += cost[1];
+        m.upgradeCost = Math.floor(20 + m.level ** 2);
+        updateUI();
+    } else if (gold < cost[0]) {
+        showPopupMessage("Not enough gold!", null, 700);
+    } else if ((passiveAbilities[0].level - 1) * 10 + 20 < m.level + 1) {
+        showPopupMessage("You have reached the level cap!", null, 700);
+    }
+}
+
+function upgradeMercenaryGearCost(m, query = false) {
+    // const m = hiredMercenaries[i];
+    return estimateUpgradeCost({
+        baseLevel: m.gearLevel,
+        upgradeEquation: (glvl) => Math.floor(100 * ((glvl + 1) ** 2) * mktUp(1)),
+        cap: (structures.blacksmith.level - 1) * 2 + 5,
+        resourceAvailable: gold,
+        multiplier: upgradeMultiplier,
+        underfill: underfillEnabled,
+        query
+    });
+}
+
+function upgradeMercGear(i) {
+    const squadMercs = hiredMercenaries.filter(m => m.squad === i);
+    if (squadMercs.length === 0) return; // No mercenaries in this squad
+    const m = squadMercs[0]; // Use the first mercenary in the squad for cost
+    const cost = upgradeMercenaryGearCost(m,true);
+    if (gold >= cost[0] && (structures.blacksmith.level - 1) * 2 + 5 >= m.gearLevel + cost[1]) {
+        gold -= cost[0];
+        for (let _m of squadMercs) {
+            _m.gearLevel += cost[1];
+            _m.gearCost = Math.floor(_m.gearCost * 2);
+            _m.nextGearLevelReq += 40;
+        }
+        updateUI();
+    } else if (gold < cost[0]) {
+        showPopupMessage("Not enough gold!", null, 700);
+    } else if ((structures.blacksmith.level - 1) * 2 + 5 < m.gearLevel + 1) {
+        showPopupMessage("You have reached the gear cap!", null, 700);
+    }
+}
+
+function upgradeMercenarySpeedCost(m, query = false) {
+    // const m = hiredMercenaries[i];
+    return estimateUpgradeCost({
+        baseLevel: m.attackSpeedLevel,
+        upgradeEquation: (mlvl) => Math.floor(100 * (mlvl + 1) ** 2),
+        cap: (structures.barracks.level - 1) * 2 + 5,
+        resourceAvailable: gold,
+        multiplier: upgradeMultiplier,
+        underfill: underfillEnabled,
+        query
+    });
+}
+
+function upgradeMercSpeed(i) {
+    // Get all mercenaries who share the same squad
+    const squadMercs = hiredMercenaries.filter(m => m.squad === i);
+    if (squadMercs.length === 0) return; // No mercenaries in this squad
+    const m = squadMercs[0]; // Use the first mercenary in the squad for cost
+    const cost = upgradeMercenarySpeedCost(m, true);
+    if (gold >= cost[0] && (structures.barracks.level - 1) * 2 + 5 >= m.attackSpeedLevel + cost[1]) {
+        gold -= cost[0];
+        for (let _m of squadMercs) {
+            {
+                _m.attackSpeedLevel += cost[1];
+                _m.attackSpeedCost = Math.floor(_m.attackSpeedCost * 2);
+            }
+        }
+        startSquadAttack(i)
+        updateUI();
+    } else if (gold < cost[0]) {
+        showPopupMessage("Not enough gold!", null, 700);
+    } else if ((structures.barracks.level - 1) * 2 + 5 < m.attackSpeedLevel + 1) {
+        showPopupMessage("You have reached the speed cap!", null, 700);
+    }
 }

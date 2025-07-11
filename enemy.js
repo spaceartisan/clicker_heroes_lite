@@ -1,3 +1,5 @@
+let deathCooldown = false;
+
 function drawRandomEnemy() {
     const gridSize = 10;
     const cellSize = enemyCanvas.width / gridSize;
@@ -34,9 +36,11 @@ function drawRandomEnemy() {
 
 // === Enemy Logic ===
 function handleEnemyDefeat() {
+    if (deathCooldown) return;
+    enemyHealth = 0;
     enemiesDefeated++;
     const goldGain = Math.floor(currentLevel * 2);
-    let goldMult =  mktUp(0);
+    let goldMult = mktUp(0);
     if (goldRushActive) {
         goldMult *= 2;
     }
@@ -44,6 +48,11 @@ function handleEnemyDefeat() {
     showGoldEarned(goldGain * goldMult);
     if (currentLevel == maxLevel) maxLevel++;
     if (autoAdvance) currentLevel++;
-    drawRandomEnemy();
-    updateStructureUI();
+    deathCooldown = true;
+    setTimeout(() => {
+        drawRandomEnemy();
+        updateStructureUI();
+        updateUI();
+        deathCooldown = false;
+    },250); // Cooldown to prevent multiple defeats in quick succession
 }

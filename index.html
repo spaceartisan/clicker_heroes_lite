@@ -6,7 +6,7 @@
     <link rel="icon" href="https://emojicdn.elk.sh/⚔️" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Clicker Heroes Lite</title>
+    <title>Heroes of the Click</title>
     <link rel="stylesheet" href="style.css">
     <!-- Firebase SDK (compat version, no module needed) -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -21,7 +21,7 @@
         </div>
     </div>
     <div id="game-container">
-        <h1>Clicker Heroes Lite</h1>
+        <h1>Heroes of the Click</h1>
 
         <div id="hero-view">
             <div id="enemy-container">
@@ -70,7 +70,7 @@
             <div id="shop">
                 <!-- Dynamic player upgrades added by JS -->
             </div>
-            
+
 
         </div>
 
@@ -121,7 +121,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v0.1.0 – Clicker Heroes Lite
+        v0.1.1 – Heroes of the Click
     </p>
     <br>
 
@@ -181,9 +181,13 @@
                 <button onclick="importGame()">📥 Import Save</button>
                 <p></p>
                 <button onclick="showAchievements()">📜 View Achievements</button>
+                <button onclick="generalMenu('stats')">📊 Game Stats</button>
                 <p></p>
                 <input type="checkbox" id="use-scientific" unchecked>
                 <label for="use-scientific">Use Scientific Notation</label>
+                <p></p>
+                <input type="checkbox" id="underfill-toggle" unchecked>
+                <label for="underfill-toggle">Enable Underfill</label>
                 <h3></h3>
                 <button onclick="closeOptions()">Close</button>
             </div>
@@ -223,7 +227,16 @@
         </div>
     </div>
 
-
+    <div id="general-menu" class="popup">
+        <div class="popup-content">
+            <div id="general-menu-header">
+            </div>
+            <div id="general-menu-content">
+            </div>
+            <h3></h3>
+            <button onclick="closeGeneralMenu()">Close</button>
+        </div>
+    </div>
 
     <!-- Firebase SDKs -->
 
