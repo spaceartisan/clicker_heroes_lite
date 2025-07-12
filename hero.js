@@ -54,14 +54,14 @@ function upgradeSkillCost(ability, query = false) {
 
 function upgradeSkill(ability) {
     const cost = upgradeSkillCost(ability, true);
-    if (cost[0] > 0) {
+    if (cost[0] > 0 && gold >= cost[0]) {
         gold -= cost[0];
         ability.level += 1; // Still unsure if I want the upgradeMultiplier here
     } else if (cost[2]) {
         showPopupMessage("You have reached the level cap!", null, 700);
-    }else if (cost[0] == 0) {
+    } else {
         showPopupMessage("Not enough gold!", null, 700);
-    } 
+    }
     updateUI();
 }
 
@@ -184,8 +184,7 @@ function estimateUpgradeCost({ baseLevel, upgradeEquation, cap, resourceAvailabl
             capReached = true;
             break;
         }
-        if (capFunction && capFunction(baseLevel))
-        {
+        if (capFunction && capFunction(baseLevel)) {
             capReached = true;
             break;
         }
@@ -222,7 +221,7 @@ function levelUpPlayer() {
     }
     // 
     // if (gold >= cost && structures.castle.level * 10 + 100 >= playerLevel + _upgradeMultiplier) {
-    if (cost > 0) {
+    if (cost > 0 && gold >= cost) {
         gold -= cost;
         playerLevel += _upgradeMultiplier;
         playerUpgradeCost = Math.floor(10 + playerLevel ** 1.5);
@@ -230,7 +229,7 @@ function levelUpPlayer() {
         updatePlayerLevelGearText();
     } else if (costReturn[2]) {
         showPopupMessage("You have reached the level cap!", null, 500);
-    } else if (cost == 0) {
+    } else {
         showPopupMessage("Not enough gold!", null, 500);
     }
 }
@@ -249,7 +248,7 @@ function gearUpPlayerCost(query = false) {
 
 function gearUpPlayer() {
     let cost = gearUpPlayerCost(true);
-    if (cost[0] > 0) {
+    if (cost[0] > 0 && gold >= cost[0]) {
         gold -= cost[0];
         playerGearLevel += cost[1];
         nextPlayerGearLevelReq += 0;
@@ -257,7 +256,7 @@ function gearUpPlayer() {
         updatePlayerLevelGearText()
     } else if (cost[2]) {
         showPopupMessage("You have reached the gear cap!", null, 500);
-    } else if (cost[0] == 0) {
+    } else {
         showPopupMessage("Not enough gold!", null, 500);
 
     }
@@ -280,14 +279,14 @@ function levelUpMercenaryCost(i, query = false) {
 function levelUpMercenary(i) {
     const m = hiredMercenaries[i];
     const cost = levelUpMercenaryCost(i, true);
-    if (cost[0] > 0) {
+    if (cost[0] > 0 && gold >= cost[0]) {
         gold -= cost[0];
         m.level += cost[1];
         m.upgradeCost = Math.floor(20 + m.level ** 2);
         updateUI();
     } else if (cost[2]) {
         showPopupMessage("You have reached the level cap!", null, 700);
-    } else if (cost[0] == 0) {
+    } else {
         showPopupMessage("Not enough gold!", null, 700);
     }
 }
@@ -310,7 +309,7 @@ function upgradeMercGear(i) {
     if (squadMercs.length === 0) return; // No mercenaries in this squad
     const m = squadMercs[0]; // Use the first mercenary in the squad for cost
     const cost = upgradeMercenaryGearCost(m, true);
-    if (cost[0] > 0) {
+    if (cost[0] > 0 && gold >= cost[0]) {
         gold -= cost[0];
         for (let _m of squadMercs) {
             _m.gearLevel += cost[1];
@@ -320,7 +319,7 @@ function upgradeMercGear(i) {
         updateUI();
     } else if (cost[2]) {
         showPopupMessage("You have reached the gear cap!", null, 700);
-    } else if (cost[0] == 0) {
+    } else{
         showPopupMessage("Not enough gold!", null, 700);
     }
 }
@@ -344,7 +343,7 @@ function upgradeMercSpeed(i) {
     if (squadMercs.length === 0) return; // No mercenaries in this squad
     const m = squadMercs[0]; // Use the first mercenary in the squad for cost
     const cost = upgradeMercenarySpeedCost(m, true);
-    if (cost[0] > 0) {
+    if (cost[0] > 0 && gold >= cost[0]) {
         gold -= cost[0];
         for (let _m of squadMercs) {
             {
@@ -356,7 +355,7 @@ function upgradeMercSpeed(i) {
         updateUI();
     } else if (cost[2]) {
         showPopupMessage("You have reached the speed cap!", null, 700);
-    } else if (cost[0] == 0) {
+    } else {
         showPopupMessage("Not enough gold!", null, 700);
     }
 }

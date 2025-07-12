@@ -697,12 +697,12 @@ function upgradeMarket(i) {
     const key = Object.keys(marketUpgrades)[i];
     const cost = marketUpgradeCost(i, true);
     let s = marketUpgrades[key];
-    if (cost[0] > 0) {
+    if (cost[0] > 0 && gold >= cost[0]) {
         gold -= cost[0];
         s.level++;
     } else if (cost[2]) {
         showPopupMessage("You have reached the level cap!", null, 700);
-    } else if (cost[0] == 0) {
+    } else {
         showPopupMessage("Not enough gold!", null, 700);
     }
 }
