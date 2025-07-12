@@ -531,3 +531,11 @@ button.mult-btn-tiny {
 .popup-message button {
     padding: 2px 6px;
 }
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
