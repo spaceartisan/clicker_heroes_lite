@@ -1,5 +1,10 @@
 let deathCooldown = false;
 
+function getEnemyHealth() {
+    return Math.floor(5 * Math.pow(currentLevel, 1.5));
+    // return Math.floor(baseEnemyHealth + currentLevel * 5);
+}
+
 function drawRandomEnemy() {
     const gridSize = 10;
     const cellSize = enemyCanvas.width / gridSize;
@@ -39,7 +44,7 @@ function handleEnemyDefeat() {
     if (deathCooldown) return;
     enemyHealth = 0;
     enemiesDefeated++;
-    const goldGain = Math.floor(currentLevel * 2);
+    const goldGain = Math.floor(2 * Math.pow(currentLevel, 1.4));
     let goldMult = mktUp(0);
     if (goldRushActive) {
         goldMult *= 2;

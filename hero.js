@@ -8,7 +8,7 @@ function marketEffect(i) {
 function attack(isRageAttack = false) {
     const now = Date.now();
     // console.log("Attack clicked at", now - lastClickTime, "ms since last click");
-    if (now - lastClickTime < 100 && !isRageAttack) return; // Prevent spamming clicks
+    if (now - lastClickTime < 60 && !isRageAttack) return; // Prevent spamming clicks
     if (!isRageAttack) lastClickTime = now;
     let dmg = playerClickDamage * mktUp(2);
     if (doubleAttackReady) {
@@ -27,16 +27,27 @@ function getPlayerClickDamage() {
     return playerLevel * (2 ** playerGearLevel);
 }
 
-function getEnemyHealth() {
-    return Math.floor(baseEnemyHealth + currentLevel * 5);
-}
+// function getAutoDamage() {
+//     return hiredMercenaries.reduce((sum, m) => {
+//         let base = m.level * (2 ** m.gearLevel) * (m.attackSpeedLevel + 1) * mktUp(3) * mktUp(2) / 2.0;
+//         if (rallyActive) base *= 2;
+//         return sum + base;
+//     }, 0);
+// }
 
 function getAutoDamage() {
-    return hiredMercenaries.reduce((sum, m) => {
-        let base = m.level * (2 ** m.gearLevel) * (m.attackSpeedLevel + 1) * mktUp(3) * mktUp(2) / 2.0;
-        if (rallyActive) base *= 2;
-        return sum + base;
-    }, 0);
+    let squads = Math.floor(hiredMercenaries.length / 5);
+    let totalDmg = 0
+    for (let i = 1; i <= squads; i++) {
+        let squadMercs = hiredMercenaries.filter(m => m.squad === i);
+        let dmg = squadMercs.reduce((sum, m) => {
+            return sum + (m.level * (2 ** m.gearLevel));
+        }, 0);
+        if (rallyActive) dmg *= 2;
+        let m = squadMercs[0]; // Use the first mercenary in the squad for attack speed
+        totalDmg += dmg * (m.attackSpeedLevel + 1) * mktUp(3) * mktUp(2) * squadMercs.length * 1.5 / 2.0; // Double check this value.
+    }
+    return totalDmg;
 }
 
 function upgradeSkillCost(ability, query = false) {
@@ -108,11 +119,12 @@ function startSquadAttack(i) {
         squadMercs.forEach((m, idx) => {
             dmg += m.level * (2 ** m.gearLevel) * (rallyActive ? 2 : 1) * mktUp(2);
         });
-        enemyHealth -= dmg;
+        enemyHealth -= dmg * 1.5;
         // showDamage(dmg);
         if (enemyHealth <= 0) handleEnemyDefeat();
         updateUI();
-    }, Math.floor(2000 / (squadMercs[0].attackSpeedLevel + 1) / mktUp(3))); // Adjust attack speed based on the first mercenary in the squad
+        // console.log(`Squad ${i} attacked for ${dmg} damage. Enemy health: ${enemyHealth}`);
+    }, Math.floor(2000 / (squadMercs[0].attackSpeedLevel + 1) / mktUp(3) / squadMercs.length)); // Adjust attack speed based on the first mercenary in the squad
 }
 
 // === Hero Abilities ===
@@ -202,7 +214,7 @@ function estimateUpgradeCost({ baseLevel, upgradeEquation, cap, resourceAvailabl
 function levelUpPlayerCost(query = false) {
     return estimateUpgradeCost({
         baseLevel: playerLevel,
-        upgradeEquation: (lvl) => Math.floor(10 + lvl ** 1.5),
+        upgradeEquation: (lvl) => Math.floor(10 + lvl ** 1.5 * mktUp(1)),
         cap: structures.castle.level * 10 + 100,
         resourceAvailable: gold,
         multiplier: upgradeMultiplier,
@@ -267,8 +279,8 @@ function levelUpMercenaryCost(i, query = false) {
     const m = hiredMercenaries[i];
     return estimateUpgradeCost({
         baseLevel: m.level,
-        upgradeEquation: (mlvl) => Math.floor(20 * mlvl ** 2),
-        cap: (passiveAbilities[0].level - 1) * 10 + 20,
+        upgradeEquation: (mlvl) => Math.floor(10 * mlvl ** 1.6), //Math.floor(10 + lvl ** 1.5),
+        cap: (passiveAbilities[0].level - 1) * 10 + 100,
         resourceAvailable: gold,
         multiplier: upgradeMultiplier,
         underfill: underfillEnabled,
@@ -282,7 +294,7 @@ function levelUpMercenary(i) {
     if (cost[0] > 0 && gold >= cost[0]) {
         gold -= cost[0];
         m.level += cost[1];
-        m.upgradeCost = Math.floor(20 + m.level ** 2);
+        m.upgradeCost = Math.floor(10 * m.level ** 1.6);
         updateUI();
     } else if (cost[2]) {
         showPopupMessage("You have reached the level cap!", null, 700);
@@ -295,7 +307,7 @@ function upgradeMercenaryGearCost(m, query = false) {
     // const m = hiredMercenaries[i];
     return estimateUpgradeCost({
         baseLevel: m.gearLevel,
-        upgradeEquation: (glvl) => Math.floor(100 * ((glvl + 1) ** 2) * mktUp(1)),
+        upgradeEquation: (glvl) => Math.floor(100 * ((glvl + 1) ** 8) * mktUp(1)),
         cap: (structures.blacksmith.level - 1) * 2 + 5,
         resourceAvailable: gold,
         multiplier: upgradeMultiplier,
@@ -319,7 +331,7 @@ function upgradeMercGear(i) {
         updateUI();
     } else if (cost[2]) {
         showPopupMessage("You have reached the gear cap!", null, 700);
-    } else{
+    } else {
         showPopupMessage("Not enough gold!", null, 700);
     }
 }
@@ -328,7 +340,7 @@ function upgradeMercenarySpeedCost(m, query = false) {
     // const m = hiredMercenaries[i];
     return estimateUpgradeCost({
         baseLevel: m.attackSpeedLevel,
-        upgradeEquation: (mlvl) => Math.floor(100 * (mlvl + 1) ** 2),
+        upgradeEquation: (mlvl) => Math.floor(100 * (mlvl + 1) ** 8 * mktUp(1)),
         cap: (structures.barracks.level - 1) * 2 + 5,
         resourceAvailable: gold,
         multiplier: upgradeMultiplier,
@@ -358,4 +370,15 @@ function upgradeMercSpeed(i) {
     } else {
         showPopupMessage("Not enough gold!", null, 700);
     }
+}
+
+
+
+function testSquadValue(i) {
+    const squadMercs = hiredMercenaries.filter(m => m.squad === i);
+    let dmg = 0
+    squadMercs.forEach((m, idx) => {
+        dmg += m.level * (2 ** m.gearLevel) * (rallyActive ? 2 : 1) * mktUp(2);
+    });
+    return dmg / 2000 * 1000 * (squadMercs[0].attackSpeedLevel + 1) * mktUp(3) * squadMercs.length * 1.5;
 }

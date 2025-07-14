@@ -59,7 +59,7 @@ function updateStructureUI() {
                 btn.classList.remove("locked");
                 btn.disabled = false;
             }
-            console.log("tavern is unlocked")
+            // console.log("tavern is unlocked")
         }
         if (el) el.textContent = structures[name].level;
         if (costEl) {
@@ -474,7 +474,7 @@ function TavernUpgradeUI(menu, upgradeButtons, container, multContainer) {
 
     addLabeledParagraph(upgradeButtons, "Hired Mercenaries", `${hiredMercenaries.length}/${structures.tavern.level * 5}`, "mercenary-count");
     addLabeledParagraph(upgradeButtons, "Next Mercenary", `${formatDigits(hireMercenaryCost(), 2, 5)} g`, "next-mercenary");
-    addLabeledParagraph(upgradeButtons, "Max Level Cap", `${(passiveAbilities[0].level - 1) * 10 + 20}`, "max-level-cap");
+    addLabeledParagraph(upgradeButtons, "Max Level Cap", `${(passiveAbilities[0].level - 1) * 10 + 100}`, "max-level-cap");
     createButton(upgradeButtons, "Hire",
         () => {
             let success = hireMercenary();

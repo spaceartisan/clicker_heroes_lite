@@ -160,7 +160,7 @@ let marketUpgrades = {
 
 const marketUpgradeEquation = [
     (level) => Math.pow(1.15, level), // Treasure Hunter
-    (level) => Math.pow(0.98, level), // Bargain Hunter
+    (level) => Math.pow(0.92, level), // Bargain Hunter
     (level) => Math.pow(1.05, level), // Blacksmith's Touch
     (level) => Math.pow(1.05, level), // Better Bunks
     (level) => Math.pow(1.05, level) // Offline Gold
@@ -177,7 +177,7 @@ abilities.forEach(ability => {
     const btn = document.getElementById(ability.name.toLowerCase().replace(/ /g, '-'));
     abilityStates[ability.name] = { cooldown: false, button: btn, unlocked: false };
     btn.onclick = () => {
-        console.log(`Activating ability: ${ability.name}`);
+        // console.log(`Activating ability: ${ability.name}`);
         if (abilityStates[ability.name].unlocked) activateAbility(ability);
     };
     btn.disabled = true;
