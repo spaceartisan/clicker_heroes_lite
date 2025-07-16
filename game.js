@@ -139,11 +139,11 @@ const underfillCheckbox = document.getElementById("underfill-toggle");
 
 // === Hero Abilities ===
 const abilities = [
-    { name: "Strong Attack", cooldown: 30000, duration: 0, unlockLevel: 5 },
-    { name: "Rally", cooldown: 60000, duration: 30000, unlockLevel: 10 },
-    { name: "Gold Rush", cooldown: 60000, duration: 30000, unlockLevel: 12 },
-    { name: "Double Attack", cooldown: 60000, duration: 0, unlockLevel: 15 },
-    { name: "Rage", cooldown: 60000, duration: 30000, unlockLevel: 20 }
+    { name: "Strong Attack", cooldown: 30000, duration: 0, unlockLevel: 5, description: "Deal double damage once." },
+    { name: "Rally", cooldown: 60000, duration: 30000, unlockLevel: 10, description: "Increase attack damage for all mercenaries." },
+    { name: "Gold Rush", cooldown: 60000, duration: 30000, unlockLevel: 12, description: "Increase gold gained from all sources." },
+    { name: "Double Attack", cooldown: 60000, duration: 0, unlockLevel: 15, description: "Attack twice in one click." },
+    { name: "Rage", cooldown: 60000, duration: 30000, unlockLevel: 20, description: "Enter a rage state, dealing constant damage." }
 ];
 
 const passiveAbilities = [

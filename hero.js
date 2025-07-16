@@ -35,9 +35,11 @@ function getPlayerClickDamage() {
 //     }, 0);
 // }
 
-function getAutoDamage() {
-    let squads = Math.floor(hiredMercenaries.length / 5);
+function getAutoDamage(query = false) {
+    let squads = Math.ceil(hiredMercenaries.length / 5);
     let totalDmg = 0
+    let topSpeed = 2000;
+    let curSpeed = 0;
     for (let i = 1; i <= squads; i++) {
         let squadMercs = hiredMercenaries.filter(m => m.squad === i);
         let dmg = squadMercs.reduce((sum, m) => {
@@ -46,6 +48,15 @@ function getAutoDamage() {
         if (rallyActive) dmg *= 2;
         let m = squadMercs[0]; // Use the first mercenary in the squad for attack speed
         totalDmg += dmg * (m.attackSpeedLevel + 1) * mktUp(3) * mktUp(2) * squadMercs.length * 1.5 / 2.0; // Double check this value.
+        if (query) {
+            curSpeed = Math.floor(2000 / (squadMercs[0].attackSpeedLevel + 1) / mktUp(3) / squadMercs.length);
+            if (curSpeed < topSpeed) {
+                topSpeed = curSpeed;
+            }
+        }
+    }
+    if (query) {
+        return [totalDmg, topSpeed];
     }
     return totalDmg;
 }
@@ -110,21 +121,23 @@ function hireMercenaryCost() {
 }
 
 function startSquadAttack(i) {
-    const squadMercs = hiredMercenaries.filter(m => m.squad === i);
-    if (squadAttackInterval[i]) {
-        clearInterval(squadAttackInterval[i]);
+    // const squadMercs = hiredMercenaries.filter(m => m.squad === i);
+    let getAuto = getAutoDamage(true);
+    if (squadAttackInterval[0]) {
+        clearInterval(squadAttackInterval[0]);
     }
-    squadAttackInterval[i] = setInterval(() => {
-        let dmg = 0
-        squadMercs.forEach((m, idx) => {
-            dmg += m.level * (2 ** m.gearLevel) * (rallyActive ? 2 : 1) * mktUp(2);
-        });
-        enemyHealth -= dmg * 1.5;
+    squadAttackInterval[0] = setInterval(() => {
+        let dmg = getAutoDamage();
+        // squadMercs.forEach((m, idx) => {
+        //     dmg += m.level * (2 ** m.gearLevel) * (rallyActive ? 2 : 1) * mktUp(2);
+        // });
+        enemyHealth -= dmg;
         // showDamage(dmg);
         if (enemyHealth <= 0) handleEnemyDefeat();
         updateUI();
         // console.log(`Squad ${i} attacked for ${dmg} damage. Enemy health: ${enemyHealth}`);
-    }, Math.floor(2000 / (squadMercs[0].attackSpeedLevel + 1) / mktUp(3) / squadMercs.length)); // Adjust attack speed based on the first mercenary in the squad
+    }, getAuto[1]);
+    // Math.floor(2000 / (squadMercs[0].attackSpeedLevel + 1) / mktUp(3) / squadMercs.length)); // Adjust attack speed based on the first mercenary in the squad
 }
 
 // === Hero Abilities ===
@@ -381,4 +394,25 @@ function testSquadValue(i) {
         dmg += m.level * (2 ** m.gearLevel) * (rallyActive ? 2 : 1) * mktUp(2);
     });
     return dmg / 2000 * 1000 * (squadMercs[0].attackSpeedLevel + 1) * mktUp(3) * squadMercs.length * 1.5;
+}
+
+function Cheatin() {
+    gold += 1000000;
+    playerLevel += 1000;
+    playerGearLevel += 10;
+    structures.castle.level = 100;
+    structures.blacksmith.level = 100;
+    structures.barracks.level = 100;
+    structures.tavern.level = 400;
+    structures.market.level = 100;
+    for (let i = 0; i < 3000; i++) {
+        hireMercenary();
+    }
+    hiredMercenaries.forEach(m => {
+        m.level = 100;
+        m.gearLevel = 40;
+        m.attackSpeedLevel = 40;
+    });
+    updateUI();
+    showPopupMessage("Cheat activated!", null, 500);
 }

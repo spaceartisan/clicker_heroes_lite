@@ -1,7 +1,7 @@
 let deathCooldown = false;
 
 function getEnemyHealth() {
-    return Math.floor(5 * Math.pow(currentLevel, 1.5));
+    return Math.floor(5 * Math.pow(currentLevel, 1.5));// + Math.floor(currentLevel / 1000) / 10));
     // return Math.floor(baseEnemyHealth + currentLevel * 5);
 }
 

@@ -631,7 +631,7 @@ function CastleUpgradeUI(menu, upgradeButtons, upgradeButtons2, container, conta
         row.className = "upgrade-row";
         row.innerHTML = `
                         <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span>${ability.name} (Required Lvl ${ability.unlockLevel})</span>
+                            <span>${ability.name} (Required Lvl ${ability.unlockLevel}) - ${ability.description}</span>
                         </div>
                         `;
         // Change the left border color
