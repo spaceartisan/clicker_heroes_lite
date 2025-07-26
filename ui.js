@@ -52,6 +52,13 @@ const soldierRanks = [
 
 
 function formatDigits(value, digits = 2, padding = 10) {
+    if (isNaN(value)) {
+        gold = 0;
+        value = 0;
+    }
+    if (isNaN(value) || !isFinite(value)) {
+        return "Infinity".padStart(padding, "\u00A0");
+    }
     const useScientificNotation = scientificNotation ?? false;
 
     if (useScientificNotation && value >= 1e3) {
@@ -84,16 +91,15 @@ function formatDigits(value, digits = 2, padding = 10) {
         // console.log(first, second, suffixes[tier]);
     }
 
-    if (value > 1e165) {
-        console.log("value: ", value, " - Suffix: ", suffixes.length, " - Tier: ", tier);
-    }
-    if (tier === 0) {
-        digits = 0;
-    }
+    // if (value > 1e165) {
+    //     console.log("value: ", value, " - Suffix: ", suffixes.length, " - Tier: ", tier);
+    // }
+    // if (tier === 0) {
+    //     digits = 0;
+    // }
 
     const formatted = value.toFixed(digits);
     const display = formatted + suffixes[tier];
-
     return display.padStart(padding, "\u00A0");
 }
 

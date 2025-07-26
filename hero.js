@@ -416,3 +416,12 @@ function Cheatin() {
     updateUI();
     showPopupMessage("Cheat activated!", null, 500);
 }
+
+function spendGold(amount) {
+    if (!isFinite(amount)) gold = 0;
+    else if (!isFinite(gold)) gold = 0;
+    else
+    {
+        gold -= amount;
+    }
+}
