@@ -10,7 +10,13 @@ function attack(isRageAttack = false) {
     // console.log("Attack clicked at", now - lastClickTime, "ms since last click");
     if (deathCooldown || (now - lastClickTime < 60 && !isRageAttack)) return; // Prevent spamming clicks
     if (!isRageAttack) lastClickTime = now;
-    let dmg = playerClickDamage * mktUp(2);
+    if (!isRageAttack && enemyType && enemyType.dodge && Math.random() < enemyType.dodge) {
+        enemyNameText.textContent = enemyType.name + " — DODGE!";
+        totalClicks++;
+        return;
+    }
+    if (enemyType) enemyNameText.textContent = enemyType.name + " — " + enemyType.trait;
+    let dmg = playerClickDamage * mktUp(2) * (enemyType ? enemyType.resistance : 1);
     if (doubleAttackReady) {
         dmg *= 2;
         doubleAttackReady = false;
@@ -27,15 +33,7 @@ function getPlayerClickDamage() {
     return playerLevel * (2 ** playerGearLevel);
 }
 
-// function getAutoDamage() {
-//     return hiredMercenaries.reduce((sum, m) => {
-//         let base = m.level * (2 ** m.gearLevel) * (m.attackSpeedLevel + 1) * mktUp(3) * mktUp(2) / 2.0;
-//         if (rallyActive) base *= 2;
-//         return sum + base;
-//     }, 0);
-// }
-
-// Damage per second is independent of the combat timer.
+// // Squad DPS is evaluated against the active enemy's defense profile.
 function getAutoDamage() {
     if (hiredMercenaries.length === 0) return 0;
     const squads = new Map();
@@ -44,19 +42,27 @@ function getAutoDamage() {
         const squadId = merc.squad || Math.floor(i / 5) + 1;
         let squad = squads.get(squadId);
         if (!squad) {
-            squad = { damage: 0, speed: Math.max(0, merc.attackSpeedLevel || 0), members: 0 };
+            squad = { id: squadId, damage: 0, speed: Math.max(0, merc.attackSpeedLevel || 0), members: 0 };
             squads.set(squadId, squad);
         }
         squad.damage += merc.level * Math.pow(2, merc.gearLevel);
         squad.members++;
     }
+    const target = enemyType || getEnemyType(currentLevel);
     const attackMultiplier = mktUp(2) * mktUp(3) * (rallyActive ? 2 : 1);
     let dps = 0;
     for (const squad of squads.values()) {
+        const build = getSquadBuild(squad.id);
+        const role = findSquadRole(build.role);
+        const kit = findEquipmentKit(build.kit);
         const teamwork = 1 + 0.1 * (squad.members - 1);
-        dps += squad.damage * (squad.speed + 1) / 2 * teamwork;
+        let roleBonus = role.power;
+        let kitBonus = kit.power;
+        if (role.favored && role.favored === target.trait) roleBonus *= role.counter;
+        if (kit.favored && kit.favored === target.trait) kitBonus *= kit.counter;
+        dps += squad.damage * (squad.speed + 1) / 2 * teamwork * roleBonus * kitBonus;
     }
-    return dps * attackMultiplier;
+    return dps * attackMultiplier * target.resistance;
 }
 
 function upgradeSkillCost(ability, query = false) {
@@ -131,6 +137,10 @@ function startSquadAttack() {
         const elapsed = Math.min(0.5, Math.max(0, (now - lastAutoCombatTick) / 1000));
         lastAutoCombatTick = now;
         if (deathCooldown || hiredMercenaries.length === 0) return;
+        const maxHealth = getEnemyHealth();
+        if (enemyType && enemyType.regen && !squadsSuppressRegeneration()) {
+            enemyHealth = Math.min(maxHealth, enemyHealth + maxHealth * enemyType.regen * elapsed);
+        }
         const damage = getAutoDamage() * elapsed;
         if (damage <= 0 || !Number.isFinite(damage)) return;
         enemyHealth -= damage;
@@ -190,7 +200,7 @@ function activateAbility(ability) {
 }
 
 function strongAttack() {
-    let dmg = playerClickDamage * 5;
+    let dmg = playerClickDamage * 5 * (enemyType ? enemyType.resistance : 1);
     if (doubleAttackReady) {
         dmg *= 2;
         doubleAttackReady = false;
