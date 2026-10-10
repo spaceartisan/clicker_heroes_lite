@@ -27,6 +27,7 @@
         <div id="view-switch">
             <button onclick="switchView('hero')">🏹 Hero</button>
             <button onclick="switchView('kingdom')">🏰 Kingdom</button>
+            <button onclick="switchView('army')">⚔️ Army</button>
         </div>
     </div>
     <div id="game-container">
@@ -121,6 +122,64 @@
         </div>
 
         <h3></h3>
+        <div id="army-view" style="display:none;">
+            <header class="army-header">
+                <div>
+                    <h2>⚔️ Army Command</h2>
+                    <p id="army-stats">Your mercenaries, all in one place.</p>
+                </div>
+                <button type="button" id="army-recruit">Recruit up to 5</button>
+            </header>
+
+            <section class="army-command" aria-label="Bulk upgrades">
+                <div class="army-toolbar">
+                    <strong>Squad selection</strong>
+                    <span id="army-selected-count" aria-live="polite">0 selected</span>
+                    <button type="button" id="army-select-all">All squads</button>
+                    <button type="button" id="army-clear">Clear</button>
+                </div>
+                <div class="army-bulk-controls">
+                    <label>Upgrade
+                        <select id="army-upgrade-type">
+                            <option value="level">Mercenary levels</option>
+                            <option value="gear">Squad gear</option>
+                            <option value="speed">Squad speed</option>
+                        </select>
+                    </label>
+                    <label>Levels per merc / squad
+                        <select id="army-amount">
+                            <option value="1">×1 each</option>
+                            <option value="10">×10 each</option>
+                            <option value="100">×100 each</option>
+                        </select>
+                    </label>
+                </div>
+                <p class="army-help">Upgrades are shared round-robin among selected squads. If gold runs out, only affordable levels are purchased.</p>
+                <div class="army-confirm">
+                    <div id="army-quote" aria-live="polite">Select squads to preview costs.</div>
+                    <button type="button" id="army-upgrade-selected" disabled>Purchase upgrades</button>
+                </div>
+            </section>
+
+            <div class="army-list-header">
+                <h3>Squads</h3>
+                <label>Sort
+                    <select id="army-sort">
+                        <option value="number">Squad number</option>
+                        <option value="weakest">Lowest DPS first</option>
+                        <option value="strongest">Highest DPS first</option>
+                        <option value="level">Lowest level first</option>
+                    </select>
+                </label>
+            </div>
+            <div id="army-squad-list" class="army-squad-grid"></div>
+            <nav class="army-pages" aria-label="Army roster pages">
+                <button type="button" id="army-prev">← Previous</button>
+                <span id="army-page-status">Page 1 of 1</span>
+                <button type="button" id="army-next">Next →</button>
+            </nav>
+        </div>
+
         <button onclick="showLeaderboard()">🏆 Leaderboard</button>
         <button onclick="showMessage()">📜 Message</button>
         <button onclick="showOptions()">⚙️ Game Config</button>
@@ -132,7 +191,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v0.2.0 – Heroes of the Click
+        v0.3.0 – Heroes of the Click
     </p>
     <br>
 
@@ -257,6 +316,7 @@
     <script src="database.js"></script>
     <script src="ui.js"></script>
     <script src="game.js"></script>
+    <script src="army.js"></script>
     <script>
         if ("serviceWorker" in navigator) {
             window.addEventListener("load", () => {
