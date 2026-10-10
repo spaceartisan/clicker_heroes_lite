@@ -196,7 +196,7 @@ function disableNameInput() {
 
 function confirmName() {
     const name = nameInput.value.trim();
-    if (!/^[\\p{L}\\p{N} _.-]{1,20}$/u.test(name)) {
+    if (!/^[\p{L}\p{N} _.-]{1,20}$/u.test(name)) {
         statusSpan.textContent = "❌ Use 1–20 letters, numbers, spaces, _, . or -.";
         statusSpan.style.color = "red";
         statusSpan.style.visibility = "visible";
