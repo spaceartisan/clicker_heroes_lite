@@ -57,6 +57,25 @@ Open the **⚔ Army** tab to manage every squad from one roster without reopenin
 
 The Army Command selection is temporary UI state; your mercenary levels, roles, equipment purchases and other progression continue to use the existing save format. It requires no account or migration. Only the currently visible roster page is rendered and nothing in Army Command runs in the combat timer.
 
+## Royal Court, Market & Royal Academy (v0.4.0)
+
+The Castle now provides a small direct hero-click bonus (+1.5% per additional Castle level, capped at +60%) in addition to its existing hero-level cap, unlocks further buildings, and hosts the **Royal Academy**. The Castle offers three paid decrees: **Leadership** (mercenary level cap), **Royal Guard** (+4% hero click damage per additional rank), and **Crown Steward** (+3% gold from enemies per rank). Unlocks are enforced during purchases, not only visually.
+
+The Market gains **Bounty Contracts** (boss rewards), **Caravan Logistics** (normal-monster income), and **War Supplies** (mercenary DPS) alongside its five previous projects. Project unlock levels and building-level caps are enforced in the purchase function. Previous market research levels carry over.
+
+The Academy has a **three-branch dependency tree**: Warfare, Commerce, and Governance. Clear each tenth stage for the first time to earn one Insight; every fifth Castle level grants another. This is computed from all-time progression, meaning returning players are credited for past milestones. Insight is limited and permanent research has prerequisite nodes, stage and Castle gates. The Academy can be opened from the Kingdom or Castle/Market building menus. Research and purchased decrees persist in exported and local saves.
+
+### Balance adjustments
+
+- Market can first be built after clearing stage **20**, without the former Castle Lv 3 requirement. Blacksmith and Barracks first open after stage 25 and Castle Lv 2. Later building upgrades still need higher Castle levels.
+- Castle base cost is now **30,000** (previously 50,000) with **1.35×** growth instead of 1.5×; other buildings use **1.45×** growth.
+- Market research costs grow at **1.65× per rank** rather than doubling; level caps and unlock requirements remain in force. Merchant discounts and the Guild Charters research apply to purchases.
+- Monster gold per defeat grows approximately with stage^1.4, versus stage^1.5 for monster HP. Research and Market benefits use bounded additive or modest multiplicative improvements; existing specialized squad counters remain important.
+- The previous description of Blacksmith's Touch was misleading: it boosts damage, not physical gear-upgrade cost efficiency.
+- The existing offline income limit (24 hours at a fraction of foreground mercenary DPS), fixed-rate combat loop, and no-constant-redraw approach remain intact.
+
+**Future religion system:** The Academy reserves a separate `faith` domain for a future progression layer but does not award Faith, add worship buildings, or choose a religion yet. Insight and Faith should remain distinct resources so future theology, patrons, blessings, and worship choices do not invalidate existing saves.
+
 ## Developer checks
 
 No dependencies, bundler, or build step are required; the site is static.
@@ -65,7 +84,7 @@ No dependencies, bundler, or build step are required; the site is static.
 node tests/smoke-test.cjs
 ```
 
-The test script verifies upgrade caps, enemy archetypes, squad roles and gear, kingdom rendering, mercenary DPS scaling, background throttling, offline gold limits, legacy saves, Firestore listener cleanup, and safe text rendering.
+The test script verifies upgrade caps, enemy archetypes, squad roles, Castle and Market purchases, Royal Academy prerequisites and Insight, save migration, army progression, background throttling, and Firestore content safety.
 
 ## Community security
 
