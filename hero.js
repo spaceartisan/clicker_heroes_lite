@@ -8,7 +8,9 @@ function marketEffect(i) {
 function attack(isRageAttack = false) {
     const now = Date.now();
     // console.log("Attack clicked at", now - lastClickTime, "ms since last click");
-    if (deathCooldown || (now - lastClickTime < 60 && !isRageAttack)) return; // Prevent spamming clicks
+    if (deathCooldown || (now - lastClickTime < 60 && !isRageAttack)) return;
+    tickBossChallenge();
+    if (deathCooldown || bossRetryStage === currentLevel) return; // Prevent spamming clicks
     if (!isRageAttack) lastClickTime = now;
     if (!isRageAttack && enemyType && enemyType.dodge && Math.random() < enemyType.dodge) {
         enemyNameText.textContent = enemyType.name + " — DODGE!";
@@ -35,7 +37,8 @@ function getPlayerClickDamage() {
     const decreeBonus = 1 + 0.04 * Math.max(0, passiveAbilities[1].level - 1);
     return playerLevel * safePowerOfTwo(playerGearLevel) *
         castleBonus * decreeBonus * (1 + getResearchBonus("heroDamage")) *
-        (currentLevel>=101&&currentLevel<=200 ? 1+getResearchBonus("frontierHeroDamage"):1);
+        (currentLevel>=101&&currentLevel<=200 ? 1+getResearchBonus("frontierHeroDamage"):1) *
+        (1+getRelicBonus("hero")+(enemyType?.id==="dragon"?getRelicBonus("boss"):0));
 }
 
 // // Squad DPS is evaluated against the active enemy's defense profile.
@@ -57,6 +60,7 @@ function getAutoDamage() {
     const attackMultiplier = mktUp(2) * mktUp(3) * (rallyActive ? 2 : 1);
     let dps = 0;
     for (const squad of squads.values()) {
+        if (isSquadOnCampaign(squad.id)) continue;
         const build = getSquadBuild(squad.id);
         const role = findSquadRole(build.role);
         const kit = findEquipmentKit(build.kit);
@@ -74,7 +78,8 @@ function getAutoDamage() {
     if (target.id === "dragon") researchedBonus *= 1 + getResearchBonus("bossDamage");
     if (target.champion) researchedBonus *= 1 + getResearchBonus("veteranDamage");
     return Math.min(1e290,dps * attackMultiplier * mktUp(7) *
-        researchedBonus * target.resistance * dynastyDamageMultiplier());
+        researchedBonus * target.resistance * dynastyDamageMultiplier() *
+        (1+getRelicBonus("squad")+(target.id==="dragon"?getRelicBonus("boss"):0)));
 }
 
 function upgradeSkillCost(ability, query = false) {
@@ -164,6 +169,7 @@ function startSquadAttack() {
         const elapsed = Math.min(tickMs / 500, Math.max(0, (now - lastAutoCombatTick) / 1000));
         lastAutoCombatTick = now;
         if (deathCooldown || hiredMercenaries.length === 0 || document.hidden) return;
+        tickBossChallenge();
         runCombatSeconds += elapsed;
         const maxHealth = getEnemyHealth();
         if (enemyType && enemyType.regen && !squadsSuppressRegeneration()) {

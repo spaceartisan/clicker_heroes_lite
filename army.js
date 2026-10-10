@@ -215,7 +215,7 @@ function armyRecruitFive() {
 }
 
 function getArmySquadDps(group) {
-    if (!group.indices.length) return 0;
+    if (!group.indices.length || isSquadOnCampaign(group.id)) return 0;
     const members = group.indices.map(index => hiredMercenaries[index]);
     const build = getSquadBuild(group.id);
     const role = findSquadRole(build.role);
@@ -244,6 +244,7 @@ function createArmyButton(text, click, className = "") {
 function buildArmyCard(group) {
     const mercs = group.indices.map(index => hiredMercenaries[index]);
     const build = getSquadBuild(group.id);
+    const deployed = isSquadOnCampaign(group.id);
     const average = Math.floor(mercs.reduce((sum, merc) => sum + merc.level, 0) / mercs.length);
     const gear = Math.max(...mercs.map(merc => merc.gearLevel || 0));
     const speed = Math.max(...mercs.map(merc => merc.attackSpeedLevel || 0));
@@ -273,6 +274,7 @@ function buildArmyCard(group) {
     const dps = document.createElement("div");
     dps.className = "army-dps";
     dps.textContent = formatDigits(getArmySquadDps(group), 1, 0).trim() + " DPS";
+    if (deployed) dps.textContent = "ON CAMPAIGN";
     head.append(checkbox, title, dps);
     outer.appendChild(head);
     outer.classList.toggle("army-card-selected", checkbox.checked);
@@ -398,6 +400,7 @@ function renderArmyView() {
     document.getElementById("army-recruit").disabled =
         structures.tavern.level * 5 <= hiredMercenaries.length || hireMercenaryCost() > gold;
     updateArmyQuote();
+    renderSquadCampaigns();
 }
 
 function resetArmySelection() {

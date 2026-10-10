@@ -235,6 +235,10 @@ abilities.forEach(ability => {
 // === Level Controls ===
 function goToNextLevel() {
     if (currentLevel < maxLevel) {
+        if (bossRetryStage && currentLevel+1===bossRetryStage) {
+            retryBossChallenge();
+            return;
+        }
         currentLevel++;
         drawRandomEnemy();
         updateUI();
@@ -308,7 +312,9 @@ function saveGame() {
         batterySaverEnabled,
         runEnemyDefeats,
         runCombatSeconds,
-        runGoldEarned
+        runGoldEarned,
+        activeCampaigns,campaignSerial,relicInventory,relicSlots,relicFragments,relicBossClaims,
+        bossRetryStage
     };
     localStorage.setItem("clickerHeroSave", JSON.stringify(saveData));
 }
@@ -387,6 +393,7 @@ function loadGame() {
         runEnemyDefeats = Math.max(0, Math.floor(Number(data.runEnemyDefeats) || 0));
         runCombatSeconds = Math.max(0, Number(data.runCombatSeconds) || 0);
         runGoldEarned = Math.max(0, Math.min(1e300, Number(data.runGoldEarned) || 0));
+        loadCampaignRelicState(data);
         applyBatterySaver(data.batterySaverEnabled ?? getDefaultBatterySaver(), false);
         autoNextToggle.checked = autoAdvance;
         scientificCheckbox.checked = scientificNotation;
@@ -436,6 +443,7 @@ function loadGame() {
         updateStructureUI();
         startSquadAttack();
         renderDynastyPanel();
+        renderRelicVault();
         saveGame();
         if (typeof resetArmySelection === "function") resetArmySelection();
     }
@@ -511,6 +519,7 @@ document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
         hiddenAt = Date.now();
         stopSquadAttack();
+        pauseBossClock();
         saveGame();
     } else {
         if (hiddenAt !== null) {
@@ -519,10 +528,11 @@ document.addEventListener("visibilitychange", () => {
             updateUI();
             saveGame();
         }
+        resumeBossClock();
         startSquadAttack();
     }
 });
-window.addEventListener("pagehide", () => saveGame());
+window.addEventListener("pagehide", () => { pauseBossClock(); saveGame(); });
 
 // === Init ===
 enemyCanvas.onclick = () => attack(false);
@@ -564,6 +574,8 @@ window.addEventListener("DOMContentLoaded", () => {
     updateStructureUI();
     drawKingdom();
     renderDynastyPanel();
+    renderRelicVault();
+    renderSquadCampaigns();
     setUpgradeMultiplier(document.getElementById("shop"), upgradeMultiplier);
 });
 

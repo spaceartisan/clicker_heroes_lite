@@ -50,6 +50,12 @@
                     <p id="enemy-level">Stage 1</p>
                     <p id="enemy-name" aria-live="off">Slime — regenerating</p>
                     <p id="enemy-trait" aria-live="off">Every enemy has a weakness.</p>
+                    <section id="boss-challenge" class="boss-challenge" aria-label="Timed boss challenge" hidden>
+                        <div class="boss-challenge-row"><strong>Boss Trial</strong><span id="boss-clock">30.0s</span></div>
+                        <div class="boss-challenge-track"><div id="boss-clock-fill"></div></div>
+                        <p id="boss-challenge-note"></p>
+                        <button type="button" id="boss-retry" onclick="retryBossChallenge()" hidden>Retry Boss</button>
+                    </section>
                     <p id="frontier-hero" class="frontier-hero" hidden></p>
                 </div>
 
@@ -93,6 +99,13 @@
 
         <div id="kingdom-view" style="display:none;">
             <section id="dynasty-panel" class="dynasty-panel" aria-label="Dynasty legacy"></section>
+            <section id="relic-vault" class="system-panel" aria-label="Relic vault">
+                <h3><span class="ui-icon ui-icon-shield" aria-hidden="true"></span> Relic Vault</h3>
+                <p id="relic-summary">Equip up to three permanent relics.</p>
+                <div id="relic-slots" class="relic-slots"></div>
+                <div id="relic-list" class="relic-list"></div>
+                <button id="relic-craft" type="button" onclick="craftRelic()" disabled>Craft relic · 8 fragments</button>
+            </section>
             <h2><span class="ui-icon ui-icon-kingdom" aria-hidden="true"></span> Your Kingdom</h2>
             <div class="research-entry">
                 <button type="button" onclick="openResearchTree()"><span class="ui-icon ui-icon-research" aria-hidden="true"></span> Royal Academy · Research</button>
@@ -196,6 +209,11 @@
                 </div>
             </section>
 
+            <section id="army-campaigns" class="system-panel" aria-label="Squad campaigns">
+                <h3><span class="ui-icon ui-icon-battle" aria-hidden="true"></span> Patrols & Campaigns</h3>
+                <p id="campaign-summary">Send squads on expeditions, even while offline.</p>
+                <div id="campaign-list" class="campaign-grid"></div>
+            </section>
             <div class="army-list-header">
                 <h3>Squads</h3>
                 <label>Sort
@@ -243,7 +261,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.2.3 – Heroes of the Click
+        v1.3.0 – Heroes of the Click
     </p>
     <br>
 
@@ -408,6 +426,7 @@
     <script src="ui.js"></script>
     <script src="game.js"></script>
     <script src="army.js"></script>
+    <script src="systems.js"></script>
     <script>
         if ("serviceWorker" in navigator) {
             window.addEventListener("load", () => {

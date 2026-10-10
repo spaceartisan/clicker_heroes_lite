@@ -58,6 +58,7 @@ function drawRandomEnemy() {
     enemyLevelText.textContent = "Stage " + currentLevel +
         (type.id === "dragon" ? " · BOSS" : type.champion ? " · VETERAN" : "");
     updateFrontierUI(currentLevel);
+    resetBossClockForSpawn();
 }
 
 // Rewards reflect enemy type, merchant upgrades, and specialized raider squads.
@@ -67,6 +68,8 @@ function handleEnemyDefeat() {
     enemiesDefeated++;
     runEnemyDefeats++;
     const type = enemyType || getEnemyType(currentLevel);
+    const defeatedStage = currentLevel;
+    const firstClear = currentLevel === maxLevel;
     const level=Math.max(1,Math.min(1e12,currentLevel));
     const endless=level>200?1+Math.min(1,Math.log10(level/200)*0.12):1;
     const goldGain=Math.floor(2*Math.pow(level,1.4)*type.gold*endless);
@@ -77,10 +80,12 @@ function handleEnemyDefeat() {
         (type.frontier ? 1 + getResearchBonus("frontierGold") : 1);
     goldMult*=dynastyGoldMultiplier()*getMarketCharterBonus();
     if(goldRushActive)goldMult*=2;
+    goldMult*=1+getRelicBonus("gold");
     const reward=Math.min(1e290,Math.ceil(goldGain*goldMult));
     gold=Math.min(1e300,gold+reward);
     runGoldEarned=Math.min(1e300,runGoldEarned+reward);
     showGoldEarned(reward);
+    recordBossVictory(defeatedStage,firstClear);
     if (currentLevel === maxLevel) maxLevel++;
     bestSeasonStage=Math.max(bestSeasonStage,maxLevel);
     if (autoAdvance) currentLevel++;

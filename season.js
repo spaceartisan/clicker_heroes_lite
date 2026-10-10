@@ -123,6 +123,7 @@ function foundNewDynasty(){
   gold=0;playerLevel=1;playerGearLevel=0;playerUpgradeCost=10;
   playerGearCost=100;nextPlayerGearLevelReq=10;
   currentLevel=1;maxLevel=1;enemyHealth=5;
+  resetCampaignsForDynasty();
   hiredMercenaries.length=0;squadBuilds={};claimedTreasury=[];
   for(const [key,building] of Object.entries(structures))
     building.level=key==="castle"?1:0;

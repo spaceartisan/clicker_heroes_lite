@@ -1840,3 +1840,51 @@ button:has(> .ui-icon) { display: inline-flex; }
     user-select: text;
     -webkit-user-select: text;
 }
+
+/* v1.3.0: authored boss, expedition and relic controls. */
+.boss-challenge {
+    margin-top: 6px;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--panel-inset);
+    border: 1px solid var(--panel-line);
+    border-radius: 7px;
+    font: 12px/1.4 Arial,sans-serif;
+}
+.boss-challenge-row { display:flex;align-items:center;justify-content:space-between;gap:8px }
+.boss-challenge-track { margin:7px 0;height:7px;border-radius:6px;overflow:hidden;background:#241c1b; }
+#boss-clock-fill { width:100%;height:100%;background:#cda66e;transition:width .2s linear }
+#boss-challenge-note { margin:5px 0; color:var(--ink-muted); }
+#boss-retry {width:100%;min-height:44px;}
+.system-panel {
+    text-align:left;min-width:0;margin:16px 0;padding:14px;
+    background:var(--panel-raised);color:var(--ink);
+    border:1px solid var(--panel-line);border-radius:9px;
+}
+.system-panel h3 { color:var(--ink-heading);margin:0 0 8px; }
+.system-panel > p {font:13px/1.5 Arial,sans-serif;color:var(--ink-muted)}
+.campaign-grid, .relic-list {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px;}
+.campaign-card,.relic-entry {display:flex;flex-direction:column;justify-content:space-between;gap:8px;
+    padding:12px;min-width:0;background:var(--panel-inset);
+    border:1px solid var(--panel-line);border-radius:7px;}
+.campaign-card strong,.relic-entry strong {font:700 14px/1.4 Georgia,serif;color:var(--ink-heading)}
+.campaign-card p,.relic-entry p {font:12px/1.5 Arial,sans-serif;color:var(--ink-muted);margin:0}
+.campaign-actions,.relic-entry-actions {display:flex;flex-wrap:wrap;gap:8px;}
+.campaign-actions select {min-width:0;flex:1 1 105px;padding:8px;color:var(--ink);
+    background:var(--panel-fill);border:1px solid var(--panel-line);border-radius:5px;}
+.campaign-actions button {flex:1 1 105px;}
+.system-panel button {min-height:44px;font-size:12px;white-space:normal}
+.relic-slots {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0 12px}
+.relic-slot {min-width:0;display:flex;flex-direction:column;gap:6px;justify-content:space-between;
+    padding:9px;background:var(--panel-inset);border:1px solid var(--panel-line);border-radius:6px}
+.relic-slot span {font:12px/1.45 Georgia,serif;overflow-wrap:anywhere}
+.relic-slot button {width:100%}
+.relic-entry-actions button {flex:1 1 100px;}
+#relic-craft {margin-top:12px;width:100%}
+@media(max-width:540px) {
+    .relic-slots{grid-template-columns:1fr}
+    .relic-slot{flex-direction:row;align-items:center}
+    .relic-slot span{flex:1}
+    .relic-slot button{flex:0 0 auto;max-width:125px}
+}
