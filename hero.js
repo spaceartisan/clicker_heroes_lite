@@ -12,13 +12,14 @@ function attack(isRageAttack = false) {
     tickBossChallenge();
     if (deathCooldown || bossRetryStage === currentLevel) return; // Prevent spamming clicks
     if (!isRageAttack) lastClickTime = now;
-    if (!isRageAttack && enemyType && enemyType.dodge && Math.random() < enemyType.dodge) {
+    if (!isRageAttack && getBossAwareDodge(enemyType) > Math.random()) {
         enemyNameText.textContent = enemyType.name + " — DODGE!";
         totalClicks++;
         return;
     }
     if (enemyType) enemyNameText.textContent = enemyType.name + " — " + enemyType.trait;
-    let dmg = playerClickDamage * mktUp(2) * (enemyType ? enemyType.resistance : 1);
+    let dmg = playerClickDamage * mktUp(2) *
+        (enemyType ? enemyType.resistance : 1) * getBossHeroDamageFactor(enemyType);
     if (doubleAttackReady) {
         dmg *= 2;
         doubleAttackReady = false;
@@ -38,7 +39,7 @@ function getPlayerClickDamage() {
     return playerLevel * safePowerOfTwo(playerGearLevel) *
         castleBonus * decreeBonus * (1 + getResearchBonus("heroDamage")) *
         (currentLevel>=101&&currentLevel<=200 ? 1+getResearchBonus("frontierHeroDamage"):1) *
-        (1+getRelicBonus("hero")+(enemyType?.id==="dragon"?getRelicBonus("boss"):0));
+        (1+getRelicBonus("hero")+(isBossEnemy(enemyType)?getRelicBonus("boss"):0));
 }
 
 // // Squad DPS is evaluated against the active enemy's defense profile.
@@ -69,17 +70,18 @@ function getAutoDamage() {
         let kitBonus = kit.power;
         if (role.favored && role.favored === target.trait) roleBonus *= role.counter;
         if (kit.favored && kit.favored === target.trait) kitBonus *= kit.counter;
-        dps += squad.damage * (squad.speed + 1) / 2 * teamwork * roleBonus * kitBonus;
+        dps += squad.damage * (squad.speed + 1) / 2 * teamwork *
+            roleBonus * kitBonus * getBossSquadDamageFactor(target,build);
     }
     let researchedBonus = 1 + getResearchBonus("squadDamage");
     if (target.trait === "armored" || target.trait === "spectral") {
         researchedBonus *= 1 + getResearchBonus("counterDamage");
     }
-    if (target.id === "dragon") researchedBonus *= 1 + getResearchBonus("bossDamage");
+    if (isBossEnemy(target)) researchedBonus *= 1 + getResearchBonus("bossDamage");
     if (target.champion) researchedBonus *= 1 + getResearchBonus("veteranDamage");
     return Math.min(1e290,dps * attackMultiplier * mktUp(7) *
         researchedBonus * target.resistance * dynastyDamageMultiplier() *
-        (1+getRelicBonus("squad")+(target.id==="dragon"?getRelicBonus("boss"):0)));
+        (1+getRelicBonus("squad")+(isBossEnemy(target)?getRelicBonus("boss"):0)));
 }
 
 function upgradeSkillCost(ability, query = false) {
@@ -172,7 +174,8 @@ function startSquadAttack() {
         tickBossChallenge();
         runCombatSeconds += elapsed;
         const maxHealth = getEnemyHealth();
-        if (enemyType && enemyType.regen && !squadsSuppressRegeneration()) {
+        if (enemyType && enemyType.regen && !isBossEnemy(enemyType) &&
+            !squadsSuppressRegeneration()) {
             enemyHealth = Math.min(maxHealth, enemyHealth + maxHealth * enemyType.regen * elapsed);
         }
         const damage = getAutoDamage() * elapsed;
@@ -324,7 +327,8 @@ function activateAbility(ability) {
 }
 
 function strongAttack() {
-    let dmg = playerClickDamage * 5 * (enemyType ? enemyType.resistance : 1);
+    let dmg = playerClickDamage * 5 * (enemyType ? enemyType.resistance : 1) *
+        getBossHeroDamageFactor(enemyType);
     if (doubleAttackReady) {
         dmg *= 2;
         doubleAttackReady = false;

@@ -199,7 +199,8 @@ function showGoldEarned(amount) {
 function updateUI() {
     // TODO: playerClickDamage should not be calculated here, but rather somewhere else
     playerClickDamage = getPlayerClickDamage();
-    damageText.textContent = `Hero Damage: ${formatDigits(playerClickDamage * (enemyType ? enemyType.resistance : 1), 2, 5)}, Merc DPS: ${formatDigits(getAutoDamage(), 2, 5)}`;
+    damageText.textContent = `Hero Damage: ${formatDigits(playerClickDamage * mktUp(2) * (enemyType ? enemyType.resistance : 1) *
+        getBossHeroDamageFactor(enemyType), 2, 5)}, Merc DPS: ${formatDigits(getAutoDamage(), 2, 5)}`;
     const summary = document.getElementById("squad-summary");
     if (summary && enemyType) {
         const squads = Math.ceil(hiredMercenaries.length / 5);

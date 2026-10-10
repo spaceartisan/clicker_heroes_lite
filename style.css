@@ -1909,3 +1909,15 @@ button:has(> .ui-icon) { display: inline-flex; }
 .boss-readiness{font:12px/1.5 Arial,sans-serif;color:var(--ink-muted);margin:6px 0}
 #boss-recall-all{width:100%;min-height:44px;white-space:normal;font-size:12px;background:var(--panel-raised)}
 #boss-retry{margin-top:7px}
+
+/* v1.5.0 boss tactics: fixed-width, authored dossier inside the enemy card. */
+.boss-dossier{
+    margin:9px 0 5px;padding:9px 10px;text-align:left;width:100%;
+    border:1px solid var(--panel-line);border-radius:7px;
+    background:var(--panel-raised);box-sizing:border-box;
+    font:12px/1.45 Arial,sans-serif;overflow-wrap:anywhere;
+}
+.boss-dossier strong{display:block;color:var(--ink-heading);font:700 13px/1.5 Georgia,serif}
+.boss-dossier p{margin:4px 0;color:var(--ink-muted)}
+#boss-dossier-state{color:var(--ink-heading)}
+#boss-challenge{max-width:100%}

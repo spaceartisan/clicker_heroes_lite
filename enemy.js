@@ -56,7 +56,7 @@ function drawRandomEnemy() {
     if (hint) hint.textContent = type.summary;
     enemyHealth = getEnemyHealth();
     enemyLevelText.textContent = "Stage " + currentLevel +
-        (type.id === "dragon" ? " · BOSS" : type.champion ? " · VETERAN" : "");
+        (isBossEnemy(type) ? " · BOSS" : type.champion ? " · VETERAN" : "");
     updateFrontierUI(currentLevel);
     resetBossClockForSpawn();
 }
@@ -73,7 +73,7 @@ function handleEnemyDefeat() {
     const level=Math.max(1,Math.min(1e12,currentLevel));
     const endless=level>200?1+Math.min(1,Math.log10(level/200)*0.12):1;
     const goldGain=Math.floor(2*Math.pow(level,1.4)*type.gold*endless);
-    const marketBounty = type.id === "dragon" ? mktUp(5) : mktUp(6);
+    const marketBounty = isBossEnemy(type) ? mktUp(5) : mktUp(6);
     const royalSteward = 1 + 0.03 * Math.max(0, passiveAbilities[2].level - 1);
     let goldMult = mktUp(0) * marketBounty * getSquadGoldMultiplier() *
         royalSteward * (1 + getResearchBonus("enemyGold")) *

@@ -122,3 +122,11 @@ The enemy encounter row is now a three-track CSS grid with fixed-width Previous/
 - **Claim all ready** collects completed patrols/campaigns in one action. The one-second clock now updates only status elements, rather than recreating squad selection controls mid-interaction.
 - Deployed Raider squads no longer grant combat gold bonuses, and deployed Ember Blade squads no longer suppress combat regeneration. Active DPS was already removed.
 - Existing Season II saves and previously dispatched campaigns remain compatible. No new Firebase fields or permissions are necessary.
+
+### v1.5.0 — four rotating boss encounters
+
+- Every tenth stage remains a first-clear 30-second boss trial; boss types repeat every 40 stages: **Ash Dragon** (armored), **Storm Wyvern** (evasive), **Grave Wyrm** (spectral), **Cinder Hydra** (regenerating).
+- Three additional pixel silhouettes and a live tactical dossier describe enemy identity, phase and counters. Armored opening guard is bypassed by Vanguards/Piercing Arms; Rangers lower Wyvern click-dodge; Mystics/Runic Weapons break Grave Wyrm healing; Ember Blades stop Hydra regrowth. Non-boss enemies remain unchanged.
+- **Boss healing is evaluated during the existing 1-second trial clock**, including manual-only play, and pauses in hidden tabs; it never runs twice through the mercenary damage timer. All mechanics are bounded and apply only to a new timed boss (revisited bosses remain farmable).
+- Boss Market bounties, boss research, boss relics, victories and telemetry now recognize **every** boss, not just the Ash Dragon. Army DPS and combat damage use matching armor modifiers, and displayed hero damage includes the same modifiers as actual clicks.
+- No save schema changes, new network calls, or new Firebase permissions required. First boss at stage 10 remains Ash Dragon. Recorded high-stage progression is preserved.

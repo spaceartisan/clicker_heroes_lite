@@ -11,7 +11,7 @@ const RESEARCH_FUTURE_DOMAINS = ["faith"];
 const RESEARCH_NODES = [
     { id:"field_manuals", branch:"warfare", name:"Field Manuals", cost:1, stage:10, castle:1, requires:[], description:"+8% mercenary DPS", bonus:"squadDamage", value:0.08 },
     { id:"beast_lore", branch:"warfare", name:"Bestiary", cost:2, stage:30, castle:1, requires:["field_manuals"], description:"+15% mercenary damage against armored and spectral enemies", bonus:"counterDamage", value:0.15 },
-    { id:"siege_doctrine", branch:"warfare", name:"Siege Doctrine", cost:2, stage:50, castle:3, requires:["field_manuals"], description:"+12% mercenary damage against boss dragons", bonus:"bossDamage", value:0.12 },
+    { id:"siege_doctrine", branch:"warfare", name:"Siege Doctrine", cost:2, stage:50, castle:3, requires:["field_manuals"], description:"+12% mercenary damage against bosses", bonus:"bossDamage", value:0.12 },
     { id:"trade_routes", branch:"commerce", name:"Trade Routes", cost:1, stage:10, castle:1, requires:[], description:"+8% gold from enemies", bonus:"enemyGold", value:0.08 },
     { id:"guild_charters", branch:"commerce", name:"Guild Charters", cost:2, stage:30, castle:2, requires:["trade_routes"], description:"5% cheaper buildings and upgrades", bonus:"discount", value:0.05 },
     { id:"royal_mint", branch:"commerce", name:"Royal Mint", cost:3, stage:70, castle:4, requires:["guild_charters"], description:"+12% gold from enemies", bonus:"enemyGold", value:0.12 },

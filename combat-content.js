@@ -80,7 +80,8 @@ const ENEMY_TYPES = [
     },
     {
         id: "dragon", name: "Ash Dragon", trait: "armored",
-        summary: "Boss every 10 stages: massive armor and rich rewards",
+        summary: "Iron Scales guard its opening 10 seconds. Vanguard and Piercing Arms bypass the guard.",
+        boss: true, bossMechanic: "scales", counter: "Vanguard / Piercing Arms",
         hp: 4.5, gold: 5.0, resistance: 0.65, regen: 0, dodge: 0,
         palette: ["#231424", "#862d31", "#d45b39", "#f9a35c", "#ffe48c"],
         sprite: [
@@ -91,6 +92,59 @@ const ENEMY_TYPES = [
         ]
     }
 ];
+
+
+// Rotating milestone bosses. All inherit the existing 30-second first-clear
+// challenge, Market bounty and relic mechanics, even at extreme stages.
+const BOSS_ENCOUNTERS = Object.freeze([
+    ENEMY_TYPES[5],
+    {
+        id:"wyvern",name:"Storm Wyvern",trait:"evasive",boss:true,
+        bossMechanic:"gale",counter:"Rangers",
+        summary:"Gale Veil dodges hero clicks. Active Rangers disrupt its flight and reduce dodging.",
+        hp:4.2,gold:5,resistance:.78,regen:0,dodge:.26,
+        palette:["#101928","#26546a","#4b9ba6","#b4dce0","#ffe0a4"],
+        sprite:[
+            "................","................","..11........11..","..1221....1221..",
+            ".122221..122221.","1222222112222221","1222233333222221","1222334444332221",
+            ".11222333332211.","...122333221....","..1122222211....","...12222221.....",
+            "..122112211.....",".1221.11.1221...","1111......1111..","................"
+        ]
+    },
+    {
+        id:"lich",name:"Grave Wyrm",trait:"spectral",boss:true,
+        bossMechanic:"ward",counter:"Mystics / Runic Weapons",
+        summary:"Soul Ward restores health each second. Mystics or Runic Weapons unravel the ward.",
+        hp:4.25,gold:5,resistance:.72,regen:.025,dodge:0,
+        palette:["#131323","#343059","#6863a2","#bcb4fa","#84e7d8"],
+        sprite:[
+            "................","......1111......",".....122221.....","....12233221....",
+            "...1223333221...","..122344443221..","..123334433321..","..123333333321..",
+            ".11223333333211.","1222333333332221","1223322332233221","1122112332112211",
+            "...1122222211...","....122..221....","...111....111...","................"
+        ]
+    },
+    {
+        id:"hydra",name:"Cinder Hydra",trait:"regenerating",boss:true,
+        bossMechanic:"regrowth",counter:"Ember Blades",
+        summary:"Regrowing heads heal each second unless active squads wield Ember Blades.",
+        hp:4.4,gold:5,resistance:.82,regen:.045,dodge:0,
+        palette:["#231b17","#5b4231","#a6643d","#e7a95b","#ffe7a2"],
+        sprite:[
+            "................",".111..111..111..","122211222112221.","1233212332123321",
+            ".12211122111221.","..122222222221..","...1222332221...","..112233332211..",
+            ".12223333332221.","1222233333322221","1222333333332221",".12223333332221.",
+            "..112222222211..","...1221..1221...","...111....111...","................"
+        ]
+    }
+]);
+function isBossEnemy(type) {
+    return Boolean(type && (type.boss===true || type.id==="dragon"));
+}
+function bossAtStage(stage) {
+    const level=Math.max(1,Math.floor(Number(stage)||1));
+    return BOSS_ENCOUNTERS[(Math.floor(level/10)-1)%BOSS_ENCOUNTERS.length]||BOSS_ENCOUNTERS[0];
+}
 
 function findSquadRole(id) {
     return SQUAD_ROLES.find(role => role.id === id) || SQUAD_ROLES[0];
@@ -113,7 +167,7 @@ function getSquadBuild(squadId) {
 }
 function getEnemyType(level = currentLevel) {
     const lvl = Math.max(1, Math.floor(Number(level) || 1));
-    const base = lvl % 10 === 0 ? ENEMY_TYPES[5] : ENEMY_TYPES[(lvl - 1) % 5];
+    const base = lvl % 10 === 0 ? bossAtStage(lvl) : ENEMY_TYPES[(lvl - 1) % 5];
     return enhanceFrontierEnemy(base,lvl);
 }
 function squadUpgradeKitCost(squadId, kitId) {

@@ -102,7 +102,7 @@ const treasuryChecks=vm.runInContext("(() => {\n const passed=[],ok=(v,n)=>{if(!
 treasuryChecks.forEach(label=>console.log("PASS "+label));
 console.log("Treasury tests: "+treasuryChecks.length+" passed.");
 
-const frontierChecks=vm.runInContext("(()=>{\n const labels=[],ok=(x,d)=>{if(!x)throw Error(\"Frontier: \"+d);labels.push(d)};\n ok(!getFrontierRegion(100)&&!getFrontierRegion(201),\"Non-frontier stages unchanged\");\n ok(FRONTIER_REGIONS.length===5,\"Five Frontier regions defined\");\n for(const [level,id] of [[101,\"ashen\"],[121,\"iron\"],[141,\"wisp\"],[161,\"storm\"],[181,\"crown\"]])\n   ok(getFrontierRegion(level).id===id,\"Region starts correctly at \"+level);\n ok(!getEnemyType(100).frontier&&getEnemyType(101).frontier,\"Frontier applies only beyond 100\");\n ok(getEnemyType(105).champion&&getEnemyType(105).name.includes(\"Veteran\"),\"Veteran on stage 105\");\n ok(!getEnemyType(110).champion&&getEnemyType(110).id===\"dragon\",\"Boss preserved on stage 110\");\n ok(getEnemyType(123).hp>ENEMY_TYPES[2].hp,\"Iron Frontier armor pressure\");\n ok(getEnemyType(144).resistance<ENEMY_TYPES[3].resistance,\"Wisp Fen spectral pressure\");\n ok(getEnemyType(162).dodge>ENEMY_TYPES[1].dodge,\"Storm Pass dodging\");\n ok(getEnemyType(190).hp>ENEMY_TYPES[5].hp,\"Dragon Crown boss health\");\n ok(getEnemyType(105).gold>ENEMY_TYPES[4].gold,\"Veteran gold bonus\");\n ok(getTreasuryReward(120)===45000&&getTreasuryReward(200)===145000,\"New bounties correct\");\n ok([120,140,160,180,200].reduce((t,l)=>t+getTreasuryReward(l),0)===460000,\n  \"New chapter bounties total 460000\");\n const first=ENEMY_TYPES[0].hp;getEnemyType(101);getEnemyType(106);\n ok(ENEMY_TYPES[0].hp===first,\"Base archetypes not mutated\");\n researchState={};maxLevel=125;structures.castle.level=5;\n ok(!canResearchNode(\"veteran_drills\"),\"Veteran Drills need Bestiary\");\n researchState.beast_lore=true;\n ok(canResearchNode(\"veteran_drills\"),\"Veteran Drills stage gate works\");\n hiredMercenaries.length=0;\n hiredMercenaries.push({level:30,gearLevel:2,attackSpeedLevel:1,squad:1});\n currentLevel=105;enemyType=getEnemyType(105);\n const base=getAutoDamage();\n ok(buyResearchNode(\"veteran_drills\"),\"Veteran Drills purchasable\");\n ok(getAutoDamage()>base,\"Veteran Drills improve real DPS\");\n enemyType=getEnemyType(106);\n const regular=getAutoDamage();\n researchState.veteran_drills=false;\n ok(Math.abs(getAutoDamage()-regular)<1e-8,\"Veteran research not applied to regular encounters\");\n researchState.veteran_drills=true;\n maxLevel=201;claimedTreasury=[20,40,60,80,100];gold=0;\n ok(getTreasuryAvailableGold()===460000,\"Existing save gets unclaimed Frontier bounties\");\n ok(claimRoyalTreasury()&&gold===460000,\"Frontier bounty awarded\");\n ok(!claimRoyalTreasury()&&gold===460000,\"Frontier claims only once\");\n const save=JSON.parse(localStorage.getItem(\"clickerHeroSave\"));\n ok(save.claimedTreasury.length===10,\"All ten claims stored\");\n ok(save.researchState.veteran_drills===true,\"Frontier research stored\");\n currentLevel=180;enemyType=getEnemyType(180);drawRandomEnemy();\n ok(document.getElementById(\"frontier-hero\").textContent.includes(\"Storm Pass\"),\"Hero Frontier UI\");\n ok(document.getElementById(\"frontier-kingdom\").textContent.includes(\"Frontier\") ||\n   document.getElementById(\"frontier-kingdom\").textContent.includes(\"Dragon Crown\"),\n   \"Kingdom Frontier UI\");\n return labels;\n})()",ctx,{timeout:3500});
+const frontierChecks=vm.runInContext("(()=>{\n const labels=[],ok=(x,d)=>{if(!x)throw Error(\"Frontier: \"+d);labels.push(d)};\n ok(!getFrontierRegion(100)&&!getFrontierRegion(201),\"Non-frontier stages unchanged\");\n ok(FRONTIER_REGIONS.length===5,\"Five Frontier regions defined\");\n for(const [level,id] of [[101,\"ashen\"],[121,\"iron\"],[141,\"wisp\"],[161,\"storm\"],[181,\"crown\"]])\n   ok(getFrontierRegion(level).id===id,\"Region starts correctly at \"+level);\n ok(!getEnemyType(100).frontier&&getEnemyType(101).frontier,\"Frontier applies only beyond 100\");\n ok(getEnemyType(105).champion&&getEnemyType(105).name.includes(\"Veteran\"),\"Veteran on stage 105\");\n ok(!getEnemyType(110).champion&&isBossEnemy(getEnemyType(110)),\"Rotating boss preserved on stage 110\");\n ok(getEnemyType(123).hp>ENEMY_TYPES[2].hp,\"Iron Frontier armor pressure\");\n ok(getEnemyType(144).resistance<ENEMY_TYPES[3].resistance,\"Wisp Fen spectral pressure\");\n ok(getEnemyType(162).dodge>ENEMY_TYPES[1].dodge,\"Storm Pass dodging\");\n ok(getEnemyType(190).hp>ENEMY_TYPES[5].hp,\"Dragon Crown boss health\");\n ok(getEnemyType(105).gold>ENEMY_TYPES[4].gold,\"Veteran gold bonus\");\n ok(getTreasuryReward(120)===45000&&getTreasuryReward(200)===145000,\"New bounties correct\");\n ok([120,140,160,180,200].reduce((t,l)=>t+getTreasuryReward(l),0)===460000,\n  \"New chapter bounties total 460000\");\n const first=ENEMY_TYPES[0].hp;getEnemyType(101);getEnemyType(106);\n ok(ENEMY_TYPES[0].hp===first,\"Base archetypes not mutated\");\n researchState={};maxLevel=125;structures.castle.level=5;\n ok(!canResearchNode(\"veteran_drills\"),\"Veteran Drills need Bestiary\");\n researchState.beast_lore=true;\n ok(canResearchNode(\"veteran_drills\"),\"Veteran Drills stage gate works\");\n hiredMercenaries.length=0;\n hiredMercenaries.push({level:30,gearLevel:2,attackSpeedLevel:1,squad:1});\n currentLevel=105;enemyType=getEnemyType(105);\n const base=getAutoDamage();\n ok(buyResearchNode(\"veteran_drills\"),\"Veteran Drills purchasable\");\n ok(getAutoDamage()>base,\"Veteran Drills improve real DPS\");\n enemyType=getEnemyType(106);\n const regular=getAutoDamage();\n researchState.veteran_drills=false;\n ok(Math.abs(getAutoDamage()-regular)<1e-8,\"Veteran research not applied to regular encounters\");\n researchState.veteran_drills=true;\n maxLevel=201;claimedTreasury=[20,40,60,80,100];gold=0;\n ok(getTreasuryAvailableGold()===460000,\"Existing save gets unclaimed Frontier bounties\");\n ok(claimRoyalTreasury()&&gold===460000,\"Frontier bounty awarded\");\n ok(!claimRoyalTreasury()&&gold===460000,\"Frontier claims only once\");\n const save=JSON.parse(localStorage.getItem(\"clickerHeroSave\"));\n ok(save.claimedTreasury.length===10,\"All ten claims stored\");\n ok(save.researchState.veteran_drills===true,\"Frontier research stored\");\n currentLevel=180;enemyType=getEnemyType(180);drawRandomEnemy();\n ok(document.getElementById(\"frontier-hero\").textContent.includes(\"Storm Pass\"),\"Hero Frontier UI\");\n ok(document.getElementById(\"frontier-kingdom\").textContent.includes(\"Frontier\") ||\n   document.getElementById(\"frontier-kingdom\").textContent.includes(\"Dragon Crown\"),\n   \"Kingdom Frontier UI\");\n return labels;\n})()",ctx,{timeout:3500});
 frontierChecks.forEach(s=>console.log("PASS "+s));
 console.log("Frontier tests: "+frontierChecks.length+" passed.");
 
@@ -141,7 +141,7 @@ const visualAssetChecks = (() => {
  ok(css.includes(':root[data-theme="stone"]')&&css.includes("--panel-fill"),
     "Stone mode uses semantic design tokens");
  ok(css.includes("background-attachment: scroll"),"Background avoids fixed-position mobile repaint");
- ok(sw.includes("heroes-of-click-v1.4.1")&&sw.includes('"./theme.js"'),
+ ok(sw.includes("heroes-of-click-v1.5.0")&&sw.includes('"./theme.js"'),
     "Theme controller is precached in PWA");
  for(const name of glyphNames){
     const file="icons/ui-"+name+".svg";
@@ -233,7 +233,7 @@ const layoutChecks = (() => {
  const source=fs.readFileSync(path.join(__dirname,"..","index.html"),"utf8");
  const css=fs.readFileSync(path.join(__dirname,"..","style.css"),"utf8");
  const sw=fs.readFileSync(path.join(__dirname,"..","sw.js"),"utf8");
- assert(source.includes('v1.4.1') && sw.includes('heroes-of-click-v1.4.1'),"Markup and PWA cache versions match");
+ assert(source.includes('v1.5.0') && sw.includes('heroes-of-click-v1.5.0'),"Markup and PWA cache versions match");
  for(const section of ["hero","kingdom","army"]) {
     assert(source.includes('id="view-tab-'+section+'"'),"Accessible tab exists for "+section);
  }
@@ -270,7 +270,7 @@ layoutChecks.forEach(label=>console.log("PASS "+label));
 console.log("Responsive layout tests: "+layoutChecks.length+" passed.");
 
 ctx.fs=fs;ctx.path=path;ctx.__dirname=__dirname;
-const enemyCardChecks = vm.runInContext("(() => {\n const verified=[],check=(value,label)=>{if(!value)throw Error(\"Enemy card: \"+label);verified.push(label)};\n const html=fs.readFileSync(path.join(__dirname,\"..\",\"index.html\"),\"utf8\");\n const css=fs.readFileSync(path.join(__dirname,\"..\",\"style.css\"),\"utf8\");\n const game=fs.readFileSync(path.join(__dirname,\"..\",\"game.js\"),\"utf8\");\n const enemy=fs.readFileSync(path.join(__dirname,\"..\",\"enemy.js\"),\"utf8\");\n const sw=fs.readFileSync(path.join(__dirname,\"..\",\"sw.js\"),\"utf8\");\n check(html.includes('id=\"enemy-name\"') && html.includes('id=\"enemy-trait\"'),\n   \"Name and trait labels are authored in the card\");\n check(html.indexOf('id=\"enemy-level\"')<html.indexOf('id=\"enemy-name\"') &&\n   html.indexOf('id=\"enemy-name\"')<html.indexOf('id=\"enemy-trait\"'),\n   \"Stage, name and trait follow a consistent visual hierarchy\");\n check(game.includes('document.getElementById(\"enemy-name\")'),\n   \"Enemy name reuses authored HTML instead of appending a runtime label\");\n check(!game.includes('document.getElementById(\"enemy-box\").appendChild(enemyNameText)'),\n   \"Old runtime name insertion removed\");\n check(css.includes(\"grid-template-columns: var(--enemy-nav-size) minmax(0, 1fr) var(--enemy-nav-size)\"),\n   \"Navigation uses two stable side columns with a constrained card\");\n check(css.includes(\"max-width: 464px\")&&css.includes(\"width: 100%\"),\n   \"Encounter row is bounded and responsive\");\n check(css.includes(\"#enemy-name\")&&css.includes(\"overflow-wrap: anywhere\"),\n   \"Long enemy names wrap without forcing row growth\");\n check(css.includes(\"margin-top: calc(var(--enemy-card-padding) + 51px)\"),\n   \"Navigation arrows are anchored at the sprite position\");\n check(css.includes(\"--enemy-nav-size: 42px\")&&css.includes(\"gap: 6px\"),\n   \"Phone layout retains fixed button slots\");\n check(sw.includes(\"heroes-of-click-v1.4.1\")&&html.includes(\"v1.4.1\"),\n   \"Installed PWA and visible version update together\");\n check(enemy.includes(\"enemyNameText.textContent = type.name\"),\n   \"Enemy spawning still updates the name\");\n const oldStage=currentLevel, oldEnemy=enemyType;\n try {\n   currentLevel=1;drawRandomEnemy();\n   const first=enemyNameText.textContent;\n   check(first.includes(getEnemyType(1).name),\"First enemy shows correct name\");\n   currentLevel=105;drawRandomEnemy();\n   check(enemyNameText.textContent.includes(\"Veteran\")&&enemyLevelText.textContent.includes(\"VETERAN\"),\n     \"Veteran text updates without extra DOM insertion\");\n   currentLevel=110;drawRandomEnemy();\n   check(enemyLevelText.textContent.includes(\"BOSS\"),\n     \"Boss stage label remains visible\");\n } finally {\n   currentLevel=oldStage;enemyType=oldEnemy;\n }\n return verified;\n})()",ctx,{timeout:2800});
+const enemyCardChecks = vm.runInContext("(() => {\n const verified=[],check=(value,label)=>{if(!value)throw Error(\"Enemy card: \"+label);verified.push(label)};\n const html=fs.readFileSync(path.join(__dirname,\"..\",\"index.html\"),\"utf8\");\n const css=fs.readFileSync(path.join(__dirname,\"..\",\"style.css\"),\"utf8\");\n const game=fs.readFileSync(path.join(__dirname,\"..\",\"game.js\"),\"utf8\");\n const enemy=fs.readFileSync(path.join(__dirname,\"..\",\"enemy.js\"),\"utf8\");\n const sw=fs.readFileSync(path.join(__dirname,\"..\",\"sw.js\"),\"utf8\");\n check(html.includes('id=\"enemy-name\"') && html.includes('id=\"enemy-trait\"'),\n   \"Name and trait labels are authored in the card\");\n check(html.indexOf('id=\"enemy-level\"')<html.indexOf('id=\"enemy-name\"') &&\n   html.indexOf('id=\"enemy-name\"')<html.indexOf('id=\"enemy-trait\"'),\n   \"Stage, name and trait follow a consistent visual hierarchy\");\n check(game.includes('document.getElementById(\"enemy-name\")'),\n   \"Enemy name reuses authored HTML instead of appending a runtime label\");\n check(!game.includes('document.getElementById(\"enemy-box\").appendChild(enemyNameText)'),\n   \"Old runtime name insertion removed\");\n check(css.includes(\"grid-template-columns: var(--enemy-nav-size) minmax(0, 1fr) var(--enemy-nav-size)\"),\n   \"Navigation uses two stable side columns with a constrained card\");\n check(css.includes(\"max-width: 464px\")&&css.includes(\"width: 100%\"),\n   \"Encounter row is bounded and responsive\");\n check(css.includes(\"#enemy-name\")&&css.includes(\"overflow-wrap: anywhere\"),\n   \"Long enemy names wrap without forcing row growth\");\n check(css.includes(\"margin-top: calc(var(--enemy-card-padding) + 51px)\"),\n   \"Navigation arrows are anchored at the sprite position\");\n check(css.includes(\"--enemy-nav-size: 42px\")&&css.includes(\"gap: 6px\"),\n   \"Phone layout retains fixed button slots\");\n check(sw.includes(\"heroes-of-click-v1.5.0\")&&html.includes(\"v1.5.0\"),\n   \"Installed PWA and visible version update together\");\n check(enemy.includes(\"enemyNameText.textContent = type.name\"),\n   \"Enemy spawning still updates the name\");\n const oldStage=currentLevel, oldEnemy=enemyType;\n try {\n   currentLevel=1;drawRandomEnemy();\n   const first=enemyNameText.textContent;\n   check(first.includes(getEnemyType(1).name),\"First enemy shows correct name\");\n   currentLevel=105;drawRandomEnemy();\n   check(enemyNameText.textContent.includes(\"Veteran\")&&enemyLevelText.textContent.includes(\"VETERAN\"),\n     \"Veteran text updates without extra DOM insertion\");\n   currentLevel=110;drawRandomEnemy();\n   check(enemyLevelText.textContent.includes(\"BOSS\"),\n     \"Boss stage label remains visible\");\n } finally {\n   currentLevel=oldStage;enemyType=oldEnemy;\n }\n return verified;\n})()",ctx,{timeout:2800});
 delete ctx.fs;delete ctx.path;delete ctx.__dirname;
 enemyCardChecks.forEach(label=>console.log("PASS "+label));
 console.log("Enemy card layout tests: "+enemyCardChecks.length+" passed.");
@@ -576,6 +576,110 @@ const expeditionInterfaceChecks=(()=>{
 })();
 expeditionInterfaceChecks.forEach(label=>console.log("PASS "+label));
 console.log("Expedition UI tests: "+expeditionInterfaceChecks.length+" passed.");
+
+
+const bossTacticsChecks=vm.runInContext(`(()=>{
+ const passed=[],ok=(v,n)=>{if(!v)throw Error("Boss tactics: "+n);passed.push(n)};
+ const old={
+  currentLevel,maxLevel,enemyType,enemyHealth,deathCooldown,
+  bossClockStage,bossClockDeadline,bossClockPausedMs,bossHealLastTick,
+  mercs:hiredMercenaries.slice(),builds:JSON.parse(JSON.stringify(squadBuilds)),
+  missions:activeCampaigns,barracks:structures.barracks.level,
+  blacksmith:structures.blacksmith.level
+ };
+ try{
+  structures.barracks.level=6;structures.blacksmith.level=6;
+  hiredMercenaries.splice(0,hiredMercenaries.length,
+   {squad:1,level:20,gearLevel:3,attackSpeedLevel:2});
+  squadBuilds={"1":{role:"vanguard",kit:"basic",ownedKits:["basic","piercing","runic","ember"]}};
+  activeCampaigns=[];
+  const bosses=[getEnemyType(10),getEnemyType(20),getEnemyType(30),getEnemyType(40)];
+  ok(bosses.map(b=>b.id).join(",")==="dragon,wyvern,lich,hydra",
+    "Four boss species rotate every ten stages");
+  ok(bosses.every(b=>isBossEnemy(b))&&getEnemyType(50).id==="dragon"&&
+    getEnemyType(110).id==="lich","Boss frequency and 40-stage cycle preserved through Frontier");
+  ok(!isBossEnemy(getEnemyType(9))&&!isBossEnemy(getEnemyType(11)),
+    "Regular opponents remain distinct from bosses");
+  ok(bosses.every(b=>b.sprite.length===16&&b.sprite.every(row=>row.length===16))&&
+    new Set(bosses.map(b=>b.sprite.join(""))).size===4,
+    "Each boss has a separate valid 16x16 authored silhouette");
+  ok(bosses.every(b=>b.counter&&b.summary&&b.hp<=4.5&&b.hp>=4.0),
+    "Encounters advertise meaningful counters without inflating HP");
+  currentLevel=10;maxLevel=10;enemyType=getEnemyType(10);
+  bossClockStage=10;bossClockDeadline=Date.now()+30000;bossClockPausedMs=30000;
+  ok(bossScalesUp(enemyType),"Dragon starts in its ten-second guarded phase");
+  ok(getBossSquadDamageFactor(enemyType,{role:"ranger",kit:"basic"})===.82&&
+    getBossSquadDamageFactor(enemyType,{role:"vanguard",kit:"basic"})===1&&
+    getBossSquadDamageFactor(enemyType,{role:"ranger",kit:"piercing"})===1,
+    "Vanguards and Piercing Arms bypass opening armor");
+  ok(getBossHeroDamageFactor(enemyType)===.9,"Opening scale guard affects hero clicks");
+  bossClockDeadline=Date.now()+17000;
+  ok(!bossScalesUp(enemyType)&&getBossHeroDamageFactor(enemyType)===1,
+    "Scales break after the first ten seconds");
+  currentLevel=20;maxLevel=20;enemyType=getEnemyType(20);
+  bossClockStage=20;bossClockDeadline=Date.now()+30000;
+  ok(getBossAwareDodge(enemyType)===.26,"Wyvern veil initially dodges hero clicks");
+  squadBuilds["1"].role="ranger";
+  ok(getBossAwareDodge(enemyType)===.08,"Active Rangers ground Wyvern and reduce dodges");
+  const group=getArmySquads()[0];
+  ok(Math.abs(getArmySquadDps(group)-getAutoDamage())<1e-7,
+    "Army damage and combat damage agree against the Wyvern");
+  activeCampaigns=[{squadId:1,id:78,kind:"patrol",endsAt:Date.now()+30000}];
+  ok(getBossAwareDodge(enemyType)===.26,"Away Rangers cannot ground the boss");
+  activeCampaigns=[];
+  currentLevel=30;maxLevel=30;enemyType=getEnemyType(30);
+  bossClockStage=30;bossClockDeadline=Date.now()+30000;
+  squadBuilds["1"].role="vanguard";
+  ok(getBossRegenerationRate(enemyType)===.025,"Grave Wyrm ward restores boss health");
+  squadBuilds["1"].role="mystic";
+  ok(getBossRegenerationRate(enemyType)===0,"Mystic squad breaks Soul Ward");
+  squadBuilds["1"].role="vanguard";squadBuilds["1"].kit="runic";
+  ok(getBossRegenerationRate(enemyType)===0,"Runic kit also breaks Soul Ward");
+  currentLevel=40;maxLevel=40;enemyType=getEnemyType(40);
+  bossClockStage=40;bossClockDeadline=Date.now()+30000;
+  squadBuilds["1"].kit="basic";
+  ok(getBossRegenerationRate(enemyType)===.045,"Hydra heads regrow without counter gear");
+  squadBuilds["1"].kit="ember";
+  ok(getBossRegenerationRate(enemyType)===0,"Active Ember Blades stop Hydra regrowth");
+  ok(Number.isFinite(getEnemyHealth()),"Hydra health finite");
+  activeCampaigns=[{squadId:1,id:80,kind:"ruins",endsAt:Date.now()+50000}];
+  ok(getBossRegenerationRate(enemyType)===.045,"Away Ember squad cannot block regeneration");
+  activeCampaigns=[];bossClockStage=0;
+  ok(!bossScalesUp(getEnemyType(10))&&getBossSquadDamageFactor(getEnemyType(10),
+    {role:"ranger",kit:"basic"})===1,"Revisited bosses are untimed and lack opening guard");
+  currentLevel=20000000;maxLevel=20000001;enemyType=getEnemyType(currentLevel);
+  ok(isBossEnemy(enemyType)&&Number.isFinite(getEnemyHealth())&&
+     getEnemyHealth()>0,"Extreme-stage boss is finite and fully recognized");
+  return passed;
+ }finally{
+  currentLevel=old.currentLevel;maxLevel=old.maxLevel;enemyType=old.enemyType;
+  enemyHealth=old.enemyHealth;deathCooldown=old.deathCooldown;
+  bossClockStage=old.bossClockStage;bossClockDeadline=old.bossClockDeadline;
+  bossClockPausedMs=old.bossClockPausedMs;bossHealLastTick=old.bossHealLastTick;
+  hiredMercenaries.splice(0,hiredMercenaries.length,...old.mercs);
+  squadBuilds=old.builds;activeCampaigns=old.missions;
+  structures.barracks.level=old.barracks;
+  structures.blacksmith.level=old.blacksmith;
+ }
+})()`,ctx,{timeout:5000});
+bossTacticsChecks.forEach(label=>console.log("PASS "+label));
+console.log("Boss tactics tests: "+bossTacticsChecks.length+" passed.");
+
+const bossDossierChecks=(()=>{
+ const passed=[],ok=(v,n)=>{if(!v)throw Error("Boss dossier UI: "+n);passed.push(n)};
+ const html=fs.readFileSync(path.join(__dirname,"..","index.html"),"utf8");
+ const css=fs.readFileSync(path.join(__dirname,"..","style.css"),"utf8");
+ const content=fs.readFileSync(path.join(__dirname,"..","combat-content.js"),"utf8");
+ ok(html.includes('id="boss-dossier-title"')&&html.includes('id="boss-dossier-state"'),
+   "Boss name, counters and mechanic status appear in authored markup");
+ ok(css.includes(".boss-dossier")&&css.includes("overflow-wrap:anywhere"),
+   "Tactical card remains responsive on phones");
+ ok(content.includes("BOSS_ENCOUNTERS")&&content.includes("bossAtStage"),
+   "All bosses come from the editable encounter definitions");
+ return passed;
+})();
+bossDossierChecks.forEach(label=>console.log("PASS "+label));
+console.log("Boss dossier UI tests: "+bossDossierChecks.length+" passed.");
 
 const seasonStabilityChecks = vm.runInContext("(async () => {\n  const passed=[],ok=(condition,label)=>{if(!condition)throw Error(\"Sync: \"+label);passed.push(label)};\n  await flushPromiseCallbacks();\n  const originalCollection=db.collection;\n  const savedName=playerName, savedConfirmed=nameConfirm;\n  const savedBest=bestSeasonStage, savedMax=maxLevel;\n  const savedSubmitted=lastSubmittedScore;\n  const previous=document.getElementById(\"leaderboard-sync-status\").textContent;\n  try {\n    let resolveWrite=null,writeCount=0,latestWritten=null;\n    db.collection=collectionName=>{\n      ok(collectionName===GAME_SCORE_COLLECTION,\"All uploads target Season II\");\n      return { doc:name=>({\n        set:payload=>{\n          writeCount++;latestWritten=payload;\n          return new Promise(resolve=>{resolveWrite=resolve});\n        },\n        get:()=>Promise.resolve({exists:false})\n      }) };\n    };\n    nameConfirm=true;playerName=\"SyncTester\";lastSubmittedScore=1;\n    bestSeasonStage=111;maxLevel=111;\n    scoreUploadPending=false;lastScoreUploadAttempt=-Infinity;scoreUploadRetryAt=0;\n    let save=inspectSeasonSave(localStorage.getItem(\"clickerHeroSave\"))||{};\n    save.schemaVersion=GAME_SCHEMA_VERSION;save.seasonId=GAME_SEASON_ID;\n    save.playerName=playerName;save.lastSubmittedScore=1;\n    localStorage.setItem(\"clickerHeroSave\",JSON.stringify(save));\n    ok(submitScore(),\"Unsynced progress schedules upload\");\n    ok(writeCount===1&&latestWritten.score===111,\"First upload captures exact stage\");\n    bestSeasonStage=222;maxLevel=222;\n    ok(!submitScore()&&writeCount===1,\"Concurrent saves do not duplicate writes\");\n    ok(scoreUploadPending,\"Pending flag prevents duplicate requests\");\n    resolveWrite();\n    await flushPromiseCallbacks();\n    ok(!scoreUploadPending&&lastSubmittedScore===111,\"Ack does not mark newer stages synchronized\");\n    const persisted=inspectSeasonSave(localStorage.getItem(\"clickerHeroSave\"));\n    ok(persisted.lastSubmittedScore===111,\"Confirmed stage is cached without another network write\");\n    ok(!submitScore()&&writeCount===1,\"Follow-up writes are rate-limited\");\n    lastScoreUploadAttempt=-Infinity;\n    ok(submitScore()&&writeCount===2&&latestWritten.score===222,\"New progress eventually uploads\");\n    resolveWrite();\n    await flushPromiseCallbacks();\n    ok(lastSubmittedScore===222,\"Second acknowledgement advances score\");\n    // Permission-denied registration leaves the name field usable.\n    db.collection=()=>({doc:()=>({\n      get:()=>Promise.reject({code:\"permission-denied\"}),\n      set:()=>Promise.reject({code:\"permission-denied\"})\n    })});\n    nameConfirm=false;nameRegistrationPending=false;\n    nameConfirmButton.disabled=false;\n    nameInput.value=\"FreshName\";\n    confirmName();\n    ok(nameRegistrationPending&&nameConfirmButton.disabled,\"Registration blocks duplicate clicks while waiting\");\n    for(let i=0;i<10;i++)await Promise.resolve();\n    ok(!nameRegistrationPending&&!nameConfirm&&nameConfirmButton.disabled===false,\n       \"Denied registration is recoverable, not a false confirmation\");\n    ok(document.getElementById(\"leaderboard-sync-status\").textContent.includes(\"Firebase\"),\n       \"Permission failure has actionable feedback\");\n    // Exact College prefix costs and repeated queries should be O(1) after initial fill.\n    const rank=3500;\n    academyDisciplines.warfare=rank;academyDisciplines.commerce=rank;\n    const expectedCost=Array.from({length:rank},(_,i)=>3+Math.floor(Math.pow(i+1,1.4)))\n      .reduce((sum,value)=>sum+value,0);\n    ok(getAcademyTotalSpent(rank)===expectedCost,\"College prefix cost equals exact rank-by-rank sum\");\n    const memoSize=academyInsightCostPrefix.length;\n    for(let i=0;i<20;i++)getResearchInsightSpent();\n    ok(academyInsightCostPrefix.length===memoSize,\"Repeated research queries reuse cached costs\");\n    academyDisciplines.warfare=10000;\n    ok(!upgradeAcademyDiscipline(\"warfare\"),\"College cap enforced before purchase\");\n    return passed;\n  } finally {\n    db.collection=originalCollection;\n    playerName=savedName;nameConfirm=savedConfirmed;\n    maxLevel=savedMax;bestSeasonStage=savedBest;lastSubmittedScore=savedSubmitted;\n    academyDisciplines={warfare:0,commerce:0,governance:0};\n    scoreUploadPending=false;nameRegistrationPending=false;\n    lastScoreUploadAttempt=-Infinity;scoreUploadRetryAt=0;\n    document.getElementById(\"leaderboard-sync-status\").textContent=previous;\n  }\n})()", ctx, {timeout:5000});
 seasonStabilityChecks.then(labels=>{

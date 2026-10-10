@@ -8,6 +8,7 @@ let bossClockPausedMs = 0;
 let bossRetryStage = 0;
 let bossAttemptsThisRun = 0;
 let bossFailuresThisRun = 0;
+let bossHealLastTick = 0;
 
 const CAMPAIGN_DEFINITIONS = Object.freeze([
     { id:"patrol", name:"Borderland Patrol", minutes:20, barracks:1, favored:"ranger",
@@ -41,6 +42,73 @@ let relicFragments = 0;
 let relicBossClaims = [];
 const campaignTimerNodes = new Map();
 
+
+// Deterministic boss pressure: stronger squad compositions bypass defenses.
+// Values remain bounded and depend only on existing squad roles, kits and time.
+function activeBossCounter(roleId,kitId) {
+    return getArmySquads().some(group=>{
+        if(isSquadOnCampaign(group.id))return false;
+        const build=getSquadBuild(group.id);
+        return (roleId&&build.role===roleId)||(kitId&&build.kit===kitId);
+    });
+}
+function bossScalesUp(type) {
+    return Boolean(type&&type.bossMechanic==="scales" &&
+        bossClockStage===currentLevel &&
+        bossRemainingMs()>BOSS_CHALLENGE_MS-10000);
+}
+function getBossSquadDamageFactor(type,build) {
+    if(!bossScalesUp(type))return 1;
+    return build && (build.role==="vanguard"||build.kit==="piercing")?1:.82;
+}
+function getBossHeroDamageFactor(type) {
+    return bossScalesUp(type)?.9:1;
+}
+function getBossAwareDodge(type) {
+    if(!type)return 0;
+    if(type.bossMechanic==="gale"&&activeBossCounter("ranger",null))return .08;
+    return Math.max(0,Math.min(.4,type.dodge||0));
+}
+function getBossRegenerationRate(type) {
+    if(!type||!isBossEnemy(type)||!type.regen)return 0;
+    if(squadsSuppressRegeneration())return 0;
+    if(type.bossMechanic==="ward"&&activeBossCounter("mystic","runic"))return 0;
+    return Math.min(.08,type.regen);
+}
+function renderBossDossier(type) {
+    const boss=isBossEnemy(type)?type:null;
+    const title=document.getElementById("boss-dossier-title");
+    const counter=document.getElementById("boss-dossier-counter");
+    const state=document.getElementById("boss-dossier-state");
+    if(!title||!counter||!state)return;
+    if(!boss){
+        title.textContent="Boss tactics";
+        counter.textContent="";
+        state.textContent="";
+        return;
+    }
+    title.textContent=boss.name+" · "+boss.trait.toUpperCase();
+    counter.textContent="Counter: "+boss.counter+". "+boss.summary;
+    const mech=boss.bossMechanic;
+    if(mech==="scales"){
+        state.textContent=bossScalesUp(boss)?
+            "Iron Scales active for the opening 10s: non-counter squads -18%, hero -10%.":
+            "Iron Scales cracked — full damage restored.";
+    }else if(mech==="gale"){
+        state.textContent=activeBossCounter("ranger",null)?
+            "Rangers grounded the Gale Veil: hero dodge chance 8%.":
+            "Gale Veil: hero attacks can miss (26%). Rangers reduce this.";
+    }else if(mech==="ward"){
+        state.textContent=getBossRegenerationRate(boss)===0?
+            "Soul Ward broken — boss healing stopped.":
+            "Soul Ward restores 2.5% HP per second. Mystics or Runic Weapons break it.";
+    }else if(mech==="regrowth"){
+        state.textContent=getBossRegenerationRate(boss)===0?
+            "Ember Blades cauterized the heads — boss healing stopped.":
+            "Regrowth restores 4.5% HP per second. Ember Blades stop it.";
+    }
+}
+
 function isTimedBossStage() {
     return currentLevel > 0 && currentLevel % 10 === 0 && currentLevel === maxLevel;
 }
@@ -48,10 +116,12 @@ function resetBossClockForSpawn() {
     bossClockStage = 0;
     bossClockDeadline = 0;
     bossClockPausedMs = 0;
+    bossHealLastTick = 0;
     if (isTimedBossStage()) {
         bossClockStage = currentLevel;
         bossClockPausedMs = BOSS_CHALLENGE_MS;
         if (!document.hidden) bossClockDeadline = Date.now() + BOSS_CHALLENGE_MS;
+        bossHealLastTick=Date.now();
         bossAttemptsThisRun++;
         const estimatedPower=getAutoDamage()+getPlayerClickDamage();
         balanceBossAttempt(currentLevel,Math.min(1000000,
@@ -68,16 +138,35 @@ function pauseBossClock() {
         bossClockPausedMs = bossRemainingMs();
         bossClockDeadline = 0;
     }
+    bossHealLastTick=0;
 }
 function resumeBossClock() {
-    if (bossClockStage && !bossClockDeadline && !document.hidden)
+    if (bossClockStage && !bossClockDeadline && !document.hidden) {
         bossClockDeadline = Date.now() + bossClockPausedMs;
+        bossHealLastTick=Date.now();
+    }
 }
 function tickBossChallenge() {
     if (!bossClockStage || document.hidden || deathCooldown) return;
-    if (bossClockStage !== currentLevel) { bossClockStage=0; renderBossChallenge(); return; }
-    if (bossClockDeadline && bossRemainingMs() <= 0) failBossChallenge();
-    else renderBossChallenge();
+    if (bossClockStage !== currentLevel) {
+        bossClockStage=0;
+        bossHealLastTick=0;
+        renderBossChallenge();
+        return;
+    }
+    if (bossClockDeadline && bossRemainingMs() <= 0) {
+        failBossChallenge();
+        return;
+    }
+    const now=Date.now();
+    const elapsed=bossHealLastTick?Math.min(1.25,Math.max(0,(now-bossHealLastTick)/1000)):0;
+    bossHealLastTick=now;
+    const healing=getBossRegenerationRate(enemyType);
+    if (healing>0 && elapsed>0) {
+        enemyHealth=Math.min(getEnemyHealth(),enemyHealth+getEnemyHealth()*healing*elapsed);
+        updateUI();
+    }
+    renderBossChallenge();
 }
 function failBossChallenge() {
     if (!bossClockStage || bossClockStage !== currentLevel || deathCooldown) return false;
@@ -87,6 +176,7 @@ function failBossChallenge() {
     bossClockStage = 0;
     bossClockDeadline = 0;
     bossClockPausedMs = 0;
+    bossHealLastTick=0;
     bossFailuresThisRun++;
     autoAdvance = false;
     const toggle = document.getElementById("auto-next-toggle");
@@ -118,25 +208,29 @@ function renderBossChallenge() {
     const readiness = document.getElementById("boss-readiness");
     const recall = document.getElementById("boss-recall-all");
     const away=activeCampaigns.filter(m=>m.endsAt>Date.now()).length;
+    const combatBoss=bossClockStage===currentLevel?enemyType:
+        (bossRetryStage===maxLevel?getEnemyType(bossRetryStage):null);
     recall.hidden=away===0;
+    renderBossDossier(combatBoss);
     if (bossClockStage === currentLevel) {
         const squadDps=getAutoDamage();
         const estimate=squadDps>0?getEnemyHealth()/squadDps:Infinity;
         const duration=estimate>9999?"over 9,999s":estimate.toFixed(1)+"s";
-        readiness.textContent="Squad-only clear estimate: "+duration+
-            " · Hero clicks and abilities not included."+
+        readiness.textContent="Squad-only raw DPS estimate: "+duration+
+            " · Healing, misses, hero clicks and abilities excluded."+
             (away?" "+away+" squad"+(away===1?" away.":"s away."):"");
         const remaining = bossRemainingMs();
         panel.hidden = false;
         clock.textContent = (remaining / 1000).toFixed(1) + "s";
         track.style.width = Math.min(100,Math.max(0,remaining / BOSS_CHALLENGE_MS * 100)) + "%";
-        note.textContent = "Defeat this new boss within 30 seconds.";
+        note.textContent = "Defeat "+enemyType.name+" within 30 seconds. Prepare counter squads at the Barracks.";
         retry.hidden = true;
     } else if (bossRetryStage === maxLevel && currentLevel < bossRetryStage) {
         panel.hidden = false;
         clock.textContent = "Farming";
         track.style.width = "0%";
-        note.textContent = "Boss failed at stage " + bossRetryStage + ". Farm gold and upgrade, then retry.";
+        note.textContent = combatBoss.name+" held stage "+bossRetryStage+
+            ". Farm gold, set its counter squad, then retry.";
         readiness.textContent=away?away+" squad"+(away===1?" is":"s are")+
             " on expedition. Recall to restore combat DPS.":
             "Strengthen your mercenaries, equip counter weapons, and retry.";
@@ -151,6 +245,7 @@ function recordBossVictory(stage, firstClear) {
         bossClockStage = 0;
         bossClockDeadline = 0;
         bossClockPausedMs = 0;
+        bossHealLastTick = 0;
     }
     if (bossRetryStage === stage) bossRetryStage = 0;
     if (firstClear && stage % 10 === 0) {
@@ -503,13 +598,14 @@ function loadCampaignRelicState(data) {
     campaignSerial=Math.max(campaignSerial,...activeCampaigns.map(m=>m.id),0);
     bossRetryStage=Number.isFinite(data.bossRetryStage)&&data.bossRetryStage===maxLevel?
         data.bossRetryStage:0;
-    bossClockStage=0;bossClockDeadline=0;bossClockPausedMs=0;
+    bossClockStage=0;bossClockDeadline=0;bossClockPausedMs=0;bossHealLastTick=0;
     renderRelicVault();
 }
 function resetCampaignsForDynasty() {
     // Incomplete campaigns return with no rewards. Relics and shards persist.
     activeCampaigns=[];
     bossRetryStage=0;bossClockStage=0;bossClockDeadline=0;bossClockPausedMs=0;
+    bossHealLastTick=0;
     renderRelicVault();
     renderSquadCampaigns();
 }

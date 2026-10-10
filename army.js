@@ -230,12 +230,13 @@ function getArmySquadDps(group,neutral=false) {
     let research=1+getResearchBonus("squadDamage");
     if(target.trait==="armored"||target.trait==="spectral")
         research*=1+getResearchBonus("counterDamage");
-    if(target.id==="dragon")research*=1+getResearchBonus("bossDamage");
+    if(isBossEnemy(target))research*=1+getResearchBonus("bossDamage");
     if(target.champion)research*=1+getResearchBonus("veteranDamage");
     return Math.min(1e290,raw*(speed+1)/2*teamwork*roleBonus*kitBonus*
         mktUp(2)*mktUp(3)*(rallyActive?2:1)*mktUp(7)*research*
         target.resistance*dynastyDamageMultiplier()*
-        (1+getRelicBonus("squad")+(target.id==="dragon"?getRelicBonus("boss"):0)));
+        getBossSquadDamageFactor(target,build)*
+        (1+getRelicBonus("squad")+(isBossEnemy(target)?getRelicBonus("boss"):0)));
 }
 
 function createArmyButton(text, click, className = "") {
