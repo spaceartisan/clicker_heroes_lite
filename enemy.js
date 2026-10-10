@@ -52,7 +52,10 @@ function handleEnemyDefeat() {
     enemiesDefeated++;
     const type = enemyType || getEnemyType(currentLevel);
     const goldGain = Math.floor(2 * Math.pow(currentLevel, 1.4) * type.gold);
-    let goldMult = mktUp(0) * getSquadGoldMultiplier();
+    const marketBounty = type.id === "dragon" ? mktUp(5) : mktUp(6);
+    const royalSteward = 1 + 0.03 * Math.max(0, passiveAbilities[2].level - 1);
+    let goldMult = mktUp(0) * marketBounty * getSquadGoldMultiplier() *
+        royalSteward * (1 + getResearchBonus("enemyGold"));
     if (goldRushActive) goldMult *= 2;
     const reward = Math.ceil(goldGain * goldMult);
     gold += reward;
