@@ -35,6 +35,13 @@
     </nav>
     <div id="game-container">
         <h1>Heroes of the Click</h1>
+        <section id="cloud-sync-notice" class="cloud-sync-notice" hidden aria-label="Cloud save available">
+            <p id="cloud-sync-notice-text" role="status">A saved game is available from another device.</p>
+            <div class="cloud-sync-notice-actions">
+                <button type="button" onclick="playerOpenCloudReview()">Compare / Restore</button>
+                <button type="button" onclick="playerCloudDismissNotice()" aria-label="Dismiss cloud notice">Dismiss</button>
+            </div>
+        </section>
 
         <div id="hero-view">
             <div id="enemy-container">
@@ -289,7 +296,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.10.0 – Heroes of the Click
+        v1.10.1 – Heroes of the Click
     </p>
     <br>
 
@@ -385,12 +392,15 @@
                     <p class="player-account-hint">Sign In With Google uses an existing account or creates a new one. Link Guest keeps an anonymous telemetry identity when connecting a new Google account. Sign-in never uploads or replaces a local save. Enable the Google provider in Firebase Console first.</p>
                 </div>
                 <div id="player-account-authenticated" hidden>
-                    <div class="player-account-identity">Signed in: <strong id="player-account-identity"></strong></div>
+                    <div class="player-account-identity">Signed in: <strong id="player-account-identity"></strong>
+                        <small id="player-account-uid" class="player-account-uid"></small>
+                    </div>
                     <button type="button" id="player-account-logout" onclick="playerAccountSignOut()">Sign Out</button>
                 </div>
                 <button type="button" id="player-cloud-export-recovery" onclick="playerExportCloudRecovery()" hidden>Export Pre-Restore Recovery Save</button>
                 <div id="player-cloud-controls" hidden>
-                    <p id="player-cloud-preview">Cloud: not checked on this device.</p>
+                    <p id="player-cloud-preview" class="player-cloud-preview">This device: not checked. Cloud: not checked.</p>
+                    <p id="player-cloud-discovery-status" class="player-cloud-discovery-status">The game will check for cloud updates when you sign in or return.</p>
                     <div class="player-cloud-buttons">
                         <button type="button" id="player-cloud-check" onclick="playerCheckCloudSave()">Check Cloud Save</button>
                         <button type="button" id="player-cloud-upload" onclick="playerBackupCloudSave()">Back Up Local Save</button>
@@ -405,7 +415,7 @@
                             </span>
                         </label>
                     </div>
-                    <p class="player-account-hint">Automatic backup checks every five minutes in the foreground. If another device changes the cloud save, automatic uploads pause and you choose which version to keep. Cloud restores are always manual.</p>
+                    <p class="player-account-hint">Cloud saves are checked when you sign in and revisit the game. A banner appears when another device has progress available. Automatic backup still uploads only from the device you enabled it on; restoring to another device requires your confirmation.</p>
                     <p class="player-account-hint">Before restoring, your current local save is copied to a recovery slot. Cloud saves require owner-only Firestore rules.</p>
                 </div>
             </section>

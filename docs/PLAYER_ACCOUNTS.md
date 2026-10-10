@@ -161,3 +161,15 @@ Current name-based score collections remain readable and unchanged. **Do not del
 ### Security limitation
 
 These are **account-owned rankings**, *not anti-cheat-validated rankings*. A user who owns an account can still manipulate the score reported by their browser. A trusted server must eventually calculate or validate milestones before treating submitted scores as authoritative. There is no automatic cloud-save restore, account migration, or historical score ownership claim in this release.
+
+## v1.10.1 — Moving progress between two devices
+
+The game checks for a cloud save when an account signs in, when the tab resumes and periodically while visible. If a save from another device is available, a banner opens a comparison in Game Config. **Restoring is an explicit choice**, never automatic.
+
+To transfer PC progress to phone for the first time:
+1. On PC, sign in with Google → Game Config → **Back Up Local Save**. Confirm that the cloud save was written and has a revision number.
+2. On phone, sign into the **same Firebase UID** (the short Account ID suffix shown on both devices should match). A cloud-save banner appears after a successful read. Choose **Compare / Restore** and review the PC stage/Dynasty against the phone stage/Dynasty; select **Restore Cloud Save**, confirm, and allow the game to reload.
+3. To keep uploading PC progress, enable **Automatic cloud backup** on PC *after* its manual upload. On phone, reopening/returning to the app checks for a later revision and prompts to review/restore it.
+4. Do not enable automatic backups on both devices simultaneously while actively playing different runs. The revision guard will pause uploads when the second device changes cloud progress.
+
+If no cloud save appears, inspect **Cloud check failed** or **No cloud backup** in Game Config. Verify that the `player_saves/{uid}` rules are published and that both clients are signed into the same Firebase account. Local saves and Export Save are unaffected by cloud errors.

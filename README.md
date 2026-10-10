@@ -164,3 +164,10 @@ The enemy encounter row is now a three-track CSS grid with fixed-width Previous/
 - New selectable **Season II · Connected Accounts** leaderboard uses `scores_accounts_dynasty_ii/{Firebase UID}`, separate from the unchanged name-based Season II and historical Season I leaderboards. Existing scores are not auto-claimed or migrated.
 - Signed-in non-anonymous players can explicitly **Publish / Update My Account Score**, choosing a public display name. A Firestore transaction prevents account score decreases and binds each entry to the current authenticated UID. Display names are not unique; the (You) highlight is based solely on matching Firebase UIDs.
 - Authentication establishes ownership, **not server-verified scores**. The new collection requires additional owner-only Firestore rules from `docs/PLAYER_ACCOUNTS.md`, which must be published separately. Existing guest scores, player saves, telemetry and admin access remain unaffected.
+
+### v1.10.1 — cross-device cloud discovery
+
+- On Google/Email sign-in the game now checks the account-owned Firestore save and detects a different or newer cloud revision. A compact in-game banner can open **Compare / Restore**, where the player's current local and cloud progress are shown side-by-side with stage, Dynasty and save date. No automatic overwrite is performed.
+- Cloud discovery also runs when the tab is re-opened and while active (throttled to one read every three minutes), with meaningful permission/network errors instead of a misleading "synced" label. The account panel shows a short UID suffix to help confirm both devices use the same Firebase identity.
+- A new device without a cloud anchor detects an available cloud save. The original **Back Up Local Save** and **Restore Cloud Save** protections remain; restoring always saves a local recovery copy and requires player confirmation.
+- Automatic cloud backup remains opt-in, backup-only, guarded by revision checks. The banner surfaces concurrent-device progress instead of silently erasing it. No new Firestore collections or rules beyond the already-documented `player_saves` rule.

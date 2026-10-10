@@ -8,6 +8,11 @@ let playerAccountCloudBusy = false;
 let playerAccountUser = null;
 let playerCloudPreview = null;
 let playerAccountPreviousUid = null;
+const PLAYER_CLOUD_DISCOVERY_MS=180000;
+let playerCloudDiscoveryBusy=false;
+let playerCloudLastDiscovery=0;
+let playerCloudLastUid=null;
+let playerCloudDismissedRevision=null;
 
 function accountAuth() {
     return typeof firebase.auth === "function" ? firebase.auth() : null;
@@ -57,6 +62,9 @@ function accountControlsUpdate() {
     const identity = document.getElementById("player-account-identity");
     if (identity) identity.textContent = signedIn ?
         (playerAccountUser.email || "Google account") : "";
+    const accountId=document.getElementById("player-account-uid");
+    if(accountId)accountId.textContent=signedIn?
+        "Account ID: …"+playerAccountUser.uid.slice(-8):"";
     const buttons = ["player-account-create","player-account-login",
         "player-account-google","player-account-google-link","player-account-logout"];
     for (const id of buttons) {
@@ -128,11 +136,100 @@ function accountCloudRecordValid(data,user) {
 function accountPreviewCloud(data) {
     const panel=document.getElementById("player-cloud-preview");
     if(!panel)return;
-    panel.textContent=accountCloudRecordValid(data,accountAuth()?.currentUser) ?
-        "Cloud: "+accountSaveSummary(data.save)+" · Revision "+data.revision :
-        (data ? "Cloud: unsupported or malformed save (cannot restore)." :
-            "Cloud: no backup found. Your local progress is unchanged.");
+    const local=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
+    panel.textContent="This device: "+accountSaveSummary(local)+"\n"+
+        (accountCloudRecordValid(data,accountAuth()?.currentUser) ?
+            "Cloud: "+accountSaveSummary(data.save)+" · Revision "+data.revision :
+            (data ? "Cloud: unsupported or malformed save (cannot restore)." :
+                "Cloud: no backup found. Back up from your PC first."));
 }
+function playerCloudNoticeSet(show,message,revision=null){
+    const notice=document.getElementById("cloud-sync-notice");
+    const body=document.getElementById("cloud-sync-notice-text");
+    if(!notice||!body)return;
+    notice.hidden=!show||revision===playerCloudDismissedRevision;
+    if(show)body.textContent=message;
+}
+function playerCloudDismissNotice(){
+    const record=playerCloudPreview;
+    playerCloudDismissedRevision=record&&Number.isSafeInteger(record.revision)?
+        record.revision:null;
+    playerCloudNoticeSet(false,"");
+}
+function playerCloudUpdateNotice(record){
+    const user=accountAuth()?.currentUser;
+    if(!playerAccountIsRegistered(user)){
+        playerCloudNoticeSet(false,"");
+        return;
+    }
+    if(!record){
+        playerCloudNoticeSet(false,"");
+        return;
+    }
+    if(!accountCloudRecordValid(record,user)){
+        playerCloudNoticeSet(true,"Cloud backup could not be verified. Open Game Config to review.",-1);
+        return;
+    }
+    const anchor=playerSyncAnchor(user.uid);
+    const local=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
+    const fingerprint=playerSyncFingerprint(local);
+    const cloudFingerprint=playerSyncFingerprint(record.save);
+    const revisionChanged=anchor && record.revision!==anchor.revision;
+    const noLinkedSave=!anchor && fingerprint!==cloudFingerprint;
+    if(revisionChanged||noLinkedSave){
+        const stage=Math.max(1,Math.floor(Number(record.save.bestSeasonStage)||0),
+            Math.floor(Number(record.save.maxLevel)||1));
+        const message=revisionChanged?
+            "Another device has updated your cloud save (stage "+stage.toLocaleString()+
+                "). Your local progress is safe. Review both before restoring.":
+            "A cloud save is available (stage "+stage.toLocaleString()+
+                "). Review it to continue your progress on this device.";
+        playerCloudNoticeSet(true,message,record.revision);
+    }else{
+        playerCloudNoticeSet(false,"");
+    }
+}
+async function playerCloudDiscover(force=false){
+    const user=accountAuth()?.currentUser;
+    if(!playerAccountIsRegistered(user)||playerCloudDiscoveryBusy||
+        playerAccountCloudBusy||playerSyncInFlight||document.hidden)return false;
+    const now=Date.now();
+    if(!force && user.uid===playerCloudLastUid &&
+        now-playerCloudLastDiscovery<PLAYER_CLOUD_DISCOVERY_MS)return false;
+    playerCloudDiscoveryBusy=true;
+    playerCloudLastUid=user.uid;
+    playerCloudLastDiscovery=now;
+    try{
+        const snapshot=await accountCloudRef(user).get({source:"server"});
+        if(accountAuth()?.currentUser?.uid!==user.uid)return false;
+        const record=snapshot.exists?snapshot.data():null;
+        playerCloudPreview=record;
+        accountPreviewCloud(record);
+        playerCloudUpdateNotice(record);
+        const feedback=document.getElementById("player-cloud-discovery-status");
+        if(feedback)feedback.textContent=record?
+            "Cloud checked. Review/restore explicitly when switching devices.":
+            "No cloud backup yet. On your main device, select Back Up Local Save first.";
+        return true;
+    }catch(error){
+        if(accountAuth()?.currentUser?.uid!==user.uid)return false;
+        const feedback=document.getElementById("player-cloud-discovery-status");
+        if(feedback)feedback.textContent="Cloud check failed: "+accountErrorMessage(error);
+        // Make rules or network errors visible rather than claiming the devices are synced.
+        playerCloudNoticeSet(true,"Could not check cloud saves. Open Game Config for the error.",-2);
+        return false;
+    }finally{
+        playerCloudDiscoveryBusy=false;
+    }
+}
+function playerOpenCloudReview(){
+    if(typeof showOptions==="function")showOptions();
+    playerCheckCloudSave();
+}
+document.addEventListener("visibilitychange",()=>{
+    if(!document.hidden)playerCloudDiscover();
+});
+setInterval(()=>playerCloudDiscover(),PLAYER_CLOUD_DISCOVERY_MS);
 async function accountReadCloud() {
     const user=accountCurrentUser();
     const snapshot=await accountCloudRef(user).get({source:"server"});
@@ -141,6 +238,7 @@ async function accountReadCloud() {
     const data=snapshot.exists?snapshot.data():null;
     playerCloudPreview=data;
     accountPreviewCloud(data);
+    playerCloudUpdateNotice(data);
     return data;
 }
 async function playerCheckCloudSave() {
@@ -198,6 +296,7 @@ async function playerBackupCloudSave() {
         playerCloudPreview=accountCloudDocument(user,save,expected+1);
         accountPreviewCloud(playerCloudPreview);
         playerSyncSetAnchor(user.uid,expected+1,save);
+        playerCloudUpdateNotice(playerCloudPreview);
         accountCloudMessage("Cloud backup saved (revision "+(expected+1)+"). This device's save is unchanged.");
         return true;
     }catch(error){
@@ -519,6 +618,10 @@ function playerAccountInit(){
         const linked=playerAccountIsRegistered(user);
         const currentUid=user&&user.uid||null;
         if(currentUid!==playerAccountPreviousUid){
+            playerCloudLastDiscovery=0;
+            playerCloudLastUid=null;
+            playerCloudDismissedRevision=null;
+            playerCloudNoticeSet(false,"");
             // Auth user switch disarms any prior account's auto-upload.
             if(playerAccountPreviousUid!==null)
                 playerSyncPause();
@@ -529,8 +632,11 @@ function playerAccountInit(){
         accountControlsUpdate();
         if(typeof accountRankingAuthChanged==="function")accountRankingAuthChanged();
         if(!linked)accountDisplayMessage("Guest · Your progress is saved on this device only.");
-        else accountDisplayMessage("Connected as "+(user.email||"Google player")+
-            ". Cloud saves are optional; use the controls below.");
+        else {
+            accountDisplayMessage("Connected as "+(user.email||"Google player")+
+                ". Checking whether another device has a newer cloud save...");
+            playerCloudDiscover(true);
+        }
     },error=>accountDisplayMessage(accountErrorMessage(error),true));
     accountControlsUpdate();
 }

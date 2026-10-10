@@ -210,6 +210,55 @@ async function run(){
  vm.runInContext("playerSyncInFlight=false",ctx);
  ok(await ctx.playerSetAutoCloudSync(false)&&!ctx.playerSyncEnabled(),
     "Disabling automatic backup leaves local and cloud saves intact");
+
+ // A second signed-in device detects but never silently loads the PC save.
+ freshUser("phone-uid");
+ const pcProgress={...local,gold:8200,maxLevel:125,bestSeasonStage:126};
+ remote={ownerUid:"phone-uid",schemaVersion:1,seasonId:"dynasty-ii",
+   revision:4,updatedAt:{__serverTimestamp:true},save:pcProgress};
+ editLocal({...local,gold:300,maxLevel:12,bestSeasonStage:12});
+ const beforeDiscovery=JSON.parse(localStorage.getItem("clickerHeroSave")).gold;
+ ok(await ctx.playerCloudDiscover(true) &&
+    !document.getElementById("cloud-sync-notice").hidden &&
+    document.getElementById("cloud-sync-notice-text").textContent.includes("125")===false &&
+    document.getElementById("cloud-sync-notice-text").textContent.includes("126") &&
+    JSON.parse(localStorage.getItem("clickerHeroSave")).gold===beforeDiscovery,
+    "Phone detects newer PC cloud save without replacing its local progress");
+ const comparison=document.getElementById("player-cloud-preview").textContent;
+ ok(comparison.includes("This device:")&&comparison.includes("Cloud:")&&
+    comparison.includes("Revision 4")&&comparison.includes("12")&&comparison.includes("126"),
+    "Cloud review compares distinct local and remote stage records");
+ ctx.playerCloudDismissNotice();
+ ok(document.getElementById("cloud-sync-notice").hidden &&
+    await ctx.playerCloudDiscover(true) &&
+    document.getElementById("cloud-sync-notice").hidden,
+    "Dismissing a known cloud revision does not repeatedly nag");
+ remote={...remote,revision:5,save:{...pcProgress,gold:9900,maxLevel:170,bestSeasonStage:171}};
+ ok(await ctx.playerCloudDiscover(true) &&
+    !document.getElementById("cloud-sync-notice").hidden,
+    "A newly uploaded cloud revision resurfaces a dismissed notice");
+ const localBeforeRestore=localStorage.getItem("clickerHeroSave");
+ const reloadsBefore=reloads;
+ confirmDecision=false;
+ ok(!await ctx.playerRestoreCloudSave()&&
+    localStorage.getItem("clickerHeroSave")===localBeforeRestore,
+    "Declined cross-device restore cannot erase phone progress");
+ confirmDecision=true;
+ ok(await ctx.playerRestoreCloudSave()&&reloads===reloadsBefore+1&&
+    JSON.parse(localStorage.getItem("clickerHeroSave")).gold===9900&&
+    localStorage.getItem("clickerHeroSave_before_cloud_restore")===localBeforeRestore,
+    "Accepted PC-to-phone restore preserves a recovery copy and reloads");
+ remote=null;
+ ok(await ctx.playerCloudDiscover(true)&&
+    document.getElementById("cloud-sync-notice").hidden&&
+    document.getElementById("player-cloud-discovery-status").textContent.includes("No cloud backup"),
+    "Missing cloud backup is explained rather than presented as synced");
+ permissionDenied=true;
+ ok(!await ctx.playerCloudDiscover(true)&&
+    document.getElementById("player-cloud-discovery-status").textContent.includes("Firestore rules")&&
+    !document.getElementById("cloud-sync-notice").hidden,
+    "Firestore read errors show a discoverable error without changing local saves");
+ permissionDenied=false;
  console.log("Player Account regression: "+passed+" passed.");
 }
 run().catch(error=>{console.error(error);process.exitCode=1});

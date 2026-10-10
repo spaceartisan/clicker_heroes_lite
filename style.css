@@ -2041,3 +2041,19 @@ button:has(> .ui-icon) { display: inline-flex; }
 .account-ranking-controls p{font:12px/1.5 Arial,sans-serif;margin:2px 0;color:var(--ink-muted)}
 .account-ranking-controls #account-ranking-status.account-error{color:#ee8b80}
 .account-ranking-explainer{opacity:.88}
+
+/* v1.10.1 — cross-device cloud discovery, no silent overwrites. */
+.cloud-sync-notice{
+ display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+ gap:10px;margin:8px auto 14px;max-width:720px;padding:10px 12px;
+ box-sizing:border-box;border:1px solid var(--accent);
+ border-radius:8px;background:var(--panel-raised)
+}
+.cloud-sync-notice[hidden]{display:none!important}
+.cloud-sync-notice p{flex:1 1 220px;margin:0;line-height:1.5;font-size:13px;color:var(--ink-heading)}
+.cloud-sync-notice-actions{display:flex;flex-wrap:wrap;gap:8px}
+.cloud-sync-notice-actions button{min-height:40px;padding:7px 12px;font-size:12px}
+.player-cloud-preview{white-space:pre-line}
+.player-account-uid{display:block;margin-top:3px;color:var(--ink-muted);font-size:11px}
+.player-cloud-discovery-status{margin-top:6px!important}
+@media(max-width:560px){.cloud-sync-notice-actions{width:100%}.cloud-sync-notice-actions button{flex:1}}
