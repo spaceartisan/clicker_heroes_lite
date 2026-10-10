@@ -157,7 +157,7 @@ const passiveAbilities = [
 let marketUpgrades = {
     mkt1: { name: "Treasure Hunter", description: "Increases gold gained from enemies.", cost: 1000, level: 0, maxLevel: 10, unlockLevel: 1 }, // 10% per level
     mkt2: { name: "Bargain Hunter", description: "Reduces upgrade costs.", cost: 500, level: 0, maxLevel: 10, unlockLevel: 1 }, // 5% per level
-    mkt3: { name: "Blacksmith's Touch", description: "Adds 5% mercenary DPS per level.", cost: 2000, level: 0, maxLevel: 10, unlockLevel: 5 }, // 10% per level
+    mkt3: { name: "Blacksmith's Touch", description: "Adds 5% damage per level.", cost: 2000, level: 0, maxLevel: 10, unlockLevel: 5 }, // 10% per level
     mkt4: { name: "Better Bunks", description: "Adds 5% mercenary DPS per level.", cost: 1500, level: 0, maxLevel: 10, unlockLevel: 5 }, // 5% per level
     mkt5: { name: "Offline Gold", description: "Increases gold earned while offline.", cost: 3000, level: 0, maxLevel: 10, unlockLevel: 3 },
     mkt6: { name: "Bounty Contracts", description: "+10% boss gold per level.", cost: 1700, level: 0, maxLevel: 10, unlockLevel: 3 },
