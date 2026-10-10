@@ -100,23 +100,24 @@ function device(label){
   get pauses(){return pauses},get restarts(){return restarts}};
 }
 async function flush(){for(let i=0;i<12;i++)await Promise.resolve()}
+function phase(device){return vm.runInContext("sessionGuardPhase",device.context)}
 async function run(){
  const pc=device("Desktop"),phone=device("Phone");
  pc.context.sessionGuardAccountChanged(pc.account);
  await flush();
- ok(pc.context.sessionGuardPhase==="active","First device obtains server lease");
+ ok(phase(pc)==="active","First device obtains server lease");
  ok(pc.context.sessionGuardCanCheckpoint(),"Owner may request session checkpoint");
  phone.context.sessionGuardAccountChanged(phone.account);
  await flush();
- ok(phone.context.sessionGuardPhase==="occupied","Second device cannot silently acquire occupied lease");
+ ok(phase(phone)==="occupied","Second device cannot silently acquire occupied lease");
  ok(phone.nodes.get("hero-view").inert===true&&phone.pauses>0,
   "Occupied phone gameplay is paused in UI");
  ok(phone.nodes.get("account-session-claim").hidden===false,
   "Take-over control is visible");
  ok(await phone.context.sessionGuardTakeover() &&
-  phone.context.sessionGuardPhase==="active","Confirmed takeover transfers lease to phone");
- pc.context.sessionGuardLastPing=0;
- ok(!await pc.context.sessionGuardPing()&&pc.context.sessionGuardPhase==="lost"&&
+  phase(phone)==="active","Confirmed takeover transfers lease to phone");
+ vm.runInContext('sessionGuardLastPing=0',pc.context);
+ ok(!await pc.context.sessionGuardPing()&&phase(pc)==="lost"&&
     pc.nodes.get("hero-view").inert===true,"Old desktop loses lease at heartbeat");
  const save={schemaVersion:2,seasonId:"dynasty-ii",gold:100,
    playerLevel:1,maxLevel:2,currentLevel:2};
@@ -132,26 +133,26 @@ async function run(){
  const tablet=device("Phone");
  tablet.context.sessionGuardAccountChanged(tablet.account);
  await flush();
- ok(tablet.context.sessionGuardPhase==="occupied","Third device cannot steal active session");
+ ok(phase(tablet)==="occupied","Third device cannot steal active session");
  await phone.context.sessionGuardRelease();
  now+=120001;
  await tablet.context.sessionGuardTakeover();
  await flush();
- ok(tablet.context.sessionGuardPhase==="review"&&tablet.nodes.get("hero-view").inert,
+ ok(phase(tablet)==="review"&&tablet.nodes.get("hero-view").inert,
   "New device must review an existing cloud save before progressing");
  ok(!tablet.context.sessionGuardCanCheckpoint()&&
     tablet.context.sessionGuardCanCheckpoint(true),
   "Manual decision can checkpoint while automatic writes are blocked");
  const newSave={...save,maxLevel:32};
  ok(await tablet.context.sessionGuardCheckpoint(newSave,1,true)===2&&
-    tablet.context.sessionGuardPhase==="active"&&cloud.save.maxLevel===32,
+    phase(tablet)==="active"&&cloud.save.maxLevel===32,
     "Explicit keep-local choice promotes reviewed device to active owner");
  // Missing server: new users continue local-first, not falsely labeled secure.
  owner.clear();cloud=null;functionsAvailable=false;
  const offline=device("Desktop");
  offline.context.sessionGuardAccountChanged(offline.account);
  await flush();
- ok(offline.context.sessionGuardPhase==="unconfigured"&&
+ ok(phase(offline)==="unconfigured"&&
     !offline.context.sessionGuardUsesServer(),"Absent functions never claim false server protection");
  ok(offline.nodes.get("account-session-status").textContent.includes("not active"),
    "Missing backend is visibly labelled unsecured");
