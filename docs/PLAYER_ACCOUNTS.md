@@ -92,3 +92,15 @@ Game Config → Export Save can create a portable \`.chs\` backup at any time. A
 - Never put a Firebase service-account private key, password, or bearer token into GitHub Pages/Netlify source. The Firebase web config is a public client identifier; Firestore Rules are the security boundary.
 
 **Google account linking note:** Use Sign In With Google for any existing Google login, even if an anonymous telemetry session is active. The separate Link Guest button attempts to retain the anonymous UID when attaching a *new* Google account. If that Google account already exists, choose the normal sign-in button instead; the game will not merge unrelated Firebase accounts automatically.
+
+## v1.9.0 — Enable optional automatic cloud backup
+
+After setting up the owner-only `player_saves` rules and signing in:
+
+1. Perform **Back Up Local Save** or **Restore Cloud Save** once on the device. This binds the device to the latest known cloud revision for that signed-in UID.
+2. Enable **Automatic cloud backup (opt-in)**. The game verifies that the live cloud revision still matches before enabling. Unregistered guests and first-time accounts with no confirmed revision cannot enable automatic backup.
+3. While the tab is visible, the game checks every five minutes, and uploads if the meaningful saved content changed. Foreground/gameplay timestamps alone are ignored. No automatic restore occurs.
+4. If a different device has updated the cloud, automatic backup pauses, protecting **both** versions. Click Check Cloud Save, review the stage/Dynasty information, then explicitly choose Back Up Local Save or Restore Cloud Save.
+5. Sign-out and account switching disable automatic uploads; enable them again only when the correct player is signed in. Manual restore disables auto backup and creates a local recovery copy first.
+
+**Cloud synchronization is deliberately conservative.** It does not merge two divergent saves or make scores authoritative. Future authenticated leaderboard integration needs separate schema/rules changes.

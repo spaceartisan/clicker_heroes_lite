@@ -65,12 +65,13 @@ function accountControlsUpdate() {
     }
     for(const id of ["player-cloud-check","player-cloud-upload","player-cloud-restore"]) {
         const control=document.getElementById(id);
-        if(control) control.disabled=!signedIn||playerAccountCloudBusy;
+        if(control) control.disabled=!signedIn||playerAccountCloudBusy||playerSyncInFlight;
     }
     const actions=document.getElementById("player-cloud-controls");
     if(actions) actions.hidden=!signedIn;
     const recovery=document.getElementById("player-cloud-export-recovery");
     if(recovery)recovery.hidden=!localStorage.getItem(PLAYER_CLOUD_BACKUP_KEY);
+    if(typeof playerSyncControlsUpdate==="function")playerSyncControlsUpdate();
     if(!signedIn) {
         playerCloudPreview=null;
         accountCloudMessage("Local saves work without an account. Cloud backups require signing in and owner-only Firestore rules.");
@@ -118,10 +119,16 @@ function accountCloudDocument(user, save, revision) {
         save
     };
 }
+function accountCloudRecordValid(data,user) {
+    return Boolean(data&&user&&data.ownerUid===user.uid&&
+        data.schemaVersion===1&&data.seasonId===GAME_SEASON_ID&&
+        Number.isSafeInteger(data.revision)&&data.revision>=1&&
+        accountValidSave(data.save));
+}
 function accountPreviewCloud(data) {
     const panel=document.getElementById("player-cloud-preview");
     if(!panel)return;
-    panel.textContent=data&&accountValidSave(data.save) ?
+    panel.textContent=accountCloudRecordValid(data,accountAuth()?.currentUser) ?
         "Cloud: "+accountSaveSummary(data.save)+" · Revision "+data.revision :
         (data ? "Cloud: unsupported or malformed save (cannot restore)." :
             "Cloud: no backup found. Your local progress is unchanged.");
@@ -137,7 +144,7 @@ async function accountReadCloud() {
     return data;
 }
 async function playerCheckCloudSave() {
-    if(playerAccountCloudBusy)return false;
+    if(playerAccountCloudBusy||playerSyncInFlight)return false;
     playerAccountCloudBusy=true;
     accountControlsUpdate();
     accountCloudMessage("Checking your private cloud save...");
@@ -157,7 +164,7 @@ async function playerCheckCloudSave() {
 // Every overwrite is explicit. The transaction rejects a remote revision that
 // changed after the player examined it, avoiding races between two devices.
 async function playerBackupCloudSave() {
-    if(playerAccountCloudBusy)return false;
+    if(playerAccountCloudBusy||playerSyncInFlight)return false;
     playerAccountCloudBusy=true;
     accountControlsUpdate();
     try {
@@ -166,7 +173,7 @@ async function playerBackupCloudSave() {
         const save=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
         if(!accountValidSave(save)) throw new Error("Local save is incompatible or too large for a cloud backup.");
         const previous=await accountReadCloud();
-        if(previous&&!accountValidSave(previous.save))
+        if(previous&&!accountCloudRecordValid(previous,user))
             throw new Error("Existing cloud save is not compatible. Refusing to overwrite it.");
         if(previous&&!confirm("Replace the cloud save with THIS device's local progress?\n\n"+
             "Local: "+accountSaveSummary(save)+"\nCloud: "+accountSaveSummary(previous.save)+
@@ -190,6 +197,7 @@ async function playerBackupCloudSave() {
         });
         playerCloudPreview=accountCloudDocument(user,save,expected+1);
         accountPreviewCloud(playerCloudPreview);
+        playerSyncSetAnchor(user.uid,expected+1,save);
         accountCloudMessage("Cloud backup saved (revision "+(expected+1)+"). This device's save is unchanged.");
         return true;
     }catch(error){
@@ -201,7 +209,7 @@ async function playerBackupCloudSave() {
     }
 }
 async function playerRestoreCloudSave() {
-    if(playerAccountCloudBusy)return false;
+    if(playerAccountCloudBusy||playerSyncInFlight)return false;
     playerAccountCloudBusy=true;
     accountControlsUpdate();
     try {
@@ -211,7 +219,7 @@ async function playerRestoreCloudSave() {
             accountCloudMessage("No cloud save found. This device's progress is unchanged.");
             return false;
         }
-        if(!accountValidSave(record.save)) throw new Error("Cloud save is invalid or belongs to another season.");
+        if(!accountCloudRecordValid(record,user)) throw new Error("Cloud save is invalid or belongs to another season or account.");
         const cloudText=JSON.stringify(record.save);
         const prior=localStorage.getItem("clickerHeroSave");
         const local=inspectSeasonSave(prior);
@@ -227,6 +235,9 @@ async function playerRestoreCloudSave() {
         // the original before its recovery copy has been written successfully.
         if(prior) localStorage.setItem(PLAYER_CLOUD_BACKUP_KEY,prior);
         localStorage.setItem("clickerHeroSave",cloudText);
+        playerSyncSetAnchor(user.uid,Number(record.revision),record.save);
+        // Restore is manual; never silently opt into future uploads.
+        playerSyncPause();
         accountCloudMessage("Cloud save restored. Reloading the game...");
         window.location.reload();
         return true;
@@ -238,6 +249,173 @@ async function playerRestoreCloudSave() {
         accountControlsUpdate();
     }
 }
+
+// Optional guarded automatic CLOUD BACKUP (never an automatic cloud restore).
+// Opt-in is per Firebase UID and may only begin from a manual backup/restore
+// revision. A changed remote revision permanently pauses until manual review.
+const PLAYER_SYNC_ENABLED_UID_KEY="hotc_auto_cloud_uid_v1";
+const PLAYER_SYNC_ANCHOR_PREFIX="hotc_cloud_anchor_v1_";
+const PLAYER_SYNC_CHECK_MS=300000;
+let playerSyncLastCheck=0;
+let playerSyncInFlight=false;
+function playerSyncUid(){
+    const auth=accountAuth();
+    const user=auth&&auth.currentUser;
+    return playerAccountIsRegistered(user)?user.uid:null;
+}
+function playerSyncEnabled(){
+    const uid=playerSyncUid();
+    return Boolean(uid&&localStorage.getItem(PLAYER_SYNC_ENABLED_UID_KEY)===uid);
+}
+function playerSyncAnchor(uid){
+    if(!uid)return null;
+    const raw=localStorage.getItem(PLAYER_SYNC_ANCHOR_PREFIX+uid);
+    if(!raw)return null;
+    try{
+        const entry=JSON.parse(raw);
+        return Number.isSafeInteger(entry.revision)&&entry.revision>0 &&
+            typeof entry.fingerprint==="string" && /^\d+:[0-9a-f]+:[0-9a-f]+$/.test(entry.fingerprint)?
+            entry:null;
+    }catch(_){return null}
+}
+function playerSyncFingerprint(save){
+    if(!accountValidSave(save))return null;
+    // Ignore heartbeat / leaderboard write bookkeeping. 64 bits of
+    // non-cryptographic checksums plus length are only for deduplication;
+    // owner-only Firestore rules and revision checks enforce safety.
+    const normalized={...save};
+    delete normalized.lastSaved;
+    delete normalized.lastSubmittedScore;
+    const str=JSON.stringify(normalized);
+    let hash1=2166136261,hash2=2246822519;
+    for(let i=0;i<str.length;i++){
+        const c=str.charCodeAt(i);
+        hash1=Math.imul(hash1^c,16777619);
+        hash2=Math.imul(hash2+c,1597334677)^hash2>>>7;
+    }
+    return str.length+":"+(hash1>>>0).toString(16)+":"+(hash2>>>0).toString(16);
+}
+function playerSyncSetAnchor(uid,revision,save){
+    const fingerprint=playerSyncFingerprint(save);
+    if(!uid||!fingerprint||!Number.isSafeInteger(revision)||revision<1)return false;
+    localStorage.setItem(PLAYER_SYNC_ANCHOR_PREFIX+uid,
+        JSON.stringify({revision,fingerprint}));
+    return true;
+}
+function playerSyncPause(reason){
+    // Pausing is also used by manual imports/sign-out; never erase the
+    // revision anchor, so a future explicit backup/restore can relink.
+    localStorage.removeItem(PLAYER_SYNC_ENABLED_UID_KEY);
+    if(reason)accountCloudMessage(reason,true);
+    playerSyncControlsUpdate();
+}
+function playerSyncControlsUpdate(){
+    const uid=playerSyncUid();
+    const checkbox=document.getElementById("player-cloud-auto");
+    if(checkbox){
+        checkbox.checked=playerSyncEnabled();
+        checkbox.disabled=!uid||playerAccountBusy||playerAccountCloudBusy||playerSyncInFlight;
+    }
+    const info=document.getElementById("player-cloud-auto-status");
+    if(info)info.textContent=playerSyncEnabled()?
+        "On · Backups check every 5 minutes while this tab is active. "+
+        "Cloud restores remain manual.":
+        "Off · First perform a manual cloud backup or restore, then opt in.";
+}
+async function playerSetAutoCloudSync(enabled){
+    if(!enabled){
+        playerSyncPause();
+        accountCloudMessage("Automatic cloud backup turned off. Local and cloud saves are intact.");
+        return true;
+    }
+    if(playerAccountCloudBusy||playerSyncInFlight)return false;
+    playerAccountCloudBusy=true;
+    accountControlsUpdate();
+    try{
+        const user=accountCurrentUser();
+        const anchor=playerSyncAnchor(user.uid);
+        const local=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
+        if(!anchor||!playerSyncFingerprint(local))
+            throw new Error("To enable automatic backup, first manually back up or restore this device's save.");
+        const cloud=await accountReadCloud();
+        if(!accountCloudRecordValid(cloud,user)||
+            cloud.revision!==anchor.revision)
+            throw new Error("Cloud progress differs from this device's last confirmed backup. "+
+                "Check both saves and manually back up or restore before enabling automatic backup.");
+        if(accountCurrentUser().uid!==user.uid)throw new Error("Account changed.");
+        localStorage.setItem(PLAYER_SYNC_ENABLED_UID_KEY,user.uid);
+        playerSyncLastCheck=Date.now();
+        accountCloudMessage("Automatic backups enabled. Another device's changes will pause uploads, not replace local progress.");
+        return true;
+    }catch(error){
+        playerSyncPause(accountErrorMessage(error));
+        return false;
+    }finally{
+        playerAccountCloudBusy=false;
+        accountControlsUpdate();
+    }
+}
+async function playerSyncCloudTick(){
+    if(!playerSyncEnabled()||document.hidden||playerAccountBusy||
+        playerAccountCloudBusy||playerSyncInFlight)return false;
+    const now=Date.now();
+    if(now-playerSyncLastCheck<PLAYER_SYNC_CHECK_MS)return false;
+    playerSyncLastCheck=now;
+    playerSyncInFlight=true;
+    accountControlsUpdate();
+    try{
+        const user=accountCurrentUser();
+        const anchor=playerSyncAnchor(user.uid);
+        if(!anchor){
+            playerSyncPause("Automatic backup paused: no confirmed cloud revision. Back up or restore manually.");
+            return false;
+        }
+        const remote=await accountReadCloud();
+        if(!accountCloudRecordValid(remote,user)||
+            remote.revision!==anchor.revision){
+            playerSyncPause("Another device has changed the cloud save. "+
+                "Automatic backup paused. Compare saves, then back up or restore manually.");
+            return false;
+        }
+        const local=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
+        const fingerprint=playerSyncFingerprint(local);
+        if(!fingerprint){
+            playerSyncPause("Automatic backup paused: local save is invalid. Use Export Save to preserve a copy.");
+            return false;
+        }
+        if(fingerprint===anchor.fingerprint)return false;
+        const reference=accountCloudRef(user);
+        await db.runTransaction(async transaction=>{
+            const current=await transaction.get(reference);
+            if(!current.exists||Number(current.data().revision)!==anchor.revision)
+                throw new Error("Cloud save changed on another device during backup.");
+            const currentSave=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
+            if(playerSyncFingerprint(currentSave)!==fingerprint ||
+                accountCurrentUser().uid!==user.uid ||
+                document.hidden || !playerSyncEnabled())
+                throw new Error("Local save or account changed during backup; upload cancelled.");
+            transaction.set(reference,accountCloudDocument(user,local,anchor.revision+1));
+        });
+        playerSyncSetAnchor(user.uid,anchor.revision+1,local);
+        playerCloudPreview=accountCloudDocument(user,local,anchor.revision+1);
+        accountPreviewCloud(playerCloudPreview);
+        accountCloudMessage("Automatic cloud backup saved · revision "+(anchor.revision+1)+".");
+        return true;
+    }catch(error){
+        const code=error&&error.code;
+        if(code==="permission-denied"||/changed on another device|Account changed/.test(error.message||""))
+            playerSyncPause("Automatic backup paused: "+accountErrorMessage(error)+
+                " Review both versions before restarting.");
+        else accountCloudMessage("Automatic backup unavailable; local save is safe. "+
+            accountErrorMessage(error),true);
+        return false;
+    }finally{
+        playerSyncInFlight=false;
+        accountControlsUpdate();
+    }
+}
+setInterval(playerSyncCloudTick,60000);
+
 async function playerEmailAccount(create) {
     if(playerAccountBusy)return false;
     const auth=accountAuth();
@@ -317,6 +495,7 @@ async function playerAccountSignOut(){
     const auth=accountAuth();
     if(!auth||!playerAccountIsRegistered(auth.currentUser))return false;
     if(!confirm("Sign out of your player account? Local gameplay and the current device save remain. No cloud data will be deleted."))return false;
+    playerSyncPause();
     playerAccountBusy=true;accountControlsUpdate();
     try{
         await auth.signOut();
@@ -340,6 +519,9 @@ function playerAccountInit(){
         const linked=playerAccountIsRegistered(user);
         const currentUid=user&&user.uid||null;
         if(currentUid!==playerAccountPreviousUid){
+            // Auth user switch disarms any prior account's auto-upload.
+            if(playerAccountPreviousUid!==null)
+                playerSyncPause();
             playerCloudPreview=null;
             playerAccountPreviousUid=currentUid;
             accountPreviewCloud(null);

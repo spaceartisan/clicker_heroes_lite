@@ -24,6 +24,7 @@ function makeNode(){
   append(){},getContext(){return null}};
 }
 const document={
+ hidden:false,
  getElementById(id){if(!nodes.has(id))nodes.set(id,makeNode());return nodes.get(id)},
  addEventListener(){ }
 };
@@ -61,6 +62,7 @@ const db={
 const ctx=vm.createContext({
  document,localStorage,db,firebase,
  window:{location:{reload(){reloads++}}},
+ setInterval:()=>1,
  confirm:()=>confirmDecision,console,Date,
  saveGame(){saveCalls++},isCurrentSeasonSave:undefined
 });
@@ -159,6 +161,55 @@ async function run(){
  ok(await ctx.playerAccountSignOut()&&currentUser===null &&
     JSON.parse(localStorage.getItem("clickerHeroSave")).gold===999,
     "Sign out leaves local progress untouched");
+
+ // Guarded background cloud backup may start only from a trusted manual revision.
+ freshUser("auto-uid");
+ remote=null;
+ editLocal({...local,gold:1000});
+ ok(!await ctx.playerSetAutoCloudSync(true),
+    "Automatic cloud backup cannot enable before manual sync establishes a revision");
+ ok(await ctx.playerBackupCloudSave()&&remote.revision===1,
+    "Manual backup establishes revision and local content anchor");
+ ok(await ctx.playerSetAutoCloudSync(true)&&ctx.playerSyncEnabled(),
+    "Opt-in enables guarded automatic uploads after verifying remote revision");
+ const writesBefore=transactionCount;
+ editLocal({...local,gold:1000,lastSaved:Date.now()+10000,lastSubmittedScore:421});
+ vm.runInContext("playerSyncLastCheck=Date.now()-PLAYER_SYNC_CHECK_MS-10",ctx);
+ ok(!await ctx.playerSyncCloudTick()&&transactionCount===writesBefore,
+    "Heartbeat and leaderboard bookkeeping alone do not upload again");
+ editLocal({...local,gold:1500,maxLevel:45,lastSaved:Date.now()});
+ vm.runInContext("playerSyncLastCheck=Date.now()-PLAYER_SYNC_CHECK_MS-10",ctx);
+ ok(await ctx.playerSyncCloudTick()&&remote.revision===2&&remote.save.gold===1500,
+    "Changed local progress automatically uploads against known revision");
+ document.hidden=true;
+ editLocal({...local,gold:1800,maxLevel:50});
+ vm.runInContext("playerSyncLastCheck=Date.now()-PLAYER_SYNC_CHECK_MS-10",ctx);
+ ok(!await ctx.playerSyncCloudTick()&&remote.revision===2,
+    "Background tab cannot perform automatic cloud backups");
+ document.hidden=false;
+ remote={...remote,revision:3,save:{...local,gold:9999,maxLevel:90}};
+ vm.runInContext("playerSyncLastCheck=Date.now()-PLAYER_SYNC_CHECK_MS-10",ctx);
+ ok(!await ctx.playerSyncCloudTick()&&!ctx.playerSyncEnabled()&&
+    remote.save.gold===9999&&
+    JSON.parse(localStorage.getItem("clickerHeroSave")).gold===1800,
+    "Remote revision change pauses automatic upload without losing either save");
+ ok(!await ctx.playerSyncCloudTick()&&remote.save.gold===9999,
+    "Paused uploader does not retry or overwrite other device's progress");
+ ok(!await ctx.playerSetAutoCloudSync(true)&&!ctx.playerSyncEnabled(),
+    "Cannot re-enable against a newer remote revision without explicit manual decision");
+ remote=null;
+ ok(await ctx.playerBackupCloudSave()&&remote.revision===1,
+    "After explicit review, manual cloud backup can establish a new confirmed revision");
+ ok(await ctx.playerSetAutoCloudSync(true)&&ctx.playerSyncEnabled(),
+    "Manual resynchronization can deliberately re-enable uploads");
+ vm.runInContext("playerSyncInFlight=true",ctx);
+ ok(!await ctx.playerBackupCloudSave() &&
+    !await ctx.playerRestoreCloudSave() &&
+    !await ctx.playerCheckCloudSave(),
+    "Manual cloud actions cannot race with automatic backup");
+ vm.runInContext("playerSyncInFlight=false",ctx);
+ ok(await ctx.playerSetAutoCloudSync(false)&&!ctx.playerSyncEnabled(),
+    "Disabling automatic backup leaves local and cloud saves intact");
  console.log("Player Account regression: "+passed+" passed.");
 }
 run().catch(error=>{console.error(error);process.exitCode=1});

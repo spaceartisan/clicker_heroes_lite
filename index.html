@@ -289,7 +289,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.8.0 – Heroes of the Click
+        v1.9.0 – Heroes of the Click
     </p>
     <br>
 
@@ -389,6 +389,15 @@
                         <button type="button" id="player-cloud-restore" onclick="playerRestoreCloudSave()">Restore Cloud Save</button>
                     </div>
                     <p id="player-cloud-status" role="status" aria-live="polite">Cloud actions are manual. No automatic merges or overwrites.</p>
+                    <div class="player-auto-sync">
+                        <label for="player-cloud-auto">
+                            <input id="player-cloud-auto" type="checkbox" onchange="playerSetAutoCloudSync(this.checked)">
+                            <span><strong>Automatic cloud backup (opt-in)</strong>
+                                <small id="player-cloud-auto-status">Off · First perform a manual cloud backup or restore, then opt in.</small>
+                            </span>
+                        </label>
+                    </div>
+                    <p class="player-account-hint">Automatic backup checks every five minutes in the foreground. If another device changes the cloud save, automatic uploads pause and you choose which version to keep. Cloud restores are always manual.</p>
                     <p class="player-account-hint">Before restoring, your current local save is copied to a recovery slot. Cloud saves require owner-only Firestore rules.</p>
                 </div>
             </section>

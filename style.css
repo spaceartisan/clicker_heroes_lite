@@ -2019,3 +2019,13 @@ button:has(> .ui-icon) { display: inline-flex; }
     .player-account-buttons,.player-cloud-buttons{grid-template-columns:minmax(0,1fr)}
     .player-account-buttons button:last-child,.player-cloud-buttons button:last-child{grid-column:auto}
 }
+
+/* v1.9.0: optional, guarded automatic cloud backup. */
+.player-auto-sync{
+    padding:11px;margin-top:10px;border:1px solid var(--panel-line);
+    border-radius:7px;background:var(--panel-raised);box-sizing:border-box;
+}
+.player-auto-sync label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;line-height:1.5}
+.player-auto-sync input{width:22px;height:22px;flex:0 0 22px;margin:0;accent-color:var(--accent)}
+.player-auto-sync strong{display:block;font-size:13px;color:var(--ink-heading)}
+.player-auto-sync small{display:block;font-size:12px;color:var(--ink-muted);margin-top:3px}
