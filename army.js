@@ -25,9 +25,10 @@ function getArmyCap(kind) {
 
 function getArmyUnitCost(kind, currentTier) {
     if (!Number.isFinite(currentTier) || currentTier < 0) return Infinity;
-    if (kind === "level") return Math.floor(10 * Math.pow(Math.max(1, currentTier), 1.6) * getResearchCostFactor());
+    if (kind === "level") return Math.floor(10 * Math.pow(Math.max(1, currentTier), 1.6) * mktUp(1) * getResearchCostFactor());
     if (kind === "gear" || kind === "speed") {
-        return Math.floor(100 * Math.pow(currentTier + 1, 8) * mktUp(1) * getResearchCostFactor());
+        const power = kind === "gear" ? 6 : 4;
+        return Math.floor(100 * Math.pow(currentTier + 1, power) * mktUp(1) * getResearchCostFactor());
     }
     return Infinity;
 }
