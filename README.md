@@ -70,6 +70,8 @@ The Academy has a **three-branch dependency tree**: Warfare, Commerce, and Gover
 - Market can first be built after clearing stage **20**, without the former Castle Lv 3 requirement. Blacksmith and Barracks first open after stage 25 and Castle Lv 2. Later building upgrades still need higher Castle levels.
 - Castle base cost is now **30,000** (previously 50,000) with **1.35×** growth instead of 1.5×; other buildings use **1.45×** growth.
 - Market research costs grow at **1.65× per rank** rather than doubling; level caps and unlock requirements remain in force. Merchant discounts and the Guild Charters research apply to purchases.
+- Mercenary gear-upgrade prices now grow as **(next rank)^6** instead of the previous eighth power, and attack-speed upgrades as **(next rank)^4**. The weaker marginal return from speed is thus priced more reasonably. Army Command and individual upgrades use identical formulas, including Market and research discounts.
+- Castle decrees also receive applicable upgrade-cost discounts.
 - Monster gold per defeat grows approximately with stage^1.4, versus stage^1.5 for monster HP. Research and Market benefits use bounded additive or modest multiplicative improvements; existing specialized squad counters remain important.
 - The previous description of Blacksmith's Touch was misleading: it boosts damage, not physical gear-upgrade cost efficiency.
 - The existing offline income limit (24 hours at a fraction of foreground mercenary DPS), fixed-rate combat loop, and no-constant-redraw approach remain intact.
