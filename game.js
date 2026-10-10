@@ -45,9 +45,9 @@ const kingdomCanvas = document.getElementById("kingdom-canvas");
 const kingdomCtx = kingdomCanvas.getContext("2d");
 
 const achievements = [
-    { id: "gold_100", name: "Gold Digger I", description: "Collect 100 gold", condition: () => gold >= 100 },
-    { id: "gold_100000", name: "Gold Digger II", description: "Collect 100,000 gold", condition: () => gold >= 100000 },
-    { id: "gold_1000000", name: "Gold Digger III", description: "Collect 1,000,000 gold", condition: () => gold >= 1000000 },
+    { id: "gold_100", name: "Gold Digger I", description: "Hold 100 gold at once", condition: () => gold >= 100 },
+    { id: "gold_100000", name: "Gold Digger II", description: "Hold 100,000 gold at once", condition: () => gold >= 100000 },
+    { id: "gold_1000000", name: "Gold Digger III", description: "Hold 1,000,000 gold at once", condition: () => gold >= 1000000 },
     { id: "player_10", name: "Hero's Rise I", description: "Reach player level 10", condition: () => playerLevel >= 10 },
     { id: "player_100", name: "Hero's Rise II", description: "Reach player level 100", condition: () => playerLevel >= 100 },
     { id: "player_1000", name: "Hero's Rise III", description: "Reach player level 1000", condition: () => playerLevel >= 1000 },
@@ -60,9 +60,9 @@ const achievements = [
     { id: "enemy_10", name: "Vanquisher I", description: "Defeat 10 enemies", condition: () => enemiesDefeated >= 10 },
     { id: "enemy_1000", name: "Vanquisher II", description: "Defeat 1000 enemies", condition: () => enemiesDefeated >= 1000 },
     { id: "enemy_10000", name: "Vanquisher III", description: "Defeat 10,000 enemies", condition: () => enemiesDefeated >= 10000 },
-    { id: "level_10", name: "Explorer I", description: "Reach level 10", condition: () => currentLevel >= 10 },
-    { id: "level_300", name: "Explorer II", description: "Reach level 300", condition: () => currentLevel >= 300 },
-    { id: "level_1000", name: "Explorer III", description: "Reach level 1000", condition: () => currentLevel >= 1000 },
+    { id: "level_10", name: "Explorer I", description: "Reach level 10", condition: () => getBestClearedStage() >= 10 },
+    { id: "level_300", name: "Explorer II", description: "Reach level 300", condition: () => getBestClearedStage() >= 300 },
+    { id: "level_1000", name: "Explorer III", description: "Reach level 1000", condition: () => getBestClearedStage() >= 1000 },
     { id: "merc_1", name: "First Hire", description: "Hire your first mercenary", condition: () => hiredMercenaries.length >= 1 },
     { id: "merc_10", name: "Mercenary Captain", description: "Hire 10 mercenaries", condition: () => hiredMercenaries.length >= 10 },
     { id: "merc_50", name: "Mercenary Commander", description: "Hire 50 mercenaries", condition: () => hiredMercenaries.length >= 50 },
@@ -71,25 +71,49 @@ const achievements = [
     { id: "merc_level_50", name: "Elite Warrior", description: "Level a mercenary to 50", condition: () => hiredMercenaries.some(m => m.level >= 50) },
     { id: "gear_5", name: "Sharpened Blades", description: "Upgrade any mercenary's gear to level 5", condition: () => hiredMercenaries.some(m => m.gearLevel >= 5) },
     { id: "gear_20", name: "Forgemaster", description: "Upgrade any mercenary's gear to level 20", condition: () => hiredMercenaries.some(m => m.gearLevel >= 20) },
-    { id: "gear_50", name: "Legendary Smith", description: "Upgrade any mercenary's gear to level 50", condition: () => hiredMercenaries.some(m => m.gearLevel >= 50) },
+    { id: "merc_gear_50", name: "Legendary Smith", description: "Upgrade any mercenary's gear to level 50", condition: () => hiredMercenaries.some(m => m.gearLevel >= 50) },
     { id: "guild_1", name: "Bar Tender", description: "Upgrade the Tavern to level 1", condition: () => structures.tavern.level >= 1 },
     { id: "guild_10", name: "Bar Keeper", description: "Upgrade the Tavern to level 10", condition: () => structures.tavern.level >= 10 },
     { id: "guild_100", name: "Tavern Owner", description: "Upgrade the Tavern to level 100", condition: () => structures.tavern.level >= 100 },
     { id: "speed_5", name: "Swift Strike I", description: "Upgrade a mercenary's attack speed to level 5", condition: () => hiredMercenaries.some(m => m.attackSpeedLevel >= 5) },
     { id: "speed_20", name: "Swift Strike II", description: "Upgrade a mercenary's attack speed to level 20", condition: () => hiredMercenaries.some(m => m.attackSpeedLevel >= 20) },
     { id: "speed_50", name: "Swift Strike III", description: "Upgrade a mercenary's attack speed to level 50", condition: () => hiredMercenaries.some(m => m.attackSpeedLevel >= 50) },
-    { id: "ability_strong", name: "Strong Hero", description: "Unlock Strong Attack ability", condition: () => abilitiesUsed.includes("Strong Attack") },
-    { id: "ability_rally", name: "Rallying Cry", description: "Unlock Rally ability", condition: () => abilitiesUsed.includes("Rally") },
-    { id: "ability_double", name: "Double Trouble", description: "Unlock Double Attack ability", condition: () => abilitiesUsed.includes("Double Attack") },
-    { id: "ability_rage", name: "Raging Fury", description: "Unlock Rage ability", condition: () => abilitiesUsed.includes("Rage") },
+    { id: "ability_strong", name: "Strong Hero", description: "Use Strong Attack", condition: () => abilitiesUsed.includes("Strong Attack") },
+    { id: "ability_rally", name: "Rallying Cry", description: "Use Rally", condition: () => abilitiesUsed.includes("Rally") },
+    { id: "ability_double", name: "Double Trouble", description: "Use Double Attack", condition: () => abilitiesUsed.includes("Double Attack") },
+    { id: "ability_rage", name: "Raging Fury", description: "Use Rage", condition: () => abilitiesUsed.includes("Rage") },
     { id: "ability_count_10", name: "Ability Master I", description: "Use abilities 10 times", condition: () => abilitiesCount >= 10 },
     { id: "ability_count_100", name: "Ability Master II", description: "Use abilities 100 times", condition: () => abilitiesCount >= 100 },
-    { id: "ability_count_1000", name: "Ability Master III", description: "Use abilities 1000 times", condition: () => abilitiesCount >= 1000 }
+    { id: "ability_count_1000", name: "Ability Master III", description: "Use abilities 1000 times", condition: () => abilitiesCount >= 1000 },
+    { id: "ability_gold", name: "Golden Touch", description: "Use Gold Rush", condition: () => abilitiesUsed.includes("Gold Rush") },
+    { id: "ability_all", name: "Master of the Five", description: "Use all five active abilities", condition: () => abilities.every(a => abilitiesUsed.includes(a.name)) },
+    { id: "stage_200", name: "Frontier Pioneer", description: "Clear stage 200", condition: () => getBestClearedStage() >= 200 },
+    { id: "stage_500", name: "Beyond the Frontier", description: "Clear stage 500", condition: () => getBestClearedStage() >= 500 },
+    { id: "stage_10000", name: "Uncharted Realms", description: "Clear stage 10,000", condition: () => getBestClearedStage() >= 10000 },
+    { id: "stage_1000000", name: "Eternal Pathfinder", description: "Clear stage 1,000,000", condition: () => getBestClearedStage() >= 1000000 },
+    { id: "dynasty_1", name: "Founding Dynasty", description: "Found a second Dynasty", condition: () => dynastyCount >= 1 },
+    { id: "dynasty_5", name: "Line of Kings", description: "Found five new Dynasties", condition: () => dynastyCount >= 5 },
+    { id: "dynasty_10", name: "Eternal Crown", description: "Found ten new Dynasties", condition: () => dynastyCount >= 10 },
+    { id: "castle_5", name: "Royal Architect", description: "Raise the Castle to level 5", condition: () => Math.max(highestCastleEver, structures.castle.level) >= 5 },
+    { id: "castle_20", name: "Fortress of Ages", description: "Raise the Castle to level 20", condition: () => Math.max(highestCastleEver, structures.castle.level) >= 20 },
+    { id: "research_1", name: "First Discovery", description: "Complete your first Royal Academy research", condition: () => getCompletedResearchCount() >= 1 },
+    { id: "research_12", name: "Royal Scholar", description: "Complete all 12 Royal Academy technologies", condition: () => getCompletedResearchCount() >= 12 },
+    { id: "college_10", name: "Learned Kingdom", description: "Purchase ten College ranks", condition: () => getCollegeRanks() >= 10 },
+    { id: "charter_5", name: "Merchant Prince", description: "Purchase five Market Charters in a Dynasty", condition: () => marketCharterRank >= 5 }
 ];
 
 
 
-let unlockedAchievements = new Set(); // Use localStorage to persist
+let unlockedAchievements = new Set(); // Saved with the Season II game, including across Dynasty rebirths.
+function getBestClearedStage() {
+    return Math.max(0, Math.floor(Math.max(maxLevel, bestSeasonStage) - 1));
+}
+function getCompletedResearchCount() {
+    return RESEARCH_NODES.reduce((count, node) => count + (researchState[node.id] === true ? 1 : 0), 0);
+}
+function getCollegeRanks() {
+    return Object.values(academyDisciplines).reduce((sum, level) => sum + level, 0);
+}
 
 const enemyNames = ["Slime", "ByteBat", "Goblink", "Rasteroid", "HexWorm", "Pixel Fiend", "Bugbear", "NullKnight", "Cryptoad", "8-Bit Dragon"];
 const levelThemes = [
@@ -185,14 +209,16 @@ let goldRushInterval = null;
 
 abilities.forEach(ability => {
     const btn = document.getElementById(ability.name.toLowerCase().replace(/ /g, '-'));
-    abilityStates[ability.name] = { cooldown: false, button: btn, unlocked: false };
+    abilityStates[ability.name] = { cooldown: false, button: btn, unlocked: false,
+        cooldownUntil: 0, activeUntil: 0 };
     btn.onclick = () => {
         // console.log(`Activating ability: ${ability.name}`);
         if (abilityStates[ability.name].unlocked) activateAbility(ability);
     };
+    btn.hidden = true;
     btn.disabled = true;
     btn.classList.add("locked");
-    btn.textContent = `${ability.name} (Unlocks at Lv ${ability.unlockLevel})`;
+    btn.textContent = ability.name;
 });
 
 // === Level Controls ===
@@ -292,6 +318,7 @@ function loadGame() {
           Object.keys(academyDisciplines).map(id=>[id,Math.max(0,Math.min(10000,Math.floor(Number(data.academyDisciplines?.[id])||0)))]));
         marketCharterRank=Math.max(0,Math.min(2000,Math.floor(Number(data.marketCharterRank)||0)));
         stopSquadAttack();
+        resetAbilityEffects();
         hiredMercenaries.length = 0;
         squadBuilds = data.squadBuilds && typeof data.squadBuilds === "object" && !Array.isArray(data.squadBuilds) ? data.squadBuilds : {};
         claimedTreasury = Array.isArray(data.claimedTreasury)

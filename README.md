@@ -37,3 +37,15 @@ Faith/religion remains a separate future mechanic. Renown and Insight are secula
 - No changes to Dynasty benefits, the Season II save schema, active combat timers, or the deferred religion system.
 
 **Deployment:** Firestore rules for `scores_dynasty_ii` still need to be verified by the project owner. Automated checks validate routing and failure handling, but cannot authorize backend access or measure thermal behavior on a physical phone.
+
+### v1.1.0 — achievements and active ability status
+
+- Locked hero abilities **do not appear on the HUD**. Buttons appear upon reaching their hero-level requirement, show a cooldown countdown, and show **ACTIVE** with remaining duration while an effect is running. Double Attack displays a prepared-charge indicator until consumed. A compact status line summarizes active effects. A single ability status timer runs only while effects/cooldowns are pending, avoiding multiple permanent timers on phones.
+- Skill timers and active flags are reset upon Dynasty rebirth or loading a saved game. Active durations are deliberately session-only; previously earned ability-use achievements remain persistent.
+- Achievements now include Dynasty, Royal Academy, College, Castle and Frontier milestones. Explorer progress uses the highest cleared stage, not whichever older stage is selected. Gold achievements explicitly require **holding** the gold simultaneously.
+- The Achievements menu now shows overall completion and progress toward unfinished targets, with Completed / In Progress filters. Achievement notifications are consolidated when several unlock at once; saved achievements survive Dynasty resets. No Season II save format migration is needed.
+- The stage 200+ pacing was reviewed at representative stages through 20 million. This pass does not change reward curves or the Dynasty reset cost; it concentrates on fixing the player-facing skill and milestone experience.
+
+### Post-200 pacing review
+
+The stage scaling was checked at stages 200, 500, 1,000, 10,000, and 20 million. For comparable boss encounters before multipliers, boss HP rises roughly 13× between 200 and 1,000, while base gold rises roughly 10×. Renown earned per reset goes from 1 (stage 200), to 2 (stage 500), 3 (stage 1,000), and 6 (stage 10,000), with gradual diminishing returns. There is no change to the economy formula in v1.1.0; empirical time-to-clear and device temperature should be measured during subsequent player tests.

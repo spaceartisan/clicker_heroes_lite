@@ -20,6 +20,7 @@ function attack(isRageAttack = false) {
     if (doubleAttackReady) {
         dmg *= 2;
         doubleAttackReady = false;
+        updateAbilityHUD(Date.now(), true);
     }
     // showDamage(dmg);
     enemyHealth -= dmg;
@@ -170,48 +171,133 @@ function stopSquadAttack() {
 }
 
 // === Hero Abilities ===
+// Only one once-per-second HUD timer for all unlocked abilities.
+// Cooldowns run from wall-clock deadlines, so a backgrounded phone does not
+// extend effects or accumulate independent countdown intervals.
+let abilityHudTimer = null;
+let abilityHudLastSecond = -1;
+let abilityHudLastLevel = -1;
+let abilityHudLastCharge = false;
+
+function updateAbilityHUD(now = Date.now(), force = false) {
+    const second = Math.floor(now / 1000);
+    if (!force && second === abilityHudLastSecond &&
+        playerLevel === abilityHudLastLevel && doubleAttackReady === abilityHudLastCharge) return;
+    abilityHudLastSecond = second;
+    abilityHudLastLevel = playerLevel;
+    abilityHudLastCharge = doubleAttackReady;
+    const bar = document.getElementById("ability-bar");
+    const activeSummary = document.getElementById("ability-active-status");
+    let anyUnlocked = false;
+    let pending = false;
+    const activeLabels = [];
+
+    for (const ability of abilities) {
+        const state = abilityStates[ability.name];
+        const unlocked = playerLevel >= ability.unlockLevel;
+        state.unlocked = unlocked;
+        state.button.hidden = !unlocked;
+        if (!unlocked) {
+            state.button.disabled = true;
+            state.button.classList.add("locked");
+            continue;
+        }
+        anyUnlocked = true;
+        state.button.classList.remove("locked");
+
+        if (state.activeUntil && now >= state.activeUntil) {
+            state.activeUntil = 0;
+            if (ability.name === "Rally") rallyActive = false;
+            if (ability.name === "Gold Rush") goldRushActive = false;
+            if (ability.name === "Rage") {
+                if (rageInterval !== null) clearInterval(rageInterval);
+                rageInterval = null;
+            }
+        }
+
+        const remainingCooldown = Math.max(0, Math.ceil((state.cooldownUntil - now) / 1000));
+        const remainingActive = Math.max(0, Math.ceil((state.activeUntil - now) / 1000));
+        const prepared = ability.name === "Double Attack" && doubleAttackReady;
+        state.cooldown = remainingCooldown > 0;
+
+        state.button.disabled = state.cooldown;
+        state.button.classList.toggle("ability-active", remainingActive > 0 || prepared);
+        state.button.classList.toggle("ability-cooling", state.cooldown);
+        let label = ability.name;
+        if (remainingActive > 0) {
+            label += " · ACTIVE " + remainingActive + "s";
+            activeLabels.push(ability.name + " " + remainingActive + "s");
+        } else if (prepared) {
+            label += " · READY CHARGE";
+            activeLabels.push("Double Attack ready");
+        }
+        if (state.cooldown) label += " · CD " + remainingCooldown + "s";
+        state.button.textContent = label;
+        state.button.setAttribute("aria-label", label);
+        if (state.cooldown || remainingActive > 0) pending = true;
+    }
+
+    bar.hidden = !anyUnlocked;
+    activeSummary.hidden = activeLabels.length === 0;
+    activeSummary.textContent = activeLabels.length ? "Active: " + activeLabels.join(" · ") : "";
+
+    if (pending && abilityHudTimer === null) {
+        abilityHudTimer = setInterval(() => updateAbilityHUD(), 1000);
+    } else if (!pending && abilityHudTimer !== null) {
+        clearInterval(abilityHudTimer);
+        abilityHudTimer = null;
+    }
+}
+
+function resetAbilityEffects() {
+    if (abilityHudTimer !== null) clearInterval(abilityHudTimer);
+    abilityHudTimer = null;
+    abilityHudLastSecond = -1;
+    abilityHudLastLevel = -1;
+    if (rageInterval !== null) clearInterval(rageInterval);
+    rageInterval = null;
+    rallyActive = false;
+    goldRushActive = false;
+    doubleAttackReady = false;
+    for (const ability of abilities) {
+        const state = abilityStates[ability.name];
+        state.cooldown = false;
+        state.cooldownUntil = 0;
+        state.activeUntil = 0;
+    }
+    updateAbilityHUD(Date.now(), true);
+}
+
 function activateAbility(ability) {
     const state = abilityStates[ability.name];
-    if (state.cooldown) return;
+    if (!state || playerLevel < ability.unlockLevel ||
+        Date.now() < state.cooldownUntil) return false;
 
-    const btn = state.button;
-    btn.disabled = true;
-    state.cooldown = true;
-
-    if (!abilitiesUsed.includes(ability.name)) {
-        abilitiesUsed.push(ability.name);
-    }
+    const now = Date.now();
+    state.cooldownUntil = now + ability.cooldown;
+    state.activeUntil = ability.duration > 0 ? now + ability.duration : 0;
+    if (!abilitiesUsed.includes(ability.name)) abilitiesUsed.push(ability.name);
     abilitiesCount++;
 
-    if (ability.name === "Strong Attack") strongAttack();
-    else if (ability.name === "Rally") {
+    if (ability.name === "Strong Attack") {
+        strongAttack();
+    } else if (ability.name === "Rally") {
         rallyActive = true;
-        setTimeout(() => rallyActive = false, ability.duration);
+    } else if (ability.name === "Gold Rush") {
+        goldRushActive = true;
     } else if (ability.name === "Double Attack") {
         doubleAttackReady = true;
     } else if (ability.name === "Rage") {
-        rageInterval = setInterval(() => attack(true), 500);
-        setTimeout(() => clearInterval(rageInterval), ability.duration);
-    } else if (ability.name === "Gold Rush") {
-        goldRushActive = true;
-        setTimeout(() => {
-            clearInterval(goldRushInterval);
-            goldRushActive = false;
-        }, ability.duration);
+        if (rageInterval !== null) clearInterval(rageInterval);
+        rageInterval = setInterval(() => {
+            if (!document.hidden && Date.now() < state.activeUntil) attack(true);
+            else if (Date.now() >= state.activeUntil) updateAbilityHUD();
+        }, 500);
     }
 
-    let timeLeft = ability.cooldown / 1000;
-    btn.textContent = `${ability.name} (${timeLeft})`;
-    const interval = setInterval(() => {
-        timeLeft--;
-        btn.textContent = `${ability.name} (${timeLeft})`;
-        if (timeLeft <= 0) {
-            clearInterval(interval);
-            btn.textContent = ability.name;
-            btn.disabled = false;
-            state.cooldown = false;
-        }
-    }, 1000);
+    updateAbilityHUD(now, true);
+    updateUI();
+    return true;
 }
 
 function strongAttack() {
@@ -219,6 +305,7 @@ function strongAttack() {
     if (doubleAttackReady) {
         dmg *= 2;
         doubleAttackReady = false;
+        updateAbilityHUD();
     }
     // showDamage(dmg);
     enemyHealth -= dmg;

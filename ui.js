@@ -210,16 +210,7 @@ function updateUI() {
 
 // === Player Upgrade ===
 function updatePlayerText() {
-    abilities.forEach(ability => {
-        const state = abilityStates[ability.name];
-        if (!state.unlocked && playerLevel >= ability.unlockLevel) {
-            state.unlocked = true;
-            const btn = state.button;
-            btn.disabled = false;
-            btn.classList.remove("locked");
-            btn.textContent = ability.name;
-        }
-    });
+    updateAbilityHUD();
 }
 
 function updatePlayerLevelGearText() {
@@ -248,43 +239,137 @@ function closeOptions() {
 }
 
 
-function checkAchievements() {
-    achievements.forEach(ach => {
-        if (!unlockedAchievements.has(ach.id) && ach.condition()) {
-            unlockedAchievements.add(ach.id);
-            localStorage.setItem("achievements", JSON.stringify([...unlockedAchievements]));
-            showAchievementPopup(ach);
-        }
-    });
+function getAchievementCategory(ach) {
+    if (/^(dynasty_|research_|college_|charter_|castle_)/.test(ach.id)) return "Kingdom & Dynasty";
+    if (/^(ability_)/.test(ach.id)) return "Abilities";
+    if (/^(merc_|speed_)/.test(ach.id) || ach.id === "gear_5" ||
+        ach.id === "gear_20" || ach.id === "merc_gear_50" ||
+        ach.id.startsWith("guild_")) return "Mercenaries & Gear";
+    if (/^(level_|stage_)/.test(ach.id)) return "Exploration";
+    return "Hero & Economy";
 }
 
-function showAchievementPopup(ach) {
+function getAchievementProgress(ach) {
+    const id = ach.id;
+    let current = 0, target = 1;
+    const suffix = id.match(/_(\d+)$/);
+    if (suffix) target = Math.max(1, Number(suffix[1]));
+    if (/^gold_/.test(id)) current = gold;
+    else if (/^player_/.test(id)) current = playerLevel;
+    else if (/^click_/.test(id)) current = totalClicks;
+    else if (/^enemy_/.test(id)) current = enemiesDefeated;
+    else if (/^(level_|stage_)/.test(id)) current = getBestClearedStage();
+    else if (/^merc_level_/.test(id)) current = Math.max(0, ...hiredMercenaries.map(m => m.level || 0));
+    else if (/^merc_gear_/.test(id) || ["gear_5", "gear_20"].includes(id)) {
+        current = Math.max(0, ...hiredMercenaries.map(m => m.gearLevel || 0));
+    } else if (/^gear_/.test(id)) current = playerGearLevel;
+    else if (/^speed_/.test(id)) current = Math.max(0, ...hiredMercenaries.map(m => m.attackSpeedLevel || 0));
+    else if (/^merc_/.test(id)) current = hiredMercenaries.length;
+    else if (/^guild_/.test(id)) current = structures.tavern.level;
+    else if (/^ability_count_/.test(id)) current = abilitiesCount;
+    else if (id === "ability_all") {
+        current = abilities.filter(ability => abilitiesUsed.includes(ability.name)).length;
+        target = abilities.length;
+    } else if (id.startsWith("ability_")) {
+        const lookup = {
+            ability_strong: "Strong Attack", ability_rally: "Rally",
+            ability_double: "Double Attack", ability_rage: "Rage", ability_gold: "Gold Rush"
+        };
+        current = abilitiesUsed.includes(lookup[id]) ? 1 : 0;
+    } else if (/^dynasty_/.test(id)) current = dynastyCount;
+    else if (/^castle_/.test(id)) current = Math.max(highestCastleEver, structures.castle.level);
+    else if (/^research_/.test(id)) current = getCompletedResearchCount();
+    else if (/^college_/.test(id)) current = getCollegeRanks();
+    else if (/^charter_/.test(id)) current = marketCharterRank;
+    else current = ach.condition() ? 1 : 0;
+
+    return {current: Math.max(0, Number(current) || 0), target};
+}
+
+function checkAchievements() {
+    const gained = [];
+    for (const ach of achievements) {
+        if (!unlockedAchievements.has(ach.id) && ach.condition()) {
+            unlockedAchievements.add(ach.id);
+            gained.push(ach);
+        }
+    }
+    if (!gained.length) return;
+    // One save and one toast, even if loading progress unlocks several at once.
+    saveGame();
+    showAchievementPopup(gained[0], gained.length - 1);
+}
+
+function showAchievementPopup(ach, additionalCount = 0) {
     const popup = document.getElementById("achievement-popup");
-    popup.innerHTML = `🏅 <strong>${ach.name}</strong><br>${ach.description}`;
+    const heading = document.createElement("strong");
+    heading.textContent = ach.name;
+    popup.replaceChildren(document.createTextNode("🏅 "), heading,
+        document.createTextNode(additionalCount
+            ? " · +" + additionalCount + " more achievements"
+            : " · " + ach.description));
     popup.style.display = "block";
     popup.style.opacity = "1";
-
-    setTimeout(() => {
+    if (typeof achievementToastTimer !== "undefined" && achievementToastTimer !== null)
+        clearTimeout(achievementToastTimer);
+    achievementToastTimer = setTimeout(() => {
         popup.style.opacity = "0";
-        setTimeout(() => popup.style.display = "none", 500);
-    }, 2500);
+        achievementToastTimer = setTimeout(() => {
+            popup.style.display = "none";
+            achievementToastTimer = null;
+        }, 350);
+    }, 2700);
+}
+
+let achievementToastTimer = null;
+
+function renderAchievements() {
+    const container = document.getElementById("achievement-list");
+    const summary = document.getElementById("achievement-summary");
+    const selected = document.getElementById("achievement-filter").value || "all";
+    const completed = achievements.filter(ach => unlockedAchievements.has(ach.id)).length;
+    summary.textContent = completed + " / " + achievements.length +
+        " achievements · " + Math.floor(100 * completed / achievements.length) + "% complete";
+    const visible = achievements.filter(ach => selected === "all" ||
+        (selected === "unlocked" ? unlockedAchievements.has(ach.id) :
+            !unlockedAchievements.has(ach.id)));
+    const fragment = document.createDocumentFragment();
+    for (const ach of visible) {
+        const owned = unlockedAchievements.has(ach.id);
+        const item = document.createElement("article");
+        item.className = "achievement" + (owned ? " unlocked" : "");
+        const header = document.createElement("div");
+        header.className = "achievement-heading";
+        const name = document.createElement("strong");
+        name.textContent = ach.name;
+        const category = document.createElement("small");
+        category.textContent = getAchievementCategory(ach);
+        header.append(name, category);
+        const description = document.createElement("p");
+        description.textContent = ach.description;
+        const progress = document.createElement("div");
+        progress.className = "achievement-progress";
+        const metric = getAchievementProgress(ach);
+        const fraction = owned ? 1 : Math.max(0, Math.min(1, metric.current / metric.target));
+        const bar = document.createElement("div");
+        bar.className = "achievement-progress-track";
+        const fill = document.createElement("span");
+        fill.style.width = (fraction * 100).toFixed(1) + "%";
+        bar.appendChild(fill);
+        const number = document.createElement("small");
+        number.textContent = owned ? "✓ Completed" :
+            formatDigits(Math.min(metric.current, metric.target), 0, 0).trim() +
+            " / " + formatDigits(metric.target, 0, 0).trim();
+        progress.append(bar, number);
+        item.append(header, description, progress);
+        fragment.appendChild(item);
+    }
+    container.replaceChildren(fragment);
+    if (visible.length === 0) container.textContent = "No achievements in this filter.";
 }
 
 function showAchievements() {
-    const container = document.getElementById("achievement-list");
-    container.innerHTML = "";
-
-    achievements.forEach(ach => {
-        const div = document.createElement("div");
-        div.classList.add("achievement");
-        if (unlockedAchievements.has(ach.id)) {
-            div.classList.add("unlocked");
-        }
-
-        div.innerHTML = `<strong>${ach.name}</strong><br>${ach.description}`;
-        container.appendChild(div);
-    });
-
+    renderAchievements();
     document.getElementById("achievement-menu").style.display = "flex";
 }
 

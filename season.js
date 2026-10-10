@@ -120,6 +120,7 @@ function foundNewDynasty(){
   for(const market of Object.values(marketUpgrades))market.level=0;
   marketCharterRank=0;
   for(const passive of passiveAbilities)passive.level=1;
+  resetAbilityEffects();
   rallyActive=false;goldRushActive=false;doubleAttackReady=false;
   if(typeof resetArmySelection==="function")resetArmySelection();
   drawRandomEnemy();updateUI();updateStructureUI();drawKingdom();

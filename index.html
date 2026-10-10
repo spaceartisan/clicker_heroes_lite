@@ -67,10 +67,11 @@
                 <p id="squad-summary">Specialize your squads at the Barracks and forge equipment at the Blacksmith.</p>
             </div>
 
-            <div id="ability-bar">
+            <div id="ability-bar" hidden>
                 <div class="ability-header">
                     <h3>Hero Abilities</h3>
                 </div>
+                <p id="ability-active-status" class="ability-active-status" aria-live="off" hidden></p>
                 <div class="ability-buttons">
                     <button id="strong-attack">Strong Attack</button>
                     <button id="gold-rush">Gold Rush</button>
@@ -226,7 +227,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.0.1 – Heroes of the Click
+        v1.1.0 – Heroes of the Click
     </p>
     <br>
 
@@ -314,6 +315,15 @@
     <div id="achievement-menu" class="popup">
         <div class="popup-content">
             <h3>🏆 Achievements</h3>
+            <p id="achievement-summary" class="achievement-summary" aria-live="polite"></p>
+            <div class="achievement-toolbar">
+                <label for="achievement-filter">Show</label>
+                <select id="achievement-filter" onchange="renderAchievements()"> 
+                    <option value="all">All</option>
+                    <option value="locked">In progress</option>
+                    <option value="unlocked">Completed</option>
+                </select>
+            </div>
             <div id="achievement-list" class="scrollable-list">
                 <!-- Achievements will be populated here -->
             </div>
