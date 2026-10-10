@@ -126,12 +126,17 @@ function AddMultiplierButtons(menu) {
 }
 
 function switchView(view) {
-    document.getElementById("hero-view").style.display = view === "hero" ? "block" : "none";
-    document.getElementById("kingdom-view").style.display = view === "kingdom" ? "block" : "none";
-    if (view === "hero") {
+    const destination = ["hero", "kingdom", "army"].includes(view) ? view : "hero";
+    for (const tab of ["hero", "kingdom", "army"]) {
+        document.getElementById(tab + "-view").style.display = destination === tab ? "block" : "none";
+    }
+    if (destination === "hero") {
         updatePlayerLevelGearText();
-    } else {
+    } else if (destination === "kingdom") {
         updateStructureUI();
+        drawKingdom();
+    } else if (typeof renderArmyView === "function") {
+        renderArmyView();
     }
 }
 
