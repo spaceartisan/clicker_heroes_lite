@@ -181,3 +181,7 @@ When using **Restore Cloud Save** on a phone, the old game's page-exit autosave 
 ## v1.11.0 — Optional server-owned sessions
 
 The game now contains client-side session takeover controls and backend Functions source. **This is not yet a deployed Firebase backend.** Follow [Secure Sessions rollout](SECURE_SESSIONS.md) and its explicit order: deploy Functions, test session takeover and checkpoint, THEN change `player_saves` to deny browser writes. Older browser-written leaderboard collections are still unverified and MUST NOT be represented as trusted competitive scores.
+
+## v1.12.0 — Spark handoff supersedes paid deployment proposal
+
+**Use [Spark Device Handoff](SPARK_DEVICE_HANDOFF.md), not the earlier Cloud Functions deployment guide.** This release coordinates active sessions using one Firestore document per UID and restricts cloud-save writes by matching the submitted tab identifier to that active document. No billing plan upgrade or Cloud Functions deployment is necessary. The two Firestore matches in the new guide must be published together after the updated game is live. This is not cheat-proof scoring.

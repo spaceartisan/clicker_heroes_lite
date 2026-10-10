@@ -1,3 +1,9 @@
+# Superseded: optional paid Cloud Functions prototype
+
+**Do not deploy this guide for v1.12.0.** The current game uses [Spark Device Handoff](SPARK_DEVICE_HANDOFF.md) and requires only Firestore rules. The previous server-owned Cloud Functions design remains archived here for future backend work, and is NOT required for this release.
+
+---
+
 # Secure sessions — deployment and threat model (v1.11.0)
 
 **Status: SOURCE READY, NOT DEPLOYED.** These files live in the GitHub repository, but Netlify does not deploy Firebase Cloud Functions or Firestore rules. Until the operator deploys the functions and tightens the rules, existing client-written saves and leaderboards are still modifiable by account owners. The game falls back to local-first saving if the session functions return \`not-found\`; it explicitly shows "protection not active".

@@ -23,7 +23,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+
 </head>
 
 <body>
@@ -297,7 +297,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.11.0 – Heroes of the Click
+        v1.12.0 – Heroes of the Click
     </p>
     <br>
 
@@ -397,10 +397,11 @@
                         <small id="player-account-uid" class="player-account-uid"></small>
                     </div>
                     <section class="account-session-panel" aria-label="Device session">
-                        <strong>Active device protection</strong>
+                        <strong>Active device handoff</strong>
                         <p id="account-session-status" role="status" aria-live="polite">Checking session service...</p>
                         <button id="account-session-claim" type="button" onclick="sessionGuardTakeover()" hidden>Use This Device (Take Over)</button>
-                        <p class="player-account-hint">Device ownership is enforced only after Firebase Functions and the server-only rules are deployed. Unverified leaderboards remain separate.</p>
+                        <button id="account-session-review" type="button" onclick="playerOpenCloudReview()" hidden>Compare / Restore Cloud Progress</button>
+                        <p class="player-account-hint">Uses the free Firestore plan after you publish the device-handoff rules. Switching tabs or devices requires cloud save review. Offline gold is not doubled across devices. Leaderboard scores remain unverified.</p>
                     </section>
                     <button type="button" id="player-account-logout" onclick="playerAccountSignOut()">Sign Out</button>
                 </div>

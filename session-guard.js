@@ -1,29 +1,38 @@
-// v1.11.0 — opportunistic server-backed device session.
-// Cloud Functions are not present until the project owner deploys them.
-// Unconfigured projects retain existing local-first play (NOT secure ranked mode).
-const SESSION_TOKEN_PREFIX="hotc_session_secret_";
-const SESSION_ENFORCED_PREFIX="hotc_session_enforced_v1_";
-const SESSION_PING_MS=45000;
+// v1.12.0 — Spark-compatible device handoff. Coordination, not cheat-proof scoring.
+// Uses Firebase Auth + Firestore transactions/rules; no Cloud Functions or billing.
+const HANDOFF_COLLECTION="player_sessions";
+const HANDOFF_INSTALL_KEY="hotc_install_id_v1";
+const HANDOFF_TAB_KEY="hotc_tab_id_v1";
+const HANDOFF_ACCOUNT_MARKER="hotc_account_linked_device_v1";
+const HANDOFF_PROTECTED_PREFIX="hotc_handoff_protected_v1_";
+const HANDOFF_POLL_MS=180000;
+const HANDOFF_LEASE_MS=480000;
 let sessionGuardPhase="unconfigured"; // active, occupied, review, lost, checking, unconfigured
 let sessionGuardUid=null;
-let sessionGuardEpoch=0;
 let sessionGuardGeneration=0;
 let sessionGuardBusy=false;
 let sessionGuardLastPing=0;
-let sessionGuardDetail="";
-let sessionGuardEverActive=false;
-function sessionGuardToken(uid) {
-    if(!uid||typeof sessionStorage==="undefined")throw Error("Session storage unavailable.");
-    const key=SESSION_TOKEN_PREFIX+uid;
-    let token=sessionStorage.getItem(key);
-    if(!/^[0-9a-f]{64}$/.test(token||"")){
-        const bytes=new Uint8Array(32);
-        if(!window.crypto?.getRandomValues)throw Error("Secure random tokens unavailable.");
-        window.crypto.getRandomValues(bytes);
-        token=Array.from(bytes,b=>b.toString(16).padStart(2,"0")).join("");
-        sessionStorage.setItem(key,token);
+let sessionGuardProtected=false;
+let sessionGuardUnsubscribe=null;
+let sessionGuardLastMessage="";
+function sessionGuardRandomHex(){
+    if(!window.crypto?.getRandomValues)throw Error("A secure browser is required for device handoff.");
+    const bytes=new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    return Array.from(bytes,x=>x.toString(16).padStart(2,"0")).join("");
+}
+function sessionGuardDeviceId(){
+    let install=localStorage.getItem(HANDOFF_INSTALL_KEY);
+    if(!/^[0-9a-f]{32}$/.test(install||"")){
+        install=sessionGuardRandomHex();
+        localStorage.setItem(HANDOFF_INSTALL_KEY,install);
     }
-    return token;
+    let tab=sessionStorage.getItem(HANDOFF_TAB_KEY);
+    if(!/^[0-9a-f]{32}$/.test(tab||"")){
+        tab=sessionGuardRandomHex();
+        sessionStorage.setItem(HANDOFF_TAB_KEY,tab);
+    }
+    return install+tab;
 }
 function sessionGuardCurrentUid(){
     const user=typeof accountAuth==="function"?accountAuth()?.currentUser:null;
@@ -31,12 +40,10 @@ function sessionGuardCurrentUid(){
 }
 function sessionGuardUsesServer(){
     const uid=sessionGuardCurrentUid();
-    return Boolean(uid&&sessionGuardUid===uid&&
-        (sessionGuardEverActive || localStorage.getItem(SESSION_ENFORCED_PREFIX+uid)==="1"));
+    return Boolean(uid&&uid===sessionGuardUid&&
+        (sessionGuardProtected||localStorage.getItem(HANDOFF_PROTECTED_PREFIX+uid)==="1"));
 }
 function sessionGuardWritesBlocked(){
-    // Explicit manual backup from "review" is permitted after its overwrite
-    // confirmation. Automatic backups still require strictly active phase.
     return ["occupied","lost","checking"].includes(sessionGuardPhase)||
         (sessionGuardUsesServer()&&sessionGuardPhase==="unconfigured");
 }
@@ -44,124 +51,164 @@ function sessionGuardCanCheckpoint(allowReview=false){
     return sessionGuardUsesServer()&&
         (sessionGuardPhase==="active"||(allowReview&&sessionGuardPhase==="review"));
 }
-function sessionGuardCall(name,data){
-    if(typeof firebase.functions!=="function")
-        throw Object.assign(Error("Firebase Functions client is not loaded."),{code:"functions/not-found"});
-    return firebase.app().functions("us-central1").httpsCallable(name)(data)
-        .then(result=>result.data);
-}
-function sessionGuardNotice(text,warning=false){
-    sessionGuardDetail=text;
-    const status=document.getElementById("account-session-status");
-    if(status){
-        status.textContent=text;
-        status.classList.toggle("session-warning",warning);
-    }
-    const take=document.getElementById("account-session-claim");
-    if(take){
-        take.hidden=!sessionGuardCurrentUid()||
-            !["occupied","lost","unconfigured"].includes(sessionGuardPhase);
-        take.textContent=sessionGuardPhase==="occupied"?
-            "Use This Device (Take Over)":"Retry / Claim Session";
-    }
-}
 function sessionGuardBlocksGameplay(){
     return ["occupied","lost","review"].includes(sessionGuardPhase);
-}
-function sessionGuardPauseGameplay(paused){
-    // This is the honest-client UX. Server rejects stale tokens regardless of UI.
-    for(const id of ["hero-view","kingdom-view","army-view"]){
-        const node=document.getElementById(id);
-        if(node)node.inert=paused;
-    }
-    if(paused){
-        if(typeof stopSquadAttack==="function")stopSquadAttack();
-        if(typeof pauseBossClock==="function")pauseBossClock();
-    }else if(!document.hidden && typeof startSquadAttack==="function"){
-        if(typeof resumeBossClock==="function")resumeBossClock();
-        startSquadAttack();
-    }
-}
-function sessionGuardSet(phase,message){
-    sessionGuardPhase=phase;
-    sessionGuardNotice(message,["occupied","lost","review"].includes(phase));
-    sessionGuardPauseGameplay(["occupied","lost","review"].includes(phase));
-    if(typeof accountControlsUpdate==="function")accountControlsUpdate();
-}
-function sessionGuardFriendlyError(error){
-    const code=String(error?.code||"");
-    if(code.includes("not-found")||code.includes("unimplemented"))return "Session service not deployed. Local play remains available, but competitive device-lock protection is not active.";
-    if(code.includes("unauthenticated"))return "Session requires a registered Firebase login.";
-    if(code.includes("failed-precondition"))return "Session belongs to another device. Take over to resume cloud saves.";
-    if(code.includes("aborted"))return "Cloud save changed on another device. Review it before writing.";
-    if(code.includes("unavailable")||code.includes("deadline-exceeded"))return "Session server unavailable. Local progress remains saved on this device.";
-    return String(error?.message||"Session check failed.").slice(0,180);
 }
 function sessionGuardDeviceLabel(){
     return (typeof navigator!=="undefined" &&
         (navigator.userAgentData?.mobile||/Android|iPhone|Mobile/i.test(navigator.userAgent||"")))?
-        "Phone / tablet":"Desktop / laptop";
+        "Phone / tablet":"Computer";
 }
-async function sessionGuardAfterClaim(uid,generation){
-    if(uid!==sessionGuardCurrentUid()||generation!==sessionGuardGeneration)return;
+function sessionGuardRef(uid){
+    return db.collection(HANDOFF_COLLECTION).doc(uid);
+}
+function sessionGuardTimestamp(){
+    return firebase.firestore.FieldValue.serverTimestamp();
+}
+function sessionGuardLeaseActive(record){
+    return record&&!record.released&&record.updatedAt&&
+        typeof record.updatedAt.toMillis==="function"&&
+        Date.now()-record.updatedAt.toMillis()<HANDOFF_LEASE_MS;
+}
+function sessionGuardError(error){
+    const code=String(error?.code||"");
+    if(code==="permission-denied")return "Publish the free Firestore device-handoff rules to activate protection.";
+    if(code==="unavailable"||code==="deadline-exceeded")return "Firestore unreachable. Local progress remains safe.";
+    return String(error?.message||"Device handoff unavailable.").slice(0,180);
+}
+function sessionGuardStatus(message,warning=false){
+    sessionGuardLastMessage=message;
+    const status=document.getElementById("account-session-status");
+    if(status){
+        status.textContent=message;
+        status.classList.toggle("session-warning",warning);
+    }
+    const claim=document.getElementById("account-session-claim");
+    if(claim){
+        claim.hidden=!sessionGuardCurrentUid()||
+            !["occupied","lost","unconfigured"].includes(sessionGuardPhase);
+        claim.textContent=sessionGuardPhase==="occupied"?
+            "Use This Device (Take Over)":"Try Connecting This Device";
+    }
+    const review=document.getElementById("account-session-review");
+    if(review)review.hidden=sessionGuardPhase!=="review";
+}
+function sessionGuardSet(phase,message){
+    sessionGuardPhase=phase;
+    sessionGuardStatus(message,["occupied","lost","review"].includes(phase));
+    const paused=sessionGuardBlocksGameplay();
+    for(const id of ["hero-view","kingdom-view","army-view"]){
+        const el=document.getElementById(id);
+        if(el)el.inert=paused;
+    }
+    if(paused){
+        window.__hotcDeferredOfflineSavedAt=null;
+        if(typeof stopSquadAttack==="function")stopSquadAttack();
+        if(typeof pauseBossClock==="function")pauseBossClock();
+    }else if(!document.hidden&&typeof startSquadAttack==="function"){
+        if(typeof resumeBossClock==="function")resumeBossClock();
+        startSquadAttack();
+    }
+    if(typeof accountControlsUpdate==="function")accountControlsUpdate();
+}
+function sessionGuardUnwatch(){
+    if(sessionGuardUnsubscribe){sessionGuardUnsubscribe();sessionGuardUnsubscribe=null}
+}
+function sessionGuardWatch(uid,generation){
+    sessionGuardUnwatch();
+    // One listener rather than frequent polling reduces Spark read usage.
+    const ref=sessionGuardRef(uid);
+    sessionGuardUnsubscribe=ref.onSnapshot(snapshot=>{
+        if(generation!==sessionGuardGeneration||uid!==sessionGuardCurrentUid())return;
+        if(!snapshot.exists||snapshot.metadata?.fromCache)return;
+        const record=snapshot.data();
+        if(record.ownerUid!==uid)return;
+        if(record.deviceId!==sessionGuardDeviceId()&&sessionGuardProtected){
+            if(typeof playerSyncPause==="function")playerSyncPause();
+            sessionGuardSet("lost","A different device has taken over this account. Your local copy is preserved.");
+        }
+    },error=>{
+        if(generation===sessionGuardGeneration&&sessionGuardProtected)
+            sessionGuardSet("lost","Cannot verify the active device: "+sessionGuardError(error));
+    });
+}
+async function sessionGuardReview(uid,generation,allowOffline=false){
+    if(generation!==sessionGuardGeneration||uid!==sessionGuardCurrentUid())return;
     try{
         const snapshot=await accountCloudRef({uid}).get({source:"server"});
-        if(uid!==sessionGuardCurrentUid()||generation!==sessionGuardGeneration)return;
-        const record=snapshot.exists?snapshot.data():null;
-        if(record && accountCloudRecordValid(record,{uid})){
+        if(generation!==sessionGuardGeneration||uid!==sessionGuardCurrentUid())return;
+        const cloud=snapshot.exists?snapshot.data():null;
+        if(cloud&&accountCloudRecordValid(cloud,{uid})){
             const anchor=playerSyncAnchor(uid);
             const local=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
-            // A device must review when revision OR actual local progress
-            // differs. This also catches unuploaded local changes.
-            if(!anchor||anchor.revision!==record.revision||
-                playerSyncFingerprint(local)!==playerSyncFingerprint(record.save)){
-                sessionGuardSet("review","Session acquired. Review/restore the latest cloud save before playing or uploading. This device's local progress is safe.");
-                if(typeof playerCloudUpdateNotice==="function")playerCloudUpdateNotice(record);
+            const same=anchor&&anchor.revision===cloud.revision&&
+                playerSyncFingerprint(local)===playerSyncFingerprint(cloud.save);
+            if(!same){
+                playerCloudPreview=cloud;
+                accountPreviewCloud(cloud);
+                playerCloudUpdateNotice(cloud);
+                sessionGuardSet("review","This account has a different cloud save. Choose Compare / Restore before playing here. No offline reward will be added.");
                 return;
             }
         }
-        sessionGuardSet("active","This device owns the active server lease. Cloud checkpoints are session-protected (ranked scores remain unverified).");
+        sessionGuardSet("active","This browser tab is active. Other tabs/devices must take over before uploading; scores remain unverified.");
+        if(allowOffline&&Number.isFinite(window.__hotcDeferredOfflineSavedAt)&&
+            typeof awardOfflineGold==="function"&&typeof saveGame==="function"){
+            const elapsed=Math.max(0,(Date.now()-window.__hotcDeferredOfflineSavedAt)/1000);
+            window.__hotcDeferredOfflineSavedAt=null;
+            // Only the device that previously owned the lease may receive
+            // local time-away earnings. Any takeover must restore a snapshot.
+            if(elapsed>2){awardOfflineGold(elapsed);saveGame()}
+        }
     }catch(error){
-        // Do not allow checkpoints until the baseline revision can be read.
-        sessionGuardSet("review","Session acquired, but latest cloud save could not be checked: "+
-            sessionGuardFriendlyError(error)+". Check Cloud Save before continuing.");
+        sessionGuardSet("review","Cloud save could not be verified: "+sessionGuardError(error)+
+            " Check Cloud Save before continuing.");
     }
 }
 async function sessionGuardClaim(takeover=false){
-    if(sessionGuardBusy)return false;
     const uid=sessionGuardCurrentUid();
-    if(!uid)return false;
-    const generation=++sessionGuardGeneration;
+    if(!uid||sessionGuardBusy)return false;
     sessionGuardBusy=true;
+    const generation=++sessionGuardGeneration;
     sessionGuardPhase="checking";
-    sessionGuardNotice("Checking whether another device owns this account...");
+    sessionGuardStatus("Checking which device owns the account...");
     try{
-        const result=await sessionGuardCall("claimPlayerSession",{
-            token:sessionGuardToken(uid),
-            label:sessionGuardDeviceLabel(),takeover
+        const id=sessionGuardDeviceId();
+        const ref=sessionGuardRef(uid);
+        const outcome=await db.runTransaction(async tx=>{
+            const snap=await tx.get(ref);
+            const old=snap.exists?snap.data():null;
+            if(old&&old.ownerUid!==uid)throw Error("Invalid handoff owner.");
+            if(old&&old.deviceId!==id&&sessionGuardLeaseActive(old)&&!takeover)
+                return {status:"occupied",deviceLabel:old.deviceLabel||"another device"};
+            const sameDevice=Boolean(old&&old.deviceId===id);
+            tx.set(ref,{ownerUid:uid,deviceId:id,schemaVersion:1,released:false,
+                deviceLabel:sessionGuardDeviceLabel(),updatedAt:sessionGuardTimestamp()});
+            return {status:"active",sameDevice};
         });
         if(generation!==sessionGuardGeneration||uid!==sessionGuardCurrentUid())return false;
-        if(result.status==="occupied"){
-            sessionGuardSet("occupied","Account in use on "+(result.deviceLabel||"another device")+
-                ". Choose Use This Device to take over. Unsaved progress on the other device may be lost.");
+        if(outcome.status==="occupied"){
+            sessionGuardSet("occupied","This account is active on "+outcome.deviceLabel+
+                ". Save progress there first, then use Take Over to switch here.");
             return false;
         }
-        if(result.status!=="active")throw Error("Unrecognized session response.");
-        sessionGuardEverActive=true;
-        localStorage.setItem(SESSION_ENFORCED_PREFIX+uid,"1");
-        sessionGuardEpoch=result.epoch;
+        sessionGuardProtected=true;
+        localStorage.setItem(HANDOFF_PROTECTED_PREFIX+uid,"1");
+        localStorage.setItem(HANDOFF_ACCOUNT_MARKER,"1");
         sessionGuardLastPing=Date.now();
-        if(typeof playerSyncPause==="function")playerSyncPause();
-        await sessionGuardAfterClaim(uid,generation);
+        if(!outcome.sameDevice&&typeof playerSyncPause==="function")playerSyncPause();
+        sessionGuardWatch(uid,generation);
+        await sessionGuardReview(uid,generation,outcome.sameDevice===true);
         return sessionGuardPhase==="active";
     }catch(error){
         if(generation!==sessionGuardGeneration)return false;
-        if(!sessionGuardUsesServer() &&
-            /not-found|unimplemented|unavailable|deadline-exceeded|internal/.test(error?.code||"")){
-            sessionGuardSet("unconfigured",sessionGuardFriendlyError(error));
+        const protectedBefore=sessionGuardUsesServer();
+        if(protectedBefore){
+            sessionGuardSet("lost","Session verification failed: "+sessionGuardError(error)+
+                " Cloud uploads are paused.");
         }else{
-            sessionGuardSet("lost",sessionGuardFriendlyError(error)+
-                " Cloud/ranked writes are paused; no progress was erased.");
+            sessionGuardSet("unconfigured",sessionGuardError(error)+
+                " Local play is available, but device coordination is not enforced.");
         }
         return false;
     }finally{
@@ -171,83 +218,87 @@ async function sessionGuardClaim(takeover=false){
 async function sessionGuardTakeover(){
     if(!sessionGuardCurrentUid())return false;
     if(sessionGuardPhase!=="occupied")return sessionGuardClaim(false);
-    if(!confirm("Take over this account on this device?\n\nThe other device will lose its server session. Unsaved progress there will not be merged. You must review the cloud save before proceeding."))return false;
+    if(!confirm("Take over this account on this device?\n\nFirst back up progress on the other device. You will be asked to review/restore the cloud save here; local saves are not merged."))return false;
     return sessionGuardClaim(true);
 }
 async function sessionGuardPing(){
-    if(sessionGuardBusy||sessionGuardPhase!=="active"||document.hidden)return false;
-    if(Date.now()-sessionGuardLastPing<SESSION_PING_MS-3000)return true;
     const uid=sessionGuardCurrentUid();
-    if(!uid||uid!==sessionGuardUid)return false;
+    if(!uid||uid!==sessionGuardUid||sessionGuardBusy||
+        document.hidden||!["active","review"].includes(sessionGuardPhase))return false;
+    if(Date.now()-sessionGuardLastPing<HANDOFF_POLL_MS-3000)return true;
     sessionGuardBusy=true;
     try{
-        const response=await sessionGuardCall("pingPlayerSession",{token:sessionGuardToken(uid)});
-        if(uid!==sessionGuardCurrentUid())return false;
-        if(response.status!=="active"){
+        const ref=sessionGuardRef(uid);
+        const result=await db.runTransaction(async tx=>{
+            const snap=await tx.get(ref);
+            if(!snap.exists||snap.data().deviceId!==sessionGuardDeviceId()||
+                snap.data().ownerUid!==uid)return false;
+            tx.update(ref,{updatedAt:sessionGuardTimestamp()});
+            return true;
+        });
+        if(!result){
             if(typeof playerSyncPause==="function")playerSyncPause();
-            sessionGuardSet("lost","Another device took over or your lease expired. Local progress is safe; take over here to resume.");
+            sessionGuardSet("lost","This account is now active on another device.");
             return false;
         }
         sessionGuardLastPing=Date.now();
         return true;
     }catch(error){
-        if(uid===sessionGuardCurrentUid()){
-            if(typeof playerSyncPause==="function")playerSyncPause();
-            sessionGuardSet("lost",sessionGuardFriendlyError(error)+
-                " Cloud checkpoints are paused to prevent stale writes.");
-        }
+        if(sessionGuardUsesServer())sessionGuardSet("lost",
+            "Could not renew device ownership: "+sessionGuardError(error));
         return false;
-    }finally{
-        sessionGuardBusy=false;
-    }
+    }finally{sessionGuardBusy=false}
 }
 async function sessionGuardCheckpoint(save,expectedRevision,allowReview=false){
-    if(!sessionGuardCanCheckpoint(allowReview))throw Error("Server session is not active on this device.");
-    const uid=sessionGuardCurrentUid();
-    try{
-        const response=await sessionGuardCall("checkpointPlayerSession",{
-            token:sessionGuardToken(uid),expectedRevision,save
-        });
-        if(uid!==sessionGuardCurrentUid())throw Error("Account changed during checkpoint.");
-        if(response.status!=="saved")throw Error("Server did not confirm the checkpoint.");
-        sessionGuardLastPing=Date.now();
-        if(sessionGuardPhase==="review")sessionGuardSet("active",
-            "This device's local save was explicitly chosen. Session checkpoints are active.");
-        return response.revision;
-    }catch(error){
-        if(uid===sessionGuardCurrentUid()){
-            if(/failed-precondition/.test(error?.code||"")){
-                if(typeof playerSyncPause==="function")playerSyncPause();
-                sessionGuardSet("lost","Cloud checkpoint rejected: another device owns this session.");
-            }else if(/aborted/.test(error?.code||"")){
-                if(typeof playerSyncPause==="function")playerSyncPause();
-                sessionGuardSet("review","Cloud revision changed. Review/restore the latest backup before continuing.");
-            }
-        }
-        throw error;
-    }
+    if(!sessionGuardCanCheckpoint(allowReview))throw Error("This tab must own the account before uploading.");
+    const uid=sessionGuardCurrentUid(),id=sessionGuardDeviceId();
+    const saveRef=accountCloudRef({uid}),sessionRef=sessionGuardRef(uid);
+    const revision=await db.runTransaction(async tx=>{
+        const sessionSnap=await tx.get(sessionRef);
+        const saveSnap=await tx.get(saveRef);
+        const active=sessionSnap.exists?sessionSnap.data():null;
+        if(!active||active.ownerUid!==uid||active.deviceId!==id||
+            !sessionGuardLeaseActive(active))throw Error("Another device owns the cloud session.");
+        const actual=saveSnap.exists?Number(saveSnap.data().revision):0;
+        if(actual!==expectedRevision)throw Error("Cloud revision changed. Review the new save first.");
+        tx.set(saveRef,{...accountCloudDocument({uid},save,actual+1),deviceId:id});
+        return actual+1;
+    });
+    if(uid!==sessionGuardCurrentUid())throw Error("Account changed during cloud upload.");
+    if(sessionGuardPhase==="review")sessionGuardSet("active",
+        "You chose this device's save and now own cloud uploads.");
+    return revision;
 }
 async function sessionGuardRelease(){
     const uid=sessionGuardCurrentUid();
-    if(!uid||!sessionGuardUsesServer())return;
-    try{await sessionGuardCall("releasePlayerSession",{token:sessionGuardToken(uid)})}
-    catch(error){console.warn("Session lease expires automatically if release fails.",error)}
-    sessionGuardEverActive=false;
+    sessionGuardUnwatch();
+    if(!uid||!sessionGuardProtected)return;
+    try{
+        await db.runTransaction(async tx=>{
+            const ref=sessionGuardRef(uid),snap=await tx.get(ref);
+            if(snap.exists&&snap.data().deviceId===sessionGuardDeviceId())
+                tx.update(ref,{released:true,updatedAt:sessionGuardTimestamp()});
+        });
+    }catch(_){/* Lease expires without a cleanup write. */}
+    sessionGuardProtected=false;
+    sessionGuardSet("lost","This tab released the active device session.");
 }
 function sessionGuardAccountChanged(user){
     const uid=user&&!user.isAnonymous?user.uid:null;
     if(uid===sessionGuardUid)return;
+    sessionGuardUnwatch();
     ++sessionGuardGeneration;
     sessionGuardUid=uid;
-    sessionGuardEverActive=false;
+    sessionGuardProtected=false;
     sessionGuardLastPing=0;
-    if(!uid){
-        sessionGuardSet("unconfigured","Sign in to establish a device session.");
-        return;
-    }
+    if(!uid){sessionGuardSet("unconfigured","Sign in to use device handoff.");return}
+    localStorage.setItem(HANDOFF_ACCOUNT_MARKER,"1");
     sessionGuardClaim(false);
 }
 document.addEventListener("visibilitychange",()=>{
-    if(!document.hidden && sessionGuardPhase==="active")sessionGuardPing();
+    if(!document.hidden&&["active","review"].includes(sessionGuardPhase)){
+        sessionGuardLastPing=0;
+        sessionGuardPing();
+    }
 });
-setInterval(sessionGuardPing,SESSION_PING_MS);
+setInterval(sessionGuardPing,HANDOFF_POLL_MS);

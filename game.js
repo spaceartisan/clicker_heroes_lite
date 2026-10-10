@@ -435,7 +435,10 @@ function loadGame() {
         // Old save files used a timestamp 60 seconds in the future; a negative
         // elapsed time simply means no offline reward yet.
         if (typeof data.lastSaved === "number") {
-            awardOfflineGold(Math.max(0, (Date.now() - data.lastSaved) / 1000));
+            if(localStorage.getItem("hotc_account_linked_device_v1")==="1")
+                window.__hotcDeferredOfflineSavedAt=data.lastSaved;
+            else
+                awardOfflineGold(Math.max(0,(Date.now()-data.lastSaved)/1000));
         }
 
         if (nameConfirm) {
@@ -528,7 +531,10 @@ document.addEventListener("visibilitychange", () => {
         saveGame();
     } else {
         if (hiddenAt !== null) {
-            if(!(typeof sessionGuardBlocksGameplay==="function"&&sessionGuardBlocksGameplay()))
+            // Account-linked devices must verify cloud ownership before
+            // claiming time-away gold. Cross-device time is not stackable.
+            if(localStorage.getItem("hotc_account_linked_device_v1")!=="1"&&
+                !(typeof sessionGuardBlocksGameplay==="function"&&sessionGuardBlocksGameplay()))
                 awardOfflineGold((Date.now() - hiddenAt) / 1000);
             hiddenAt = null;
             updateUI();

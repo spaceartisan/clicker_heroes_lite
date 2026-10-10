@@ -655,6 +655,7 @@ function playerAccountInit(){
         else {
             accountDisplayMessage("Connected as "+(user.email||"Google player")+
                 ". Checking whether another device has a newer cloud save...");
+            localStorage.setItem("hotc_account_linked_device_v1","1");
             playerCloudDiscover(true);
         }
     },error=>accountDisplayMessage(accountErrorMessage(error),true));

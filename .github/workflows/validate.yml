@@ -23,5 +23,4 @@ jobs:
           node tests/smoke-test.cjs
           node tests/player-account-test.cjs
           node tests/account-leaderboard-test.cjs
-          node functions/tests/session-core.test.cjs
           node tests/session-guard-test.cjs

@@ -1,4 +1,4 @@
-const CACHE_NAME = "heroes-of-click-v1.11.0";
+const CACHE_NAME = "heroes-of-click-v1.12.0";
 const SHELL = [
     "./",
     "./index.html",
@@ -55,8 +55,7 @@ const SHELL = [
 const FIREBASE_SDK = [
     "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js",
     "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js",
-    "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js",
-    "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"
+    "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"
 ];
 
 self.addEventListener("install", event => {

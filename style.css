@@ -2066,3 +2066,6 @@ button:has(> .ui-icon) { display: inline-flex; }
 .account-session-panel button{width:100%;min-height:44px}
 .account-session-panel [hidden]{display:none!important}
 .account-session-panel .session-warning{color:#ee8b80}
+
+/* v1.12.0 — Spark plan handoff status */
+.account-session-panel p.session-warning{font-weight:600;color:#eaa78e}
