@@ -787,3 +787,170 @@ input, textarea { font-size: 16px; user-select: text; -webkit-user-select: text;
 .frontier-kingdom {max-width:640px;margin:10px auto 14px;}
 .frontier-hero[hidden],.frontier-kingdom[hidden]{display:none!important;}
 @media(max-width:400px){.frontier-hero{max-width:220px;font-size:11px;padding:6px}}
+
+
+/* Castle upgrade dialog: one scroll owner, compact cards, stable close control. */
+#upgrade-menu {
+    padding: max(10px, env(safe-area-inset-top)) 10px
+             max(10px, env(safe-area-inset-bottom));
+}
+#upgrade-menu.castle-menu .popup-content {
+    width: min(100%, 600px);
+    max-width: 600px;
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 10px;
+    padding: 16px;
+    text-align: left;
+}
+#upgrade-menu.castle-menu .popup-content > h3 {
+    margin: 0;
+    padding: 0 0 10px;
+    font: 700 20px/1.2 Georgia, serif;
+    border-bottom: 1px solid #94704e;
+}
+#upgrade-menu.castle-menu #upgrade-buttons,
+#upgrade-menu.castle-menu #upgrade-buttons-2,
+#upgrade-menu.castle-menu #upgrade-list,
+#upgrade-menu.castle-menu #upgrade-list-2 {
+    min-width: 0;
+    flex: 0 0 auto;
+    margin: 0;
+}
+#upgrade-menu.castle-menu #upgrade-list,
+#upgrade-menu.castle-menu #upgrade-list-2 {
+    border: 0;
+    background: none;
+    border-radius: 0;
+    padding: 0;
+    max-height: none;
+    overflow: visible;
+    min-height: 0;
+}
+#upgrade-menu.castle-menu .castle-intro,
+#upgrade-menu.castle-menu .castle-insight,
+#upgrade-menu.castle-menu .castle-decrees-help {
+    font: 13px/1.45 Arial, sans-serif;
+    color: #ded1bf;
+    margin: 0 0 10px;
+}
+#upgrade-menu.castle-menu .castle-insight {
+    margin: 10px 0 0;
+    font-size: 12px;
+    color: #dfbf82;
+}
+#upgrade-menu.castle-menu .castle-research-button {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    font: 15px/1.25 Georgia, serif;
+    padding: 10px;
+    background: linear-gradient(#654767, #403246);
+}
+#upgrade-menu.castle-menu .castle-abilities {
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid #775b43;
+    background: #2a201c;
+    border-radius: 7px;
+    font: 13px/1.4 Arial, sans-serif;
+}
+#upgrade-menu.castle-menu .castle-abilities summary {
+    cursor: pointer;
+    color: #e6c790;
+    font-weight: bold;
+    padding: 2px 0;
+    min-height: 22px;
+}
+#upgrade-menu.castle-menu .castle-abilities p {
+    margin: 8px 0 0;
+    font: 12px/1.45 Arial, sans-serif;
+}
+#upgrade-menu.castle-menu .castle-decrees-heading {
+    font: bold 16px/1.3 Georgia, serif;
+    margin: 6px 0;
+    color: #f2d397;
+}
+#upgrade-menu.castle-menu .castle-decree {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    margin: 0 0 9px;
+    padding: 12px;
+    border: 1px solid #66503c;
+    border-left: 3px solid #c2975a;
+    background: #37291f;
+    border-radius: 7px;
+}
+#upgrade-menu.castle-menu .castle-decree-info {
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 8px;
+    align-items: baseline;
+}
+#upgrade-menu.castle-menu .castle-decree strong {
+    color: #f3dcaa;
+    font: bold 14px/1.35 Georgia, serif;
+}
+#upgrade-menu.castle-menu .castle-decree-rank {
+    color: #b9aa93;
+    font: 12px/1.3 Arial, sans-serif;
+}
+#upgrade-menu.castle-menu .castle-decree p {
+    flex: 0 0 100%;
+    margin: 0;
+    color: #cfbea6;
+    font: 12px/1.45 Arial, sans-serif;
+}
+#upgrade-menu.castle-menu .castle-decree button {
+    max-width: 210px;
+    min-width: 128px;
+    min-height: 44px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font: 13px/1.35 Georgia, serif;
+    padding: 9px;
+}
+#upgrade-menu.castle-menu .castle-decree button:disabled { opacity: .6; }
+#upgrade-menu.castle-menu .upgrade-multiplier { display: none !important; }
+#upgrade-menu.castle-menu #close-upgrade-menu {
+    position: sticky;
+    bottom: -16px;
+    z-index: 1;
+    margin: 4px -16px -16px;
+    width: calc(100% + 32px);
+    min-height: 48px;
+    border-radius: 0 0 7px 7px;
+    border: 1px solid #9d7750;
+    background: linear-gradient(#87542c, #5c351b);
+    font: bold 15px Georgia, serif;
+}
+@media(max-width: 570px) {
+    #upgrade-menu.castle-menu .popup-content {
+        padding: 12px;
+        gap: 9px;
+        max-height: calc(100dvh - 18px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    }
+    #upgrade-menu.castle-menu .castle-decree {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+    }
+    #upgrade-menu.castle-menu .castle-decree button {
+        min-width: 0;
+        max-width: 100%;
+        width: 100%;
+    }
+    #upgrade-menu.castle-menu #close-upgrade-menu {
+        bottom: -12px;
+        margin: 4px -12px -12px;
+        width: calc(100% + 24px);
+    }
+}

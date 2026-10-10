@@ -606,60 +606,85 @@ function isRoyalSkillUnlocked(ability) {
         structures.castle.level >= (ability.castleLevel || 1);
 }
 function CastleUpgradeUI(menu, upgradeButtons, upgradeButtons2, container, container2) {
-    const heading = document.createElement("h4");
-    heading.textContent = "Royal Court";
-    upgradeButtons.appendChild(heading);
-    const help = document.createElement("p");
-    help.textContent = "The Castle raises your hero level cap and increases click damage by 1.5% per Castle level (up to +60%).";
-    upgradeButtons.appendChild(help);
-    createButton(upgradeButtons, "📚 Open Royal Academy · Research Tree", () => openResearchTree());
-    const insight = document.createElement("p");
-    insight.textContent = getResearchInsightAvailable() + " Insight available. First-time boss clears and Castle milestones earn Insight.";
-    upgradeButtons.appendChild(insight);
-    container.replaceChildren();
-    const activeLabel = document.createElement("h4");
-    activeLabel.textContent = "Hero abilities";
-    container.appendChild(activeLabel);
-    for (const ability of abilities) {
-        const p = document.createElement("p");
-        p.className = "castle-skill-summary";
-        p.textContent = ability.name + " · Hero Lv " + ability.unlockLevel + " · " + ability.description;
-        container.appendChild(p);
-    }
-
+    // Rebuild the whole Castle panel on purchase, never append another Court header.
+    upgradeButtons.replaceChildren();
     upgradeButtons2.replaceChildren();
-    const title = document.createElement("h4");
-    title.textContent = "Royal Decrees";
-    upgradeButtons2.appendChild(title);
-    const note = document.createElement("p");
-    note.textContent = "Permanent passive upgrades. Each requires an appropriate Castle and hero level.";
-    upgradeButtons2.appendChild(note);
+    container.replaceChildren();
     container2.replaceChildren();
+
+    const summary = document.createElement("p");
+    summary.className = "castle-intro";
+    summary.textContent = "Castle levels raise your hero cap and add up to +60% click damage.";
+    upgradeButtons.appendChild(summary);
+
+    const research = document.createElement("button");
+    research.className = "castle-research-button";
+    research.textContent = "📚 Open Royal Academy";
+    research.addEventListener("click", openResearchTree);
+    upgradeButtons.appendChild(research);
+
+    const insight = document.createElement("p");
+    insight.className = "castle-insight";
+    insight.textContent = formatDigits(getResearchInsightAvailable(), 0, 0).trim() +
+        " Insight available · Earn more from bosses and Castle milestones";
+    upgradeButtons.appendChild(insight);
+
+    // Abilities are reference text, not primary upgrade actions. Keep collapsed.
+    const abilitiesPanel = document.createElement("details");
+    abilitiesPanel.className = "castle-abilities";
+    const abilitiesSummary = document.createElement("summary");
+    abilitiesSummary.textContent = "Hero abilities (" + abilities.length + ")";
+    abilitiesPanel.appendChild(abilitiesSummary);
+    for (const ability of abilities) {
+        const item = document.createElement("p");
+        item.className = "castle-skill-summary";
+        item.textContent = ability.name + " · Hero Lv " + ability.unlockLevel +
+            " · " + ability.description;
+        abilitiesPanel.appendChild(item);
+    }
+    container.appendChild(abilitiesPanel);
+
+    const heading = document.createElement("h4");
+    heading.className = "castle-decrees-heading";
+    heading.textContent = "Royal Decrees";
+    upgradeButtons2.appendChild(heading);
+    const help = document.createElement("p");
+    help.className = "castle-decrees-help";
+    help.textContent = "Permanent royal upgrades. Higher ranks require hero and Castle levels.";
+    upgradeButtons2.appendChild(help);
+
     for (const ability of passiveAbilities) {
         const row = document.createElement("article");
         row.className = "upgrade-row castle-decree";
         const info = document.createElement("div");
-        const heading = document.createElement("strong");
-        heading.textContent = ability.name + " · Rank " + ability.level + "/" + ability.maxLevel;
-        const effect = document.createElement("p");
-        effect.textContent = ability.description;
-        info.append(heading,effect);
+        info.className = "castle-decree-info";
+        const title = document.createElement("strong");
+        title.textContent = ability.name;
+        const rank = document.createElement("small");
+        rank.className = "castle-decree-rank";
+        rank.textContent = "Rank " + ability.level + "/" + ability.maxLevel;
+        const description = document.createElement("p");
+        description.textContent = ability.description;
+        info.append(title, rank, description);
+
         const button = document.createElement("button");
         const unlocked = isRoyalSkillUnlocked(ability);
         const capped = ability.level >= ability.maxLevel;
-        const cost = upgradeSkillCost(ability, true);
-        button.textContent = capped ? "Max rank" : !unlocked ?
-            "Hero Lv " + ability.unlockLevel + " · Castle Lv " + (ability.castleLevel || 1) :
-            "Upgrade " + formatDigits(cost[0], 2, 0).trim() + " g";
-        button.disabled = capped || !unlocked || !cost[1] || gold < cost[0];
+        const quote = upgradeSkillCost(ability, true);
+        button.textContent = capped ? "Max rank" : !unlocked
+            ? "Requires Hero " + ability.unlockLevel + " · Castle " + (ability.castleLevel || 1)
+            : "Upgrade · " + formatDigits(quote[0], 2, 0).trim() + " gold";
+        button.disabled = capped || !unlocked || !quote[1] || gold < quote[0];
         button.onclick = () => {
-            if (!upgradeSkill(ability)) return;
-            CastleUpgradeUI(menu,upgradeButtons,upgradeButtons2,container,container2);
+            if (upgradeSkill(ability)) {
+                CastleUpgradeUI(menu, upgradeButtons, upgradeButtons2, container, container2);
+            }
         };
-        row.append(info,button);
+        row.append(info, button);
         container2.appendChild(row);
     }
 }
+
 function getMarketUpgradeLockReason(index) {
     const key = Object.keys(marketUpgrades)[index];
     const market = marketUpgrades[key];
@@ -736,9 +761,12 @@ function showMenu(name) {
     activeKingdomMenu = name;
     const menu = document.getElementById("upgrade-menu");
     menu.style.display = "flex";
+    menu.classList.toggle("castle-menu", name === "castle");
     const upgradeName = document.getElementById("upgrade-name");
-    upgradeName.textContent = `${name.charAt(0).toUpperCase() + name.slice(1)} Upgrade`;
+    upgradeName.textContent = name === "castle" ? "Royal Court" :
+        `${name.charAt(0).toUpperCase() + name.slice(1)} Upgrade`;
     const popupContent = document.querySelector("#upgrade-menu .popup-content");
+    popupContent.scrollTop = 0;
 
     const upgradeButtons = document.getElementById("upgrade-buttons");
     upgradeButtons.innerHTML = ""; // Clear previous buttons
@@ -755,11 +783,8 @@ function showMenu(name) {
 
     const emptyMessage = document.getElementById("upgrade-empty-message");
 
-    if (hiredMercenaries.length > 0) {
-        emptyMessage.style.display = "none";
-    } else {
-        emptyMessage.style.display = "block";
-    }
+    emptyMessage.style.display = (name === "castle" || name === "market" ||
+        hiredMercenaries.length > 0) ? "none" : "block";
 
     if (["tavern", "barracks", "blacksmith"].includes(name)) {
         createButton(upgradeButtons, "⚔️ Manage Entire Army", () => {
@@ -823,5 +848,6 @@ function closeMenu(name) {
     }
 
     menu.style.display = "none";
+    menu.classList.remove("castle-menu");
 }
 

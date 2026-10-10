@@ -96,6 +96,10 @@ The Royal Academy adds three permanent branches: **Veteran Drills** (stage 120, 
 
 This pass stops at stage 200. Regional modifiers are modest and focused on individual traits; normal gold multipliers are 1.12–1.16. Early-stage profiles, the capped offline patrol, mobile-friendly render timing, old saves, and the 250ms combat interval are unchanged.
 
+## v0.5.1 Castle menu repair
+
+The Castle's Royal Court dialog now clears its content before any rerender, including after purchasing a Decree. This eliminates duplicated headings and Academy buttons. The Hero abilities section is collapsed by default. The Castle dialog uses one scrolling container rather than competing nested scrollbars, compact Decree cards, responsive full-width buttons on phones, and a sticky Close button. The empty mercenary notice stays hidden in Castle and Market menus. No save changes or new gameplay currencies were introduced.
+
 ## Developer checks
 
 No dependencies, bundler, or build step are required; the site is static.
