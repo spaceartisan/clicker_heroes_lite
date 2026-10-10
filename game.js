@@ -207,6 +207,20 @@ function mktUp(idx) {
     return marketUpgradeEquation[idx](marketUpgrades[key].level);
 }
 
+// Idle earnings are capped to protect against huge stale timestamps and runaway saves.
+// This is intentionally a quarter of live DPS, consistent with previous offline rewards.
+function awardOfflineGold(seconds) {
+    if (!Number.isFinite(seconds) || seconds < 2) return 0;
+    const effectiveSeconds = Math.min(seconds, 24 * 60 * 60);
+    const reward = Math.floor(effectiveSeconds * getAutoDamage() * 0.25 * mktUp(4));
+    if (reward > 0 && Number.isFinite(reward)) {
+        gold += reward;
+        showPopupMessage(`Offline earnings: ${formatDigits(reward, 2, 0)} gold`, false, 3500);
+        return reward;
+    }
+    return 0;
+}
+
 function saveGame() {
     submitScore();
     const saveData = {
@@ -233,9 +247,10 @@ function saveGame() {
         marketUpgrades,
         passiveAbilities,
         unlockedAchievements: Array.from(unlockedAchievements), // convert Set to Array
-        lastSaved: Date.now() + 60000, // <--- new
-        scientificNotation
-
+        lastSaved: Date.now(),
+        scientificNotation,
+        autoAdvance,
+        underfillEnabled
     };
     localStorage.setItem("clickerHeroSave", JSON.stringify(saveData));
 }
@@ -245,6 +260,7 @@ function loadGame() {
     if (saved) {
         const data = JSON.parse(saved);
 
+        stopSquadAttack();
         hiredMercenaries.length = 0;
         if (Array.isArray(data.hiredMercenaries)) {
             data.hiredMercenaries.forEach((m, i) => {
@@ -257,13 +273,7 @@ function loadGame() {
             });
         }
 
-        // Iterate over all squads and start their attack
-        // Get total squads
-        const totalSquads = Math.ceil(hiredMercenaries.length / 5);
-        for (let i = 1; i <= totalSquads; i++) {
-            startSquadAttack(i);
-        }
-
+        // Restore progression before restarting the single combat timer.
         // restore everything else...
         gold = data.gold ?? 0;
         playerLevel = data.playerLevel ?? 1;
@@ -284,7 +294,12 @@ function loadGame() {
         abilitiesUsed = data.abilitiesUsed || []; // restore used abilities
         abilitiesCount = data.abilitiesCount || 0; // restore ability usage count
         unlockedAchievements = new Set(data.unlockedAchievements || []); // restore achievements
-        scientificNotation = data.scientificNotation ?? false; // restore scientific notation preference
+        scientificNotation = data.scientificNotation ?? false;
+        autoAdvance = data.autoAdvance ?? autoAdvance;
+        underfillEnabled = data.underfillEnabled ?? false;
+        autoNextToggle.checked = autoAdvance;
+        scientificCheckbox.checked = scientificNotation;
+        underfillCheckbox.checked = underfillEnabled; // restore scientific notation preference
         if (typeof data.structures === 'object') {
             structures = data.structures;
         }
@@ -300,22 +315,10 @@ function loadGame() {
         // console.log(marketUpgrades);
         // Restore equation for market upgrades
 
-        // Offline gold calc
-        if (data.lastSaved) {
-            const now = Date.now();
-            const diffSeconds = Math.floor((now - data.lastSaved) / 1000);
-            if (diffSeconds > 0) {
-                const goldPerSecond = getTotalAutoDamage(); // simple estimate
-                const offlineGold = diffSeconds * goldPerSecond * 0.25; // 25% efficiency while offline
-
-                console.log(`Offline gold earned: ${formatDigits(offlineGold, 2, 5)} (calculated over ${diffSeconds} seconds) for ${formatDigits(goldPerSecond, 2, 5)} gold/sec`);
-
-                if (offlineGold > 0) {
-                    gold += offlineGold * mktUp(4); // apply Offline Gold multiplier
-                    showPopupMessage(`Offline Gold Earned. You earned ${formatDigits(offlineGold, 2, 5)} gold while you were away!`);
-                    // alert(`While you were away, your mercenaries earned ${formatDigits(offlineGold, 2, 5)} gold!`);
-                }
-            }
+        // Old save files used a timestamp 60 seconds in the future; a negative
+        // elapsed time simply means no offline reward yet.
+        if (typeof data.lastSaved === "number") {
+            awardOfflineGold(Math.max(0, (Date.now() - data.lastSaved) / 1000));
         }
 
         if (nameConfirm) {
@@ -325,6 +328,7 @@ function loadGame() {
         playerNameText.textContent = playerName;
         drawRandomEnemy();
         updateUI();
+        startSquadAttack();
         saveGame();
     }
 }
@@ -393,6 +397,25 @@ function setUpgradeMultiplier(menu, x) {
     updatePlayerLevelGearText();
 }
 
+// Mobile browsers may throttle background tabs; stop combat completely while hidden.
+let hiddenAt = null;
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        hiddenAt = Date.now();
+        stopSquadAttack();
+        saveGame();
+    } else {
+        if (hiddenAt !== null) {
+            awardOfflineGold((Date.now() - hiddenAt) / 1000);
+            hiddenAt = null;
+            updateUI();
+            saveGame();
+        }
+        startSquadAttack();
+    }
+});
+window.addEventListener("pagehide", () => saveGame());
+
 // === Init ===
 enemyCanvas.onclick = () => attack(false);
 kingdomCanvas.onclick = (event) => checkClickLocation(event);
@@ -419,6 +442,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 setInterval(() => {
+    if (document.hidden) return;
     saveGame();
     showAutosaveIndicator();
-}, 60000); // every 60 seconds
+}, 60000); // once per minute, and only in the foreground
