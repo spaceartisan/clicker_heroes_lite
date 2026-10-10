@@ -324,6 +324,86 @@ function createButton(parent, text, ...listeners) {
 }
 
 
+// Combat specializations are attached to existing Barracks/Blacksmith menus,
+// with a single selector per squad so large armies remain manageable on phones.
+function appendSquadLoadoutUI(container, mode) {
+    const squads = Math.ceil(hiredMercenaries.length / 5);
+    if (squads < 1) return;
+
+    const heading = document.createElement("h4");
+    heading.textContent = mode === "role" ? "Squad specializations" : "Squad equipment";
+    heading.className = "loadout-heading";
+    container.appendChild(heading);
+
+    const tip = document.createElement("p");
+    tip.className = "loadout-hint";
+    tip.textContent = mode === "role"
+        ? "Barracks levels unlock combat roles. Match squads to enemy weaknesses."
+        : "Buy a kit once per squad; switching owned equipment is free.";
+    container.appendChild(tip);
+
+    for (let squadId = 1; squadId <= squads; squadId++) {
+        const id = squadId;
+        const build = getSquadBuild(id);
+        const row = document.createElement("div");
+        row.className = "loadout-row";
+        const label = document.createElement("label");
+        label.textContent = "Squad " + id;
+        const choices = document.createElement("select");
+        choices.setAttribute("aria-label", "Squad " + id + " " + (mode === "role" ? "role" : "equipment"));
+        const info = document.createElement("small");
+        info.className = "loadout-hint";
+        const choicesData = mode === "role" ? SQUAD_ROLES : EQUIPMENT_KITS;
+        const level = mode === "role" ? structures.barracks.level : structures.blacksmith.level;
+
+        choicesData.forEach(choice => {
+            const option = document.createElement("option");
+            option.value = choice.id;
+            option.textContent = choice.name + (level < choice.unlock ? " · Lv " + choice.unlock : "");
+            option.disabled = level < choice.unlock;
+            option.title = choice.summary;
+            choices.appendChild(option);
+        });
+        choices.value = mode === "role" ? build.role : build.kit;
+        const details = () => {
+            const chosen = choicesData.find(choice => choice.id === choices.value) || choicesData[0];
+            if (mode === "role") {
+                info.textContent = chosen.summary;
+            } else {
+                const owned = build.ownedKits.includes(chosen.id);
+                const cost = owned ? "Owned" : formatDigits(squadUpgradeKitCost(id, chosen.id), 0, 0) + " gold";
+                info.textContent = chosen.summary + " · " + cost;
+            }
+        };
+        details();
+        if (mode === "role") {
+            choices.addEventListener("change", () => {
+                if (!setSquadRole(id, choices.value)) choices.value = getSquadBuild(id).role;
+                details();
+            });
+            row.append(label, choices, info);
+        } else {
+            const button = document.createElement("button");
+            button.className = "loadout-action";
+            const updateButton = () => {
+                const buildNow = getSquadBuild(id);
+                const owned = buildNow.ownedKits.includes(choices.value);
+                button.textContent = buildNow.kit === choices.value ? "Equipped" : owned ? "Equip" : "Forge";
+                button.disabled = buildNow.kit === choices.value;
+                details();
+            };
+            choices.addEventListener("change", updateButton);
+            button.addEventListener("click", () => {
+                buyOrEquipSquadKit(id, choices.value);
+                updateButton();
+            });
+            updateButton();
+            row.append(label, choices, button, info);
+        }
+        container.appendChild(row);
+    }
+}
+
 function TavernUpgradeUI(menu, upgradeButtons, container, multContainer) {
     levelUpCostTextArray = [];
 
@@ -442,6 +522,8 @@ function BarracksUpgradeUI(menu, upgradeButtons, container, multContainer) {
             });
         });
     });
+    appendSquadLoadoutUI(container, "role");
+
 }
 
 function BlacksmithUpgradeUI(menu, upgradeButtons, container, multContainer) {
@@ -502,6 +584,8 @@ function BlacksmithUpgradeUI(menu, upgradeButtons, container, multContainer) {
             });
         });
     });
+    appendSquadLoadoutUI(container, "kit");
+
 }
 
 function CastleUpgradeUI(menu, upgradeButtons, upgradeButtons2, container, container2, multContainer) {
