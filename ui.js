@@ -190,7 +190,7 @@ function updateUI() {
     // TODO: playerClickDamage should not be calculated here, but rather somewhere else
     playerClickDamage = getPlayerClickDamage();
     damageText.textContent = `Hero Damage: ${formatDigits(playerClickDamage, 2, 5)}, Merc DPS: ${formatDigits(getAutoDamage(), 2, 5)}`;
-    healthFill.style.width = `${(enemyHealth / getEnemyHealth()) * 100}%`;
+    healthFill.style.width = `${Math.max(0, Math.min(100, (enemyHealth / getEnemyHealth()) * 100))}%`;
     document.getElementById("gold-fixed").textContent = formatDigits(gold);
     updatePlayerText();
     document.getElementById("prev-level").disabled = currentLevel <= 1;
