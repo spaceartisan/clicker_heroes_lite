@@ -30,7 +30,10 @@ function attack(isRageAttack = false) {
 
 // === Damage and UI ===
 function getPlayerClickDamage() {
-    return playerLevel * (2 ** playerGearLevel);
+    const castleBonus = 1 + Math.min(0.60, 0.015 * Math.max(0, structures.castle.level - 1));
+    const decreeBonus = 1 + 0.04 * Math.max(0, passiveAbilities[1].level - 1);
+    return playerLevel * (2 ** playerGearLevel) *
+        castleBonus * decreeBonus * (1 + getResearchBonus("heroDamage"));
 }
 
 // // Squad DPS is evaluated against the active enemy's defense profile.
@@ -62,7 +65,12 @@ function getAutoDamage() {
         if (kit.favored && kit.favored === target.trait) kitBonus *= kit.counter;
         dps += squad.damage * (squad.speed + 1) / 2 * teamwork * roleBonus * kitBonus;
     }
-    return dps * attackMultiplier * target.resistance;
+    let researchedBonus = 1 + getResearchBonus("squadDamage");
+    if (target.trait === "armored" || target.trait === "spectral") {
+        researchedBonus *= 1 + getResearchBonus("counterDamage");
+    }
+    if (target.id === "dragon") researchedBonus *= 1 + getResearchBonus("bossDamage");
+    return dps * attackMultiplier * mktUp(7) * researchedBonus * target.resistance;
 }
 
 function upgradeSkillCost(ability, query = false) {
@@ -79,16 +87,20 @@ function upgradeSkillCost(ability, query = false) {
 }
 
 function upgradeSkill(ability) {
-    const cost = upgradeSkillCost(ability, true);
-    if (cost[0] > 0 && gold >= cost[0]) {
-        gold -= cost[0];
-        ability.level += 1; // Still unsure if I want the upgradeMultiplier here
-    } else if (cost[2]) {
-        showPopupMessage("You have reached the level cap!", null, 700);
-    } else {
-        showPopupMessage("Not enough gold!", null, 700);
+    if (!isRoyalSkillUnlocked(ability)) {
+        showPopupMessage("Upgrade hero and Castle to unlock this decree.",false,1300);
+        return false;
     }
-    updateUI();
+    const quote = upgradeSkillCost(ability, true);
+    if (quote[1] > 0 && quote[0] > 0 && gold >= quote[0]) {
+        gold -= quote[0];
+        ability.level++;
+        updateUI();
+        saveGame();
+        return true;
+    }
+    showPopupMessage(ability.level >= ability.maxLevel ? "Maximum decree rank." : "Not enough gold.",false,900);
+    return false;
 }
 
 // === Mercenaries ===
@@ -241,7 +253,7 @@ function estimateUpgradeCost({ baseLevel, upgradeEquation, cap, resourceAvailabl
 function levelUpPlayerCost(query = false) {
     return estimateUpgradeCost({
         baseLevel: playerLevel,
-        upgradeEquation: (lvl) => Math.floor(10 + lvl ** 1.5 * mktUp(1)),
+        upgradeEquation: (lvl) => Math.floor(10 + lvl ** 1.5 * mktUp(1) * getResearchCostFactor()),
         cap: structures.castle.level * 10 + 100,
         resourceAvailable: gold,
         multiplier: upgradeMultiplier,
@@ -273,7 +285,7 @@ function levelUpPlayer() {
 function gearUpPlayerCost(query = false) {
     return estimateUpgradeCost({
         baseLevel: playerGearLevel,
-        upgradeEquation: (lvl) => Math.floor(100 * (lvl + 1) ** 2 * mktUp(1)),
+        upgradeEquation: (lvl) => Math.floor(100 * (lvl + 1) ** 2 * mktUp(1) * getResearchCostFactor()),
         cap: (structures.blacksmith.level - 1) * 2 + 5,
         resourceAvailable: gold,
         multiplier: upgradeMultiplier,
@@ -303,7 +315,7 @@ function levelUpMercenaryCost(i, query = false) {
     const m = hiredMercenaries[i];
     return estimateUpgradeCost({
         baseLevel: m.level,
-        upgradeEquation: (mlvl) => Math.floor(10 * mlvl ** 1.6), //Math.floor(10 + lvl ** 1.5),
+        upgradeEquation: (mlvl) => Math.floor(10 * mlvl ** 1.6 * getResearchCostFactor()), //Math.floor(10 + lvl ** 1.5),
         cap: (passiveAbilities[0].level - 1) * 10 + 100,
         resourceAvailable: gold,
         multiplier: upgradeMultiplier,
@@ -331,7 +343,7 @@ function upgradeMercenaryGearCost(m, query = false) {
     // const m = hiredMercenaries[i];
     return estimateUpgradeCost({
         baseLevel: m.gearLevel,
-        upgradeEquation: (glvl) => Math.floor(100 * ((glvl + 1) ** 8) * mktUp(1)),
+        upgradeEquation: (glvl) => Math.floor(100 * ((glvl + 1) ** 8) * mktUp(1) * getResearchCostFactor()),
         cap: (structures.blacksmith.level - 1) * 2 + 5,
         resourceAvailable: gold,
         multiplier: upgradeMultiplier,
@@ -364,7 +376,7 @@ function upgradeMercenarySpeedCost(m, query = false) {
     // const m = hiredMercenaries[i];
     return estimateUpgradeCost({
         baseLevel: m.attackSpeedLevel,
-        upgradeEquation: (mlvl) => Math.floor(100 * (mlvl + 1) ** 8 * mktUp(1)),
+        upgradeEquation: (mlvl) => Math.floor(100 * (mlvl + 1) ** 8 * mktUp(1) * getResearchCostFactor()),
         cap: (structures.barracks.level - 1) * 2 + 5,
         resourceAvailable: gold,
         multiplier: upgradeMultiplier,
