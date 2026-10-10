@@ -49,6 +49,7 @@ function submitScore() {
         statusSpan.textContent = "✔️ Name and score saved!";
         statusSpan.style.color = "#0f0";
         localStorage.setItem("playerName", playerName);
+        lastSubmittedScore = maxLevel;
         nameInput.disabled = true;
     }).catch((error) => {
         console.error("Error writing to leaderboard: ", error);
@@ -63,7 +64,7 @@ function submitScore() {
         statusSpan.style.visibility = "hidden";
     }, 1500);
 
-    lastSubmittedScore = maxLevel; // Update last submitted score
+    // Only mark the score submitted after Firestore confirms the write.
 }
 
 
@@ -78,19 +79,20 @@ function showLeaderboard() {
         .orderBy("score", "desc")
         .limit(50)
         .onSnapshot(snapshot => {
-            const entries = [];
+            const fragment = document.createDocumentFragment();
             let i = 0;
             snapshot.forEach(doc => {
                 const data = doc.data();
-                const name = data.name || "Unnamed Hero";
-                const score = typeof data.score === "number" ? data.score : 0;
+                const name = typeof data.name === "string" ? data.name : "Unnamed Hero";
+                const score = Number.isFinite(data.score) ? data.score : 0;
                 const isPlayer = name === playerName;
-
-                const displayName = isPlayer ? `🛡️ ${name}` : name;
-                const playerClass = isPlayer ? 'highlight-player' : '';
-                entries.push(`<p class="${playerClass}">${++i}. ${displayName} — Level ${score}</p>`);
+                const line = document.createElement("p");
+                if (isPlayer) line.classList.add("highlight-player");
+                line.textContent = `${++i}. ${isPlayer ? "🛡️ " : ""}${name} — Level ${score}`;
+                fragment.appendChild(line);
             });
-            scrollDiv.innerHTML = entries.join("") || "<p>No entries yet.</p>";
+            scrollDiv.replaceChildren(fragment);
+            if (i === 0) scrollDiv.textContent = "No entries yet.";
         }, error => {
             console.error("Error fetching leaderboard:", error);
             scrollDiv.innerHTML = "<p>Error loading leaderboard.</p>";
@@ -103,7 +105,8 @@ function showLeaderboard() {
 
 function closeLeaderboard() {
     document.getElementById("leaderboard-popup").style.display = "none";
-    leaderboardUnsub = null; // Unsubscribe from the snapshot listener
+    if (typeof leaderboardUnsub === "function") leaderboardUnsub();
+    leaderboardUnsub = null;
 }
 
 function sendMessage() {
@@ -112,7 +115,13 @@ function sendMessage() {
         messageStatusSpan.style.color = "red";
         return;
     }
-    const msg = messageBody.value.trim(); // or your desired metric
+    const msg = messageBody.value.trim();
+    if (!msg || msg.length > 99) {
+        messageStatusSpan.textContent = "Enter a message of 1–99 characters.";
+        messageStatusSpan.style.visibility = "visible";
+        messageStatusSpan.style.opacity = "1";
+        return;
+    }
 
     db.collection("message").add({
         name: playerName,
@@ -145,17 +154,23 @@ function showMessage() {
             .orderBy("timestamp", "desc")
             .limit(50)
             .onSnapshot(snapshot => {
-                const entries = [];
+                const fragment = document.createDocumentFragment();
+                let count = 0;
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    if (!data.timestamp) return;
-
-                    const name = data.name || "Unnamed Hero";
+                    if (!data.timestamp || typeof data.timestamp.toDate !== "function") return;
+                    const name = typeof data.name === "string" ? data.name : "Unnamed Hero";
                     const msg = typeof data.msg === "string" ? data.msg : "No message";
                     const time = data.timestamp.toDate().toLocaleTimeString();
-                    entries.push(`<p><strong>${name}</strong> @ ${time}: ${msg}</p>`);
+                    const line = document.createElement("p");
+                    const author = document.createElement("strong");
+                    author.textContent = name;
+                    line.append(author, document.createTextNode(` @ ${time}: ${msg}`));
+                    fragment.appendChild(line);
+                    count++;
                 });
-                scrollDiv.innerHTML = entries.join("") || "<p>No entries yet.</p>";
+                scrollDiv.replaceChildren(fragment);
+                if (count === 0) scrollDiv.textContent = "No entries yet.";
             }, error => {
                 console.error("Error loading messages:", error);
                 scrollDiv.innerHTML = "<p>Error loading message board.</p>";
@@ -167,7 +182,8 @@ function showMessage() {
 
 function closeMessage() {
     document.getElementById("message-popup").style.display = "none";
-    messageUnsub = null; // Unsubscribe from the snapshot listener
+    if (typeof messageUnsub === "function") messageUnsub();
+    messageUnsub = null;
 }
 
 function disableNameInput() {
@@ -179,12 +195,12 @@ function disableNameInput() {
 }
 
 function confirmName() {
-    localStorage.setItem("playerName", playerName);
-    localStorage.setItem("nameConfirm", true);
     const name = nameInput.value.trim();
-    if (name.length === 0) {
-        statusSpan.textContent = "❌ Please enter a valid name.";
+    if (!/^[\\p{L}\\p{N} _.-]{1,20}$/u.test(name)) {
+        statusSpan.textContent = "❌ Use 1–20 letters, numbers, spaces, _, . or -.";
         statusSpan.style.color = "red";
+        statusSpan.style.visibility = "visible";
+        statusSpan.style.opacity = "1";
         return;
     }
 
@@ -192,10 +208,16 @@ function confirmName() {
         if (doc.exists) {
             statusSpan.textContent = "❌ Name is already taken.";
             statusSpan.style.color = "red";
+            statusSpan.style.visibility = "visible";
+            statusSpan.style.opacity = "1";
             return;
         } else {
             nameConfirm = true;
             playerName = name;
+            localStorage.setItem("playerName", name);
+            localStorage.setItem("nameConfirm", "true");
+            // Submit the first level too, so the name is actually reserved.
+            lastSubmittedScore = -1;
             submitScore();
             // Save to localStorage
             disableNameInput();
