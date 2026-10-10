@@ -118,7 +118,7 @@ function getEnemyType(level = currentLevel) {
 }
 function squadUpgradeKitCost(squadId, kitId) {
     const kit = findEquipmentKit(kitId);
-    return Math.floor(kit.cost * (1 + (Math.max(1, squadId) - 1) * 0.12) * mktUp(1));
+    return Math.floor(kit.cost * (1 + (Math.max(1, squadId) - 1) * 0.12) * mktUp(1) * getResearchCostFactor());
 }
 function getSquadGoldMultiplier() {
     const uniqueSquads = new Set(hiredMercenaries.map(m => m.squad));
