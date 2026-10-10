@@ -87,6 +87,11 @@ function openResearchTree() {
 function closeResearchTree() {
     const popup = document.getElementById("research-popup");
     if (popup) popup.style.display = "none";
+    updateStructureUI();
+    if (typeof activeKingdomMenu !== "undefined" &&
+        ["castle", "market"].includes(activeKingdomMenu)) {
+        showMenu(activeKingdomMenu);
+    }
 }
 function renderResearchTree() {
     const root = document.getElementById("research-branches");
