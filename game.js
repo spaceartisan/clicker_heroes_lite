@@ -362,6 +362,7 @@ function loadGame() {
         playerNameText.textContent = playerName;
         drawRandomEnemy();
         updateUI();
+        updateStructureUI();
         startSquadAttack();
         saveGame();
         if (typeof resetArmySelection === "function") resetArmySelection();
