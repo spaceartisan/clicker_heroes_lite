@@ -3,6 +3,14 @@
 const GAME_SCHEMA_VERSION=2;
 const GAME_SEASON_ID="dynasty-ii";
 const GAME_SCORE_COLLECTION="scores_dynasty_ii";
+// History is read-only; only GAME_SCORE_COLLECTION receives score uploads.
+const GAME_LEADERBOARD_SEASONS = Object.freeze([
+  Object.freeze({id:GAME_SEASON_ID,label:"Season II — Dynasties",collection:GAME_SCORE_COLLECTION,historical:false}),
+  Object.freeze({id:"legacy",label:"Season I — Legacy",collection:"scores",historical:true})
+]);
+function getLeaderboardSeason(seasonId){
+  return GAME_LEADERBOARD_SEASONS.find(season=>season.id===seasonId)||GAME_LEADERBOARD_SEASONS[0];
+}
 const GAME_LEGACY_BACKUP_KEY="clickerHeroSave_before_dynasties";
 function isCurrentSeasonSave(value){
   return !!value && typeof value==="object" &&

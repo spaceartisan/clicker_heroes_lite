@@ -125,50 +125,90 @@ function submitScore(manual = false) {
     return true;
 }
 
-function showLeaderboard() {
+// Changing seasons detaches the old feed. Generation guards discard delayed
+// snapshots from a prior selection or after closing the leaderboard.
+let leaderboardViewGeneration = 0;
+let leaderboardSelectedSeason = GAME_SEASON_ID;
+
+function switchLeaderboardSeason(seasonId) {
+    const season = getLeaderboardSeason(seasonId);
     const scrollDiv = document.getElementById("leaderboard-scroll");
-    if (nameConfirm) {
-        updateScoreSyncStatus(scoreUploadPending ? "Score upload in progress." :
-            currentDynastyPeak() > lastSubmittedScore
-                ? "You have unsynchronized progress. You can retry below."
-                : "Score synchronized through stage " + lastSubmittedScore + ".");
-    } else {
-        updateScoreSyncStatus("Confirm a name to join the Season II rankings.");
+    const seasonSelect = document.getElementById("leaderboard-season");
+    const note = document.getElementById("leaderboard-season-note");
+    const syncStatus = document.getElementById("leaderboard-sync-status");
+    const nameEntry = document.getElementById("name-entry");
+    const syncButton = document.getElementById("sync-score-button");
+
+    const generation = ++leaderboardViewGeneration;
+    if (typeof leaderboardUnsub === "function") leaderboardUnsub();
+    leaderboardUnsub = null;
+    leaderboardSelectedSeason = season.id;
+    seasonSelect.value = season.id;
+    nameEntry.hidden = season.historical;
+    syncButton.hidden = season.historical;
+    syncStatus.hidden = season.historical;
+    note.textContent = season.historical
+        ? "Archived rankings are read-only. Names and scores are preserved."
+        : "Current season · Your name and score are registered here.";
+
+    if (!season.historical) {
+        if (nameConfirm) {
+            updateScoreSyncStatus(scoreUploadPending ? "Score upload in progress." :
+                currentDynastyPeak() > lastSubmittedScore
+                    ? "You have unsynchronized progress. You can retry below."
+                    : "Score synchronized through stage " + lastSubmittedScore + ".");
+        } else {
+            updateScoreSyncStatus("Confirm a name to join the Season II rankings.");
+        }
     }
-    scrollDiv.textContent = "Loading Season II leaderboard...";
-
-    if (leaderboardUnsub) leaderboardUnsub();
-
-    leaderboardUnsub = db.collection(GAME_SCORE_COLLECTION)
-        .orderBy("score", "desc")
-        .limit(50)
-        .onSnapshot(snapshot => {
-            const fragment = document.createDocumentFragment();
-            let i = 0;
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const name = typeof data.name === "string" ? data.name : "Unnamed Hero";
-                const score = Number.isFinite(data.score) ? data.score : 0;
-                const isPlayer = name === playerName;
-                const line = document.createElement("p");
-                if (isPlayer) line.classList.add("highlight-player");
-                line.textContent = `${++i}. ${isPlayer ? "(You) " : ""}${name} — Level ${score}`;
-                fragment.appendChild(line);
+    scrollDiv.textContent = "Loading " + season.label + " rankings...";
+    try {
+        leaderboardUnsub = db.collection(season.collection)
+            .orderBy("score", "desc")
+            .limit(50)
+            .onSnapshot(snapshot => {
+                if (generation !== leaderboardViewGeneration) return;
+                const fragment = document.createDocumentFragment();
+                let rank = 0;
+                snapshot.forEach(doc => {
+                    const data = doc.data() || {};
+                    const displayName = typeof data.name === "string" ? data.name : "Unnamed Hero";
+                    const score = Number.isFinite(data.score) ? data.score : 0;
+                    // Reused names from the first season are not verified identities.
+                    const isPlayer = !season.historical && nameConfirm && displayName === playerName;
+                    const line = document.createElement("p");
+                    if (isPlayer) line.classList.add("highlight-player");
+                    line.textContent = String(++rank) + ". " +
+                        (isPlayer ? "(You) " : "") + displayName + " — Level " + score;
+                    fragment.appendChild(line);
+                });
+                scrollDiv.replaceChildren(fragment);
+                if (rank === 0) scrollDiv.textContent = "No rankings recorded for this season.";
+            }, error => {
+                if (generation !== leaderboardViewGeneration) return;
+                console.error("Error fetching " + season.label + " leaderboard:", error);
+                scrollDiv.textContent = season.label +
+                    " rankings unavailable. Check your connection or Firebase read permissions.";
+                if (!season.historical)
+                    updateScoreSyncStatus("Could not load online rankings. Your local save is safe.", true);
             });
-            scrollDiv.replaceChildren(fragment);
-            if (i === 0) scrollDiv.textContent = "No entries yet.";
-        }, error => {
-            console.error("Error fetching leaderboard:", error);
-            scrollDiv.textContent = "Season II leaderboard unavailable. Check your connection or Firebase rules.";
+    } catch (error) {
+        if (generation !== leaderboardViewGeneration) return;
+        console.error("Could not subscribe to " + season.label + " leaderboard:", error);
+        scrollDiv.textContent = season.label +
+            " rankings unavailable. Check your connection or Firebase read permissions.";
+        if (!season.historical)
             updateScoreSyncStatus("Could not load online rankings. Your local save is safe.", true);
-        });
-
-    document.getElementById("leaderboard-popup").style.display = "flex";
+    }
 }
 
-
+function showLeaderboard() {
+    document.getElementById("leaderboard-popup").style.display = "flex";
+    switchLeaderboardSeason(GAME_SEASON_ID);
+}
 
 function closeLeaderboard() {
+    ++leaderboardViewGeneration;
     document.getElementById("leaderboard-popup").style.display = "none";
     if (typeof leaderboardUnsub === "function") leaderboardUnsub();
     leaderboardUnsub = null;

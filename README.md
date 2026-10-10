@@ -85,3 +85,11 @@ The enemy encounter row is now a three-track CSS grid with fixed-width Previous/
 - Renamed Dark Theme to **Stone Theme** in Game Config. Existing `heroes-of-click-theme=dark` preferences still load as Stone; save data and Dynasty state are unchanged.
 - Audited themed buttons throughout Hero, Army, Castle, Market, Research, popups, and settings. Stone now overrides legacy hard-coded colors while retaining distinct selected, locked, disabled, cooling, and active-ability states.
 - Bumped the offline shell cache to v1.2.1 so installed PWAs pick up the updated stylesheet, controller, and tests. The restored original brick texture is hosted externally, so the underlying solid-color fallback remains available offline.
+
+### v1.2.2 — browse historical leaderboard seasons
+
+- Added an accessible Season selector in Leaderboard: **Season II · Dynasties** (current, `scores_dynasty_ii`) and **Season I · Legacy** (archive, `scores`). Viewing Season I is read-only and does not alter or delete any historical score.
+- Name confirmation and score synchronization controls disappear while browsing an archived season. Returning to Season II restores them; uploads are still hardwired to the current season.
+- Changing the selection ends the previous Firestore subscription and ignores stale snapshots; closing the popup cleans up its listener. Empty rankings and Firestore permission issues have clear messages.
+- Added selector regression checks and bumped visible version and offline shell cache to v1.2.2. Corrected an existing test harness to await an event-loop turn for asynchronous synchronization callbacks.
+- Firestore must allow client **read** access to the legacy `scores` collection to display historic rankings. This frontend change cannot modify server rules.

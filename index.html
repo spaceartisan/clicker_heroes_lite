@@ -243,7 +243,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.2.1 – Heroes of the Click
+        v1.2.2 – Heroes of the Click
     </p>
     <br>
 
@@ -265,7 +265,15 @@
 
     <div id="leaderboard-popup" class="popup">
         <div class="popup-content">
-            <h3><span class="ui-icon ui-icon-leaderboard" aria-hidden="true"></span> Dynasty Season II Leaderboard</h3>
+            <h3><span class="ui-icon ui-icon-leaderboard" aria-hidden="true"></span> Leaderboard</h3>
+            <div class="leaderboard-season-control">
+                <label for="leaderboard-season">Season</label>
+                <select id="leaderboard-season" onchange="switchLeaderboardSeason(this.value)">
+                    <option value="dynasty-ii">Season II · Dynasties (Current)</option>
+                    <option value="legacy">Season I · Legacy</option>
+                </select>
+            </div>
+            <p id="leaderboard-season-note" role="status">Current season · Your name and score are registered here.</p>
             <div id="leaderboard-scroll">
                 <!-- Scores will be injected here -->
             </div>
