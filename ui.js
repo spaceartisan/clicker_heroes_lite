@@ -236,6 +236,8 @@ function updatePlayerLevelGearText() {
 }
 
 function showOptions() {
+    const oldExport = document.getElementById("export-legacy-save");
+    if (oldExport) oldExport.hidden = !localStorage.getItem(GAME_LEGACY_BACKUP_KEY);
     const optionsPopup = document.getElementById("options-popup");
     optionsPopup.style.display = "flex";
 }

@@ -66,16 +66,23 @@ function getResearchInsightEarned() {
     return Math.max(0,Math.floor((highest-1)/10))+
         Math.max(0,Math.floor(highestCastle/5));
 }
+// Each College uses the same increasing per-rank cost. Cache the cumulative
+// costs once so rendering every research card is constant-time at high ranks.
+const academyInsightCostPrefix = [0];
+function getAcademyTotalSpent(rank) {
+    const safeRank = Math.min(10000, Math.max(0, Math.floor(Number(rank) || 0)));
+    while (academyInsightCostPrefix.length <= safeRank) {
+        const nextRank = academyInsightCostPrefix.length;
+        const price = 3 + Math.floor(Math.pow(nextRank, 1.4));
+        academyInsightCostPrefix.push(academyInsightCostPrefix[nextRank - 1] + price);
+    }
+    return academyInsightCostPrefix[safeRank];
+}
 function getResearchInsightSpent() {
-    const fixed=RESEARCH_NODES.reduce((sum,node)=>
-        sum+(researchState[node.id]===true?node.cost:0),0);
-    const colleges=ACADEMY_DISCIPLINES.reduce((sum,college)=>{
-        const ranks=Math.min(10000,Math.max(0,academyDisciplines[college.id]||0));
-        for(let rank=0;rank<ranks;rank++)
-            sum+=3+Math.floor(Math.pow(rank+1,1.4));
-        return sum;
-    },0);
-    return fixed+colleges;
+    const fixed = RESEARCH_NODES.reduce((sum, node) =>
+        sum + (researchState[node.id] === true ? node.cost : 0), 0);
+    return fixed + ACADEMY_DISCIPLINES.reduce((sum, college) =>
+        sum + getAcademyTotalSpent(academyDisciplines[college.id]), 0);
 }
 function getResearchInsightAvailable() {
     return Math.max(0, getResearchInsightEarned() - getResearchInsightSpent());
@@ -191,8 +198,9 @@ function renderResearchTree() {
                 Math.round(getAcademyDisciplineBonus(college.id)*100)+"% so far";
             const btn=document.createElement("button");
             const cost=getAcademyDisciplineCost(college.id);
-            btn.textContent="Advance · "+cost+" Insight";
-            btn.disabled=available<cost;
+            const maxed = academyDisciplines[college.id] >= 10000;
+            btn.textContent = maxed ? "Maximum rank" : "Advance · " + cost + " Insight";
+            btn.disabled = maxed || available < cost;
             btn.addEventListener("click",()=>upgradeAcademyDiscipline(college.id));
             card.append(name,desc,btn);
             section.appendChild(card);

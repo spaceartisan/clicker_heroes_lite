@@ -27,3 +27,13 @@ Run `node tests/smoke-test.cjs` to exercise combat, purchases, Dynasty state, th
 Faith/religion remains a separate future mechanic. Renown and Insight are secular resources.
 
 **QA note:** The release includes explicit smoke checks for Season II leaderboard collection routing, legacy-save archival, Dynasty rebirth persistence, and finite numerical calculations at twenty million stages. Visual QA uses responsive layout previews; actual device performance and Firestore permissions must still be checked on deployed infrastructure.
+
+### v1.0.1 — stabilization and mobile efficiency
+
+- Season II leaderboard uploads are **coalesced** while one is pending, with a two-minute normal upload cadence and a five-minute automatic backoff after failures. The uploaded snapshot stage is the only stage marked as synchronized; newly earned stages cannot silently be treated as sent.
+- Name registration is only confirmed after the Firestore write succeeds. Permission errors provide actionable feedback and leave the name field usable for a retry. Players can manually retry score synchronization from the leaderboard.
+- The **Export Previous-Season Save** button remains available in Game Config whenever a pre-Season-II backup exists, even after the transition dialog is closed.
+- Royal Academy Insight spending uses a memoized cumulative cost table. This avoids repeatedly recomputing thousands of ranks whenever research cards refresh.
+- No changes to Dynasty benefits, the Season II save schema, active combat timers, or the deferred religion system.
+
+**Deployment:** Firestore rules for `scores_dynasty_ii` still need to be verified by the project owner. Automated checks validate routing and failure handling, but cannot authorize backend access or measure thermal behavior on a physical phone.

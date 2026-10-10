@@ -983,3 +983,23 @@ input, textarea { font-size: 16px; user-select: text; -webkit-user-select: text;
 .market-charter p{font:12px/1.5 Arial,sans-serif;color:#d9cab6}
 .market-charter button{width:100%;min-height:44px}
 .research-college{margin-top:12px;border:1px solid #a78b55;background:#333021}
+
+
+/* Season II leaderboard and previous-save controls. */
+#leaderboard-sync-status {
+    color: #e9d4aa;
+    font: 12px/1.5 Arial,sans-serif;
+    min-height: 16px;
+    margin: 8px 0;
+    text-align: center;
+}
+#leaderboard-sync-status.sync-error { color: #e6a99d; }
+#sync-score-button {
+    display: block;
+    min-height: 44px;
+    width: 100%;
+    margin: 8px auto 0;
+    font: 14px/1.4 Georgia,serif;
+}
+#export-legacy-save { min-height: 44px; }
+#export-legacy-save[hidden] { display:none!important; }
