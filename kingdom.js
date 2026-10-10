@@ -14,72 +14,69 @@ const structurePositions = {
     market: { x: 16, y: 10 }
 };
 
+// Progression gates are enforced in purchases as well as the UI.
+const KINGDOM_UNLOCK_STAGES = { tavern: 10, market: 20, blacksmith: 25, barracks: 25 };
+function requiredCastleLevel(id, nextLevel) {
+    if (id === "tavern" && nextLevel === 1) return 1;
+    if (id === "market") return Math.max(1, nextLevel);
+    if (id === "blacksmith" || id === "barracks") return Math.max(2, nextLevel + 1);
+    return Math.max(1, nextLevel);
+}
+function structureLockReason(id) {
+    if (!(id in structures)) return "Unknown structure";
+    if (id === "castle") return "";
+    const nextLevel = structures[id].level + 1;
+    if (nextLevel === 1 && maxLevel <= (KINGDOM_UNLOCK_STAGES[id] || 0)) {
+        return "Clear stage " + KINGDOM_UNLOCK_STAGES[id];
+    }
+    const required = requiredCastleLevel(id, nextLevel);
+    if (structures.castle.level < required) return "Castle Lv " + required + " required";
+    return "";
+}
 function getStructureCost(structure) {
-    return Math.floor(structure.baseCost * Math.pow(1.5, structure.level));
+    const id = Object.keys(structures).find(key => structures[key] === structure) || "castle";
+    const growth = id === "castle" ? 1.35 : 1.45;
+    const base = Math.floor(structure.baseCost * Math.pow(growth, Math.max(0, structure.level)));
+    return Math.max(1, Math.ceil(base * getStructureCostFactor(id)));
 }
-
-function upgradeStructure(name) {
-    const s = structures[name];
-    let cost = getStructureCost(s);
-    if (name === "tavern" && s.level < 1) {
-        cost = 0;
+function upgradeStructure(id) {
+    const structure = structures[id];
+    if (!structure) return false;
+    const locked = structureLockReason(id);
+    if (locked) {
+        showPopupMessage(locked, false, 1500);
+        return false;
     }
-    if (gold >= cost) {
-        gold -= cost;
-        s.level++;
-        updateStructureUI();
-        updateUI();
-        drawKingdom();
-    } else if (gold < cost) {
-        showPopupMessage("Not enough gold!", false, 700);
+    const cost = id === "tavern" && structure.level === 0 ? 0 : getStructureCost(structure);
+    if (gold < cost) {
+        showPopupMessage("Not enough gold!", false, 900);
+        return false;
     }
+    gold -= cost;
+    structure.level++;
+    updateStructureUI();
+    updateUI();
+    drawKingdom();
+    saveGame();
+    return true;
 }
-
 function updateStructureUI() {
-    Object.keys(structures).forEach(name => {
-        const el = document.getElementById(`${name}-lvl`);
-        const costEl = document.getElementById(`${name}-cost`);
-        const btn = document.getElementById(`${name}-cost`)?.closest("button");
-        const nameLvl = structures[name].level * structures[name].upgradeType + structures[name].upgradeType + 1;
-        const castLvl = structures.castle.level;
-
-        if ((castLvl < nameLvl && name !== "castle")) {
-            if (btn) {
-                btn.classList.add("locked");
-                btn.disabled = true;
-            }
-        } else {
-            if (btn) {
-                btn.classList.remove("locked");
-                btn.disabled = false;
-            }
+    for (const [id, structure] of Object.entries(structures)) {
+        const el = document.getElementById(id + "-lvl");
+        const costEl = document.getElementById(id + "-cost");
+        const button = costEl ? costEl.closest("button") : null;
+        const locked = structureLockReason(id);
+        if (button) {
+            button.disabled = !!locked;
+            button.classList.toggle("locked", !!locked);
         }
-        if (name === "tavern" && structures.tavern.level < 1 && maxLevel >= 10) {
-            if (btn) {
-                btn.classList.remove("locked");
-                btn.disabled = false;
-            }
-            // console.log("tavern is unlocked")
-        }
-        if (el) el.textContent = structures[name].level;
+        if (el) el.textContent = structure.level;
         if (costEl) {
-            if (btn.disabled) {
-                if (name !== "tavern" || (name === "tavern" && maxLevel >= 10)) {
-                    costEl.textContent = "Required Castle Level: " + (nameLvl);
-                } else {
-                    costEl.textContent = "Req Enemy Level: 10";
-                }
-            } else {
-                if (name === "tavern" && structures.tavern.level < 1) {
-                    costEl.textContent = "Upgrade Free";
-                }
-                else {
-                    costEl.textContent = "Upgrade " + formatDigits(getStructureCost(structures[name]), 2, 5) + " g";
-                }
-            }
+            const free = id === "tavern" && structure.level === 0;
+            costEl.textContent = locked || (free ? "Build free" :
+                "Upgrade " + formatDigits(getStructureCost(structure), 2, 0).trim() + " g");
         }
-    });
-
+    }
 }
 
 let persistentMiniBuildings = [];
