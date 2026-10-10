@@ -149,7 +149,9 @@ const abilities = [
 ];
 
 const passiveAbilities = [
-    { name: "Leadership", description: "Increases mercenary level cap.", level: 1, maxLevel: 10, unlockLevel: 10, cost: 1000 }
+    { name: "Leadership", description: "Increases mercenary level cap.", level: 1, maxLevel: 10, unlockLevel: 10, castleLevel: 1, cost: 1000 },
+    { name: "Royal Guard", description: "+4% hero click damage per purchased level.", level: 1, maxLevel: 8, unlockLevel: 20, castleLevel: 2, cost: 1500 },
+    { name: "Crown Steward", description: "+3% gold from defeated enemies per purchased level.", level: 1, maxLevel: 8, unlockLevel: 40, castleLevel: 3, cost: 2000 }
 ];
 
 let marketUpgrades = {
@@ -157,7 +159,10 @@ let marketUpgrades = {
     mkt2: { name: "Bargain Hunter", description: "Reduces upgrade costs.", cost: 500, level: 0, maxLevel: 10, unlockLevel: 1 }, // 5% per level
     mkt3: { name: "Blacksmith's Touch", description: "Increases gear upgrade efficiency.", cost: 2000, level: 0, maxLevel: 10, unlockLevel: 5 }, // 10% per level
     mkt4: { name: "Better Bunks", description: "Increases mercenary attack speed.", cost: 1500, level: 0, maxLevel: 10, unlockLevel: 5 }, // 5% per level
-    mkt5: { name: "Offline Gold", description: "Increases gold earned while offline.", cost: 3000, level: 0, maxLevel: 10, unlockLevel: 3 }, // 5% per level
+    mkt5: { name: "Offline Gold", description: "Increases gold earned while offline.", cost: 3000, level: 0, maxLevel: 10, unlockLevel: 3 },
+    mkt6: { name: "Bounty Contracts", description: "+10% boss gold per level.", cost: 1700, level: 0, maxLevel: 10, unlockLevel: 3 },
+    mkt7: { name: "Caravan Logistics", description: "+6% normal-enemy gold per level.", cost: 2500, level: 0, maxLevel: 10, unlockLevel: 4 },
+    mkt8: { name: "War Supplies", description: "+4% mercenary DPS per level.", cost: 3400, level: 0, maxLevel: 10, unlockLevel: 5 },
 };
 
 const marketUpgradeEquation = [
@@ -165,7 +170,10 @@ const marketUpgradeEquation = [
     (level) => Math.pow(0.92, level), // Bargain Hunter
     (level) => Math.pow(1.05, level), // Blacksmith's Touch
     (level) => Math.pow(1.05, level), // Better Bunks
-    (level) => Math.pow(1.05, level) // Offline Gold
+    (level) => Math.pow(1.05, level), // Offline Gold
+    (level) => Math.pow(1.10, level), // Bounty Contracts
+    (level) => Math.pow(1.06, level), // Caravan Logistics
+    (level) => Math.pow(1.04, level) // War Supplies
 ]
 
 let abilityStates = {};
@@ -206,6 +214,7 @@ function goToPrevLevel() {
 
 function mktUp(idx) {
     const key = Object.keys(marketUpgrades)[idx];
+    if (!key || !marketUpgradeEquation[idx]) return 1;
     return marketUpgradeEquation[idx](marketUpgrades[key].level);
 }
 
@@ -214,7 +223,7 @@ function mktUp(idx) {
 function awardOfflineGold(seconds) {
     if (!Number.isFinite(seconds) || seconds < 2) return 0;
     const effectiveSeconds = Math.min(seconds, 24 * 60 * 60);
-    const reward = Math.floor(effectiveSeconds * getAutoDamage() * 0.25 * mktUp(4));
+    const reward = Math.floor(effectiveSeconds * getAutoDamage() * 0.25 * mktUp(4) * (1 + getResearchBonus("offlineGold")));
     if (reward > 0 && Number.isFinite(reward)) {
         gold += reward;
         showPopupMessage(`Offline earnings: ${formatDigits(reward, 2, 0)} gold`, false, 3500);
@@ -239,6 +248,7 @@ function saveGame() {
         // maxMercenaries,
         hiredMercenaries,
         squadBuilds,
+        researchState,
         nameConfirm,
         playerName,
         lastSubmittedScore,
@@ -266,6 +276,12 @@ function loadGame() {
         stopSquadAttack();
         hiredMercenaries.length = 0;
         squadBuilds = data.squadBuilds && typeof data.squadBuilds === "object" && !Array.isArray(data.squadBuilds) ? data.squadBuilds : {};
+        researchState = {};
+        if (data.researchState && typeof data.researchState === "object") {
+            for (const node of RESEARCH_NODES) {
+                if (data.researchState[node.id] === true) researchState[node.id] = true;
+            }
+        }
         if (Array.isArray(data.hiredMercenaries)) {
             data.hiredMercenaries.forEach((m, i) => {
                 hiredMercenaries.push(m);
@@ -304,16 +320,30 @@ function loadGame() {
         autoNextToggle.checked = autoAdvance;
         scientificCheckbox.checked = scientificNotation;
         underfillCheckbox.checked = underfillEnabled; // restore scientific notation preference
-        if (typeof data.structures === 'object') {
-            structures = data.structures;
+        // Transfer purchased levels onto the current definitions; don't discard
+        // new upgrades when loading a save from an earlier release.
+        if (data.structures && typeof data.structures === "object") {
+            for (const [key, definition] of Object.entries(structures)) {
+                const previous = data.structures[key];
+                if (previous && Number.isFinite(previous.level)) {
+                    definition.level = Math.max(key === "castle" ? 1 : 0, Math.floor(previous.level));
+                }
+            }
         }
-        if (typeof data.marketUpgrades === 'object') {
-            marketUpgrades = data.marketUpgrades;
+        if (data.marketUpgrades && typeof data.marketUpgrades === "object") {
+            for (const [key, definition] of Object.entries(marketUpgrades)) {
+                const previous = data.marketUpgrades[key];
+                if (previous && Number.isFinite(previous.level)) {
+                    definition.level = Math.max(0, Math.min(definition.maxLevel, Math.floor(previous.level)));
+                }
+            }
         }
         if (data.passiveAbilities) {
             Object.keys(data.passiveAbilities).forEach((key) => {
                 const ability = data.passiveAbilities[key];
-                passiveAbilities[key].level = ability.level || 1; // restore passive abilities
+                if (passiveAbilities[key] && Number.isFinite(ability.level)) {
+                    passiveAbilities[key].level = Math.max(1, Math.min(passiveAbilities[key].maxLevel, Math.floor(ability.level)));
+                }
             });
         }
         // console.log(marketUpgrades);
