@@ -25,7 +25,15 @@ function element(tag = "div") {
 }
 const document = {
     hidden: false, body: element("body"),
-    getElementById(id) { if (!nodes.has(id)) nodes.set(id, element()); return nodes.get(id); },
+    getElementById(id) {
+        if (!nodes.has(id)) {
+            const item = element();
+            // Match the inline display:none on tabs that exist in the real HTML.
+            if (id === "army-view" || id === "research-popup") item.style.display = "none";
+            nodes.set(id, item);
+        }
+        return nodes.get(id);
+    },
     createElement: element,
     querySelector() { return element(); },
     createTextNode: text => ({ textContent: text }),
