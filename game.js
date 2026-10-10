@@ -161,7 +161,7 @@ const autoClickerCostText = document.getElementById("auto-clicker-cost");
 const guildLevelText = document.getElementById("guild-level");
 const mercenaryList = document.getElementById("mercenary-shop");
 const healthFill = document.getElementById("health-fill");
-const enemyNameText = document.createElement("p");
+const enemyNameText = document.getElementById("enemy-name");
 const enemyLevelText = document.getElementById("enemy-level");
 const guildCostText = document.getElementById("guild-cost");
 const playerNameText = document.getElementById("player-name");
@@ -170,7 +170,7 @@ const statusSpan = document.getElementById("name-status");
 const nameConfirmButton = document.getElementById("confirm-button");
 const messageBody = document.getElementById("message-body");
 const messageStatusSpan = document.getElementById("msg-status");
-document.getElementById("enemy-box").appendChild(enemyNameText);
+// Enemy name is authored in the scene markup for stable card order and width.
 const scientificCheckbox = document.getElementById("use-scientific");
 const underfillCheckbox = document.getElementById("underfill-toggle");
 

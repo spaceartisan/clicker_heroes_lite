@@ -66,3 +66,7 @@ This is a CPU/DOM workload reduction, **not a claim of verified lower device tem
 - Reorganized Game Config's save/import actions into a two-column grid, without changing the save system, Battery Saver, or the export of pre-Season-II files.
 - Removed redundant early hero-ability styling and duplicate achievement scrolling rules. The achievement cards retain their dedicated internal scroll container and visible Close button.
 - No gameplay/economic changes or additional animation loops. The stylesheet retains the existing medieval brown-and-gold identity.
+
+### v1.1.3 — Fixed-width enemy card
+
+The enemy encounter row is now a three-track CSS grid with fixed-width Previous/Next controls and a bounded center card. Enemy names and trait text wrap **inside** that card without shifting the stage arrows. The arrows are anchored to the sprite position instead of vertically centering on variable text, and long names (including Veteran and Frontier modifiers) are supported at phone and desktop widths. The enemy-name label is now authored in the HTML rather than appended at runtime, keeping the sprite, health, stage, name, and trait in a predictable order. Sprite rendering and attack mechanics are unchanged; no new timers or redraws are introduced.
