@@ -968,9 +968,7 @@ const accountBoardMarkupChecks=(()=>{
     rules.includes("request.auth.uid == userId")&&
     rules.includes("request.resource.data.score >= resource.data.score"),
     "Server rules document owner-only immutable ranking scores");
- ok(getLeaderboardSeason("accounts").collection==="scores_accounts_dynasty_ii"&&
-    getLeaderboardSeason("legacy").collection==="scores"&&
-    getLeaderboardSeason(GAME_SEASON_ID).collection===GAME_SCORE_COLLECTION,
+ ok(vm.runInContext('getLeaderboardSeason("accounts").collection==="scores_accounts_dynasty_ii" && getLeaderboardSeason("legacy").collection==="scores" && getLeaderboardSeason(GAME_SEASON_ID).collection===GAME_SCORE_COLLECTION',ctx),
     "Three historical and current rankings remain separated");
  return checks;
 })();
