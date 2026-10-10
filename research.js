@@ -75,7 +75,7 @@ function getResearchCostFactor() {
     return Math.max(0.60, 1 - getResearchBonus("discount"));
 }
 function getStructureCostFactor(id) {
-    const academyFactor = getResearchCostFactor();
+    const academyFactor = getResearchCostFactor() * mktUp(1);
     return id === "castle" ? academyFactor * (1 - getResearchBonus("castleDiscount")) : academyFactor;
 }
 function openResearchTree() {
