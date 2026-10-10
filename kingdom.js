@@ -1,5 +1,5 @@
 let structures = {
-    castle: { level: 1, baseCost: 50000 },
+    castle: { level: 1, baseCost: 30000 },
     tavern: { level: 0, baseCost: 35000, upgradeType: 4 },
     blacksmith: { level: 0, baseCost: 20000, upgradeType: 3 },
     barracks: { level: 0, baseCost: 20000, upgradeType: 3 },
