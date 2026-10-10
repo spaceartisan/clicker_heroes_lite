@@ -676,6 +676,10 @@ input, textarea { font-size: 16px; user-select: text; -webkit-user-select: text;
     .army-squad-grid { grid-template-columns:1fr; }
     .army-header { align-items:flex-start; }
     .army-header h2 { font-size:19px; }
+    .army-toolbar { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .army-toolbar strong { grid-column:1; }
+    #army-selected-count { grid-column:2; margin:0; justify-self:end; }
+    .army-toolbar button { width:100%; }
 }
 @media (max-width:385px) {
     .army-command { padding:10px; }
