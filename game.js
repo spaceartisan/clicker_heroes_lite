@@ -22,6 +22,8 @@ let playerName = "Unnamed Hero"; // Default name
 let nameConfirm = false;
 
 const hiredMercenaries = [];
+let squadBuilds = {};
+let enemyType = null;
 const squadAttackInterval = [];
 
 let messageInterval = null;
@@ -236,6 +238,7 @@ function saveGame() {
         // guildLevel,
         // maxMercenaries,
         hiredMercenaries,
+        squadBuilds,
         nameConfirm,
         playerName,
         lastSubmittedScore,
@@ -262,6 +265,7 @@ function loadGame() {
 
         stopSquadAttack();
         hiredMercenaries.length = 0;
+        squadBuilds = data.squadBuilds && typeof data.squadBuilds === "object" && !Array.isArray(data.squadBuilds) ? data.squadBuilds : {};
         if (Array.isArray(data.hiredMercenaries)) {
             data.hiredMercenaries.forEach((m, i) => {
                 hiredMercenaries.push(m);
