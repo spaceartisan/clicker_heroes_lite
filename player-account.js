@@ -527,6 +527,7 @@ function playerAccountInit(){
             accountPreviewCloud(null);
         }
         accountControlsUpdate();
+        if(typeof accountRankingAuthChanged==="function")accountRankingAuthChanged();
         if(!linked)accountDisplayMessage("Guest · Your progress is saved on this device only.");
         else accountDisplayMessage("Connected as "+(user.email||"Google player")+
             ". Cloud saves are optional; use the controls below.");

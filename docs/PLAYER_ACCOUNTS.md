@@ -1,6 +1,6 @@
 # Heroes of the Click — Optional Player Accounts & Cloud Saves
 
-Release: v1.8.0 · Firebase project: \`game-leaderboard-17478\`
+Current client: v1.10.0 · Firebase project: \`game-leaderboard-17478\`
 
 **Status:** The game UI and client logic have been committed. **Cloud reads and writes will not work until the new owner-only Firestore rule is merged and published** in the Firebase Console. This document is not a deployment and contains no credentials.
 
@@ -80,7 +80,7 @@ This rule is **account ownership protection, not anti-cheat**. A signed-in playe
 
 Game Config → Export Save can create a portable \`.chs\` backup at any time. After a cloud restore, the *previous* local save is also stored under \`clickerHeroSave_before_cloud_restore\`; do not clear browser storage if recovery may be needed. The restore backup is kept locally, not uploaded. Game Config displays **Export Pre-Restore Recovery Save** when the recovery slot exists; it downloads a compatible `.chs` file that can be loaded with **Import Save**. A subsequent cloud restore will replace the one-slot local recovery copy, so export important backups first.
 
-**Current rollout intentionally has no background synchronization, conflict merging, cross-device automatic switching, cloud deletion, or account management dashboard.** This prevents a new feature from silently destroying saves. Automatic sync can be added once the owner rules and two-device behavior have been exercised.
+**Current rollout supports guarded, opt-in automatic cloud backups, but not automatic restore or save merging.** Cloud deletion and a full account management dashboard are not yet provided. See v1.9.0 below.
 
 ## Compatibility and limitations
 
@@ -104,3 +104,60 @@ After setting up the owner-only `player_saves` rules and signing in:
 5. Sign-out and account switching disable automatic uploads; enable them again only when the correct player is signed in. Manual restore disables auto backup and creates a local recovery copy first.
 
 **Cloud synchronization is deliberately conservative.** It does not merge two divergent saves or make scores authoritative. Future authenticated leaderboard integration needs separate schema/rules changes.
+
+## v1.10.0 — Connected Accounts leaderboard
+
+The new optional account leaderboard is **separate** from both \`scores_dynasty_ii\` and legacy \`scores\`. It uses \`scores_accounts_dynasty_ii/{Firebase Auth UID}\`. Players must sign in with Email/Password or Google and explicitly publish a current Season II score. Names are non-unique public labels, never ownership identifiers. Authentication prevents writing someone else's UID entry; it does **not** prove that the client's score is genuine.
+
+**Merge this additional block only** inside your existing \`match /databases/{database}/documents {\` Firestore Rules scope. Do not remove \`player_saves\`, \`balance_telemetry_v1\`, legacy leaderboards, message board, or your \`balanceAdmin\` checks. No matching wildcard rule may grant broad writes to this collection.
+
+\`\`\`firebase
+match /scores_accounts_dynasty_ii/{userId} {
+  function signedInAccount() {
+    return request.auth != null
+      && request.auth.uid == userId
+      && request.auth.token.firebase.sign_in_provider != 'anonymous';
+  }
+
+  function validRanking() {
+    let value = request.resource.data;
+    return value.keys().hasOnly([
+        'ownerUid', 'schemaVersion', 'seasonId',
+        'name', 'score', 'timestamp'
+      ])
+      && value.keys().hasAll([
+        'ownerUid', 'schemaVersion', 'seasonId',
+        'name', 'score', 'timestamp'
+      ])
+      && value.ownerUid == userId
+      && value.schemaVersion == 1
+      && value.seasonId == 'dynasty-ii'
+      && value.name is string
+      && value.name.matches('^[A-Za-z0-9 _.-]{1,20}$')
+      && value.name != ''
+      && value.name != ' '
+      && value.score is int
+      && value.score >= 1
+      && value.score <= 1000000000000
+      && value.timestamp == request.time;
+  }
+
+  allow get: if true;
+  allow list: if request.query.limit <= 50;
+  allow create: if signedInAccount() && validRanking();
+  allow update: if signedInAccount() && validRanking()
+                && resource.data.ownerUid == userId
+                && request.resource.data.score >= resource.data.score;
+  allow delete: if false;
+}
+\`\`\`
+
+The interface publishes records through a Firestore transaction: it reads its own UID document, chooses the maximum of local and existing score, and writes an updated timestamp. The rules deny attempts to change an entry's UID, decrease its score, publish an invalid name, delete an entry, or write from an anonymous user. Public top-50 reads are allowed, so guests can browse the account rankings without creating an account.
+
+**Publish and test Rules in Firebase Console → Firestore Database → Rules** before expecting account score submissions to work. Test reading top 50 anonymously, creating as an authenticated UID, inability of a different UID to update the same document, rejection of anonymous writes, decreasing-score rejection, and preservation of the existing \`balanceAdmin\` telemetry checks. The new client feature never deploys rules automatically.
+
+Current name-based score collections remain readable and unchanged. **Do not delete or migrate them automatically.** Two people can have the same new account leaderboard display name. Existing older name-based records cannot be securely attributed to a Firebase UID using a matching text name alone.
+
+### Security limitation
+
+These are **account-owned rankings**, *not anti-cheat-validated rankings*. A user who owns an account can still manipulate the score reported by their browser. A trusted server must eventually calculate or validate milestones before treating submitted scores as authoritative. There is no automatic cloud-save restore, account migration, or historical score ownership claim in this release.

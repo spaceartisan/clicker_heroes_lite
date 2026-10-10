@@ -3,9 +3,11 @@
 const GAME_SCHEMA_VERSION=2;
 const GAME_SEASON_ID="dynasty-ii";
 const GAME_SCORE_COLLECTION="scores_dynasty_ii";
+const GAME_ACCOUNT_SCORE_COLLECTION="scores_accounts_dynasty_ii";
 // History is read-only; only GAME_SCORE_COLLECTION receives score uploads.
 const GAME_LEADERBOARD_SEASONS = Object.freeze([
   Object.freeze({id:GAME_SEASON_ID,label:"Season II — Dynasties",collection:GAME_SCORE_COLLECTION,historical:false}),
+  Object.freeze({id:"accounts",label:"Season II — Connected Accounts",collection:GAME_ACCOUNT_SCORE_COLLECTION,historical:false,authenticated:true}),
   Object.freeze({id:"legacy",label:"Season I — Legacy",collection:"scores",historical:true})
 ]);
 function getLeaderboardSeason(seasonId){

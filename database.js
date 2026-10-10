@@ -138,20 +138,26 @@ function switchLeaderboardSeason(seasonId) {
     const syncStatus = document.getElementById("leaderboard-sync-status");
     const nameEntry = document.getElementById("name-entry");
     const syncButton = document.getElementById("sync-score-button");
+    const accountControls=document.getElementById("account-ranking-controls");
+    const authenticated=season.authenticated===true;
 
     const generation = ++leaderboardViewGeneration;
     if (typeof leaderboardUnsub === "function") leaderboardUnsub();
     leaderboardUnsub = null;
     leaderboardSelectedSeason = season.id;
     seasonSelect.value = season.id;
-    nameEntry.hidden = season.historical;
-    syncButton.hidden = season.historical;
-    syncStatus.hidden = season.historical;
+    nameEntry.hidden = season.historical || authenticated;
+    syncButton.hidden = season.historical || authenticated;
+    syncStatus.hidden = season.historical || authenticated;
+    if(accountControls)accountControls.hidden=!authenticated;
     note.textContent = season.historical
         ? "Archived rankings are read-only. Names and scores are preserved."
-        : "Current season · Your name and score are registered here.";
-
-    if (!season.historical) {
+        : authenticated
+            ? "Connected Accounts · Rankings are tied to Firebase UIDs. Names are display labels; scores are player-reported, not server-validated."
+            : "Current season · Your name and score are registered here.";
+    if(authenticated&&typeof accountRankingShowControls==="function")
+        accountRankingShowControls();
+    if (!season.historical && !authenticated) {
         if (nameConfirm) {
             updateScoreSyncStatus(scoreUploadPending ? "Score upload in progress." :
                 currentDynastyPeak() > lastSubmittedScore
@@ -175,7 +181,11 @@ function switchLeaderboardSeason(seasonId) {
                     const displayName = typeof data.name === "string" ? data.name : "Unnamed Hero";
                     const score = Number.isFinite(data.score) ? data.score : 0;
                     // Reused names from the first season are not verified identities.
-                    const isPlayer = !season.historical && nameConfirm && displayName === playerName;
+                    const accountUser=authenticated&&typeof accountRankingUser==="function"?
+                        accountRankingUser():null;
+                    const isPlayer = authenticated
+                        ? Boolean(accountUser&&doc.id===accountUser.uid&&data.ownerUid===accountUser.uid)
+                        : !season.historical && nameConfirm && displayName === playerName;
                     const line = document.createElement("p");
                     if (isPlayer) line.classList.add("highlight-player");
                     line.textContent = String(++rank) + ". " +
@@ -189,7 +199,7 @@ function switchLeaderboardSeason(seasonId) {
                 console.error("Error fetching " + season.label + " leaderboard:", error);
                 scrollDiv.textContent = season.label +
                     " rankings unavailable. Check your connection or Firebase read permissions.";
-                if (!season.historical)
+                if (!season.historical && !authenticated)
                     updateScoreSyncStatus("Could not load online rankings. Your local save is safe.", true);
             });
     } catch (error) {
@@ -197,7 +207,7 @@ function switchLeaderboardSeason(seasonId) {
         console.error("Could not subscribe to " + season.label + " leaderboard:", error);
         scrollDiv.textContent = season.label +
             " rankings unavailable. Check your connection or Firebase read permissions.";
-        if (!season.historical)
+        if (!season.historical && !authenticated)
             updateScoreSyncStatus("Could not load online rankings. Your local save is safe.", true);
     }
 }

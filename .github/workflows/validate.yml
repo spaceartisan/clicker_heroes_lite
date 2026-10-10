@@ -15,10 +15,11 @@ jobs:
           node-version: '22'
       - name: Check JavaScript syntax
         run: |
-          for file in config.js season.js research.js progression.js frontier.js combat-content.js hero.js kingdom.js enemy.js database.js ui.js game.js army.js sw.js player-account.js; do
+          for file in config.js season.js research.js progression.js frontier.js combat-content.js hero.js kingdom.js enemy.js database.js ui.js game.js army.js sw.js player-account.js account-leaderboard.js; do
             node --check "$file"
           done
       - name: Regression tests
         run: |
           node tests/smoke-test.cjs
           node tests/player-account-test.cjs
+          node tests/account-leaderboard-test.cjs

@@ -289,7 +289,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.9.0 – Heroes of the Click
+        v1.10.0 – Heroes of the Click
     </p>
     <br>
 
@@ -316,6 +316,7 @@
                 <label for="leaderboard-season">Season</label>
                 <select id="leaderboard-season" onchange="switchLeaderboardSeason(this.value)">
                     <option value="dynasty-ii">Season II · Dynasties (Current)</option>
+                    <option value="accounts">Season II · Connected Accounts</option>
                     <option value="legacy">Season I · Legacy</option>
                 </select>
             </div>
@@ -331,6 +332,13 @@
                 <span id="name-status" style="opacity: 0;"></span>
             </div>
             <button type="button" id="sync-score-button" onclick="submitScore(true)">↻ Sync my score</button>
+            <div id="account-ranking-controls" class="account-ranking-controls" hidden>
+                <label for="account-ranking-name">Public account display name</label>
+                <input type="text" id="account-ranking-name" maxlength="20" placeholder="Choose a public name" autocomplete="nickname">
+                <button type="button" id="account-ranking-publish" onclick="publishAccountRanking()">Publish / Update My Account Score</button>
+                <p id="account-ranking-status" role="status" aria-live="polite">Sign in under Game Config to publish your account score.</p>
+                <p class="account-ranking-explainer">Accounts are linked to Firebase UIDs. Display names are not exclusive; scores are submitted by the browser and are not anti-cheat validated. Legacy rankings remain separate.</p>
+            </div>
             <button type="button" class="modal-close" onclick="closeLeaderboard()">Close</button>
         </div>
     </div>
@@ -510,6 +518,7 @@
     <script src="systems.js"></script>
     <script src="monster-codex.js"></script>
     <script src="player-account.js"></script>
+    <script src="account-leaderboard.js"></script>
     <script src="telemetry.js"></script>
     <script>
         if ("serviceWorker" in navigator) {
