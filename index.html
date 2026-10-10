@@ -289,7 +289,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.7.0 – Heroes of the Click
+        v1.8.0 – Heroes of the Click
     </p>
     <br>
 
@@ -356,6 +356,42 @@
             <h3><span class="ui-icon ui-icon-settings" aria-hidden="true"></span> Game Config</h3>
             <p><b>Instructions:</b> Click the enemy to attack it. Use abilities to gain an advantage. Upgrade your hero and hire mercenaries
                 to progress faster. To join the message board or leaderboard, create a name under the leaderboard.</p>
+            <section id="player-account" class="player-account" aria-label="Player account and cloud backup">
+                <h4><span class="ui-icon ui-icon-save" aria-hidden="true"></span> Player Account & Cloud Saves</h4>
+                <p id="player-account-status" role="status" aria-live="polite">Guest · Your progress is saved on this device only.</p>
+                <div id="player-account-fields">
+                    <div class="player-account-fields">
+                        <label for="player-account-email">Email
+                            <input id="player-account-email" type="email" autocomplete="email" placeholder="you@example.com" maxlength="254">
+                        </label>
+                        <label for="player-account-password">Password
+                            <input id="player-account-password" type="password" autocomplete="current-password" placeholder="Password" minlength="6">
+                        </label>
+                    </div>
+                    <div class="player-account-buttons">
+                        <button type="button" id="player-account-login" onclick="playerEmailAccount(false)">Sign In</button>
+                        <button type="button" id="player-account-create" onclick="playerEmailAccount(true)">Create Account</button>
+                        <button type="button" id="player-account-google" onclick="playerGoogleAccount(false)">Sign In With Google</button>
+                        <button type="button" id="player-account-google-link" onclick="playerGoogleAccount(true)">Link Guest to New Google Account</button>
+                    </div>
+                    <p class="player-account-hint">Sign In With Google uses an existing account or creates a new one. Link Guest keeps an anonymous telemetry identity when connecting a new Google account. Sign-in never uploads or replaces a local save. Enable the Google provider in Firebase Console first.</p>
+                </div>
+                <div id="player-account-authenticated" hidden>
+                    <div class="player-account-identity">Signed in: <strong id="player-account-identity"></strong></div>
+                    <button type="button" id="player-account-logout" onclick="playerAccountSignOut()">Sign Out</button>
+                </div>
+                <button type="button" id="player-cloud-export-recovery" onclick="playerExportCloudRecovery()" hidden>Export Pre-Restore Recovery Save</button>
+                <div id="player-cloud-controls" hidden>
+                    <p id="player-cloud-preview">Cloud: not checked on this device.</p>
+                    <div class="player-cloud-buttons">
+                        <button type="button" id="player-cloud-check" onclick="playerCheckCloudSave()">Check Cloud Save</button>
+                        <button type="button" id="player-cloud-upload" onclick="playerBackupCloudSave()">Back Up Local Save</button>
+                        <button type="button" id="player-cloud-restore" onclick="playerRestoreCloudSave()">Restore Cloud Save</button>
+                    </div>
+                    <p id="player-cloud-status" role="status" aria-live="polite">Cloud actions are manual. No automatic merges or overwrites.</p>
+                    <p class="player-account-hint">Before restoring, your current local save is copied to a recovery slot. Cloud saves require owner-only Firestore rules.</p>
+                </div>
+            </section>
             <div id="save-load-controls" class="settings-actions">
                 <button onclick="saveGame()"><span class="ui-icon ui-icon-save" aria-hidden="true"></span> Save Game</button>
                 <button onclick="deleteSave()"><span class="ui-icon ui-icon-delete" aria-hidden="true"></span> Delete Save</button>
@@ -464,6 +500,7 @@
     <script src="army.js"></script>
     <script src="systems.js"></script>
     <script src="monster-codex.js"></script>
+    <script src="player-account.js"></script>
     <script src="telemetry.js"></script>
     <script>
         if ("serviceWorker" in navigator) {

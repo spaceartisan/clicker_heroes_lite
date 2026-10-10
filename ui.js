@@ -239,6 +239,7 @@ function showOptions() {
     applyGameTheme(readGameTheme());
     const oldExport = document.getElementById("export-legacy-save");
     if (oldExport) oldExport.hidden = !localStorage.getItem(GAME_LEGACY_BACKUP_KEY);
+    if(typeof accountControlsUpdate==="function")accountControlsUpdate();
     const optionsPopup = document.getElementById("options-popup");
     optionsPopup.style.display = "flex";
 }

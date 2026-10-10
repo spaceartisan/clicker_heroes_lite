@@ -34,7 +34,7 @@ function balanceNewRun(nextDynasty=false){
     const id=balanceRandomId();
     if(!id)return null;
     return {schemaVersion:1,runId:id,seasonId:GAME_SEASON_ID,
-        build:"1.7.0",dynasty:balanceClamp(dynastyCount+(nextDynasty?1:0),100000),
+        build:"1.8.0",dynasty:balanceClamp(dynastyCount+(nextDynasty?1:0),100000),
         startedAt:Date.now(),highestStage:balanceClamp(maxLevel-1),
         currentStage:balanceClamp(currentLevel),activeSeconds:0,
         bosses:{},campaigns:{started:0,claimed:0,won:0,lost:0},
@@ -155,11 +155,14 @@ function balanceDynastyEnded(stage){
 function balanceAuth(){
     if(typeof firebase.auth!=="function")
         return Promise.reject(new Error("Firebase Authentication SDK is unavailable"));
-    if(balanceAuthTask)return balanceAuthTask;
     const auth=firebase.auth();
-    balanceAuthTask=(auth.currentUser?Promise.resolve({user:auth.currentUser}):
-        auth.signInAnonymously()).then(result=>result.user||auth.currentUser)
-        .catch(error=>{balanceAuthTask=null;throw error});
+    // Re-read currentUser first: the player may have linked their anonymous
+    // telemetry identity to a real account or signed in as a different UID.
+    if(auth.currentUser)return Promise.resolve(auth.currentUser);
+    if(balanceAuthTask)return balanceAuthTask;
+    balanceAuthTask=auth.signInAnonymously()
+        .then(result=>result.user||auth.currentUser)
+        .finally(()=>{balanceAuthTask=null;});
     return balanceAuthTask;
 }
 function balancePayload(run,uid){
@@ -173,7 +176,7 @@ function balancePayload(run,uid){
     }
     const c=run.campaigns||{},r=run.relics||{};
     return {
-        schemaVersion:1,seasonId:GAME_SEASON_ID,build:"1.7.0",
+        schemaVersion:1,seasonId:GAME_SEASON_ID,build:"1.8.0",
         ownerUid:uid,startedAt:balanceClamp(run.startedAt,1e14),
         updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
         dynasty:balanceClamp(run.dynasty,100000),
