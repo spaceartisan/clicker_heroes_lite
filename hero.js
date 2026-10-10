@@ -8,7 +8,7 @@ function marketEffect(i) {
 function attack(isRageAttack = false) {
     const now = Date.now();
     // console.log("Attack clicked at", now - lastClickTime, "ms since last click");
-    if (now - lastClickTime < 60 && !isRageAttack) return; // Prevent spamming clicks
+    if (deathCooldown || (now - lastClickTime < 60 && !isRageAttack)) return; // Prevent spamming clicks
     if (!isRageAttack) lastClickTime = now;
     let dmg = playerClickDamage * mktUp(2);
     if (doubleAttackReady) {
@@ -35,37 +35,35 @@ function getPlayerClickDamage() {
 //     }, 0);
 // }
 
-function getAutoDamage(query = false) {
-    let squads = Math.ceil(hiredMercenaries.length / 5);
-    let totalDmg = 0
-    let topSpeed = 2000;
-    let curSpeed = 0;
-    for (let i = 1; i <= squads; i++) {
-        let squadMercs = hiredMercenaries.filter(m => m.squad === i);
-        let dmg = squadMercs.reduce((sum, m) => {
-            return sum + (m.level * (2 ** m.gearLevel));
-        }, 0);
-        if (rallyActive) dmg *= 2;
-        let m = squadMercs[0]; // Use the first mercenary in the squad for attack speed
-        totalDmg += dmg * (m.attackSpeedLevel + 1) * mktUp(3) * mktUp(2) * squadMercs.length * 1.5 / 2.0; // Double check this value.
-        if (query) {
-            curSpeed = Math.floor(2000 / (squadMercs[0].attackSpeedLevel + 1) / mktUp(3) / squadMercs.length);
-            if (curSpeed < topSpeed) {
-                topSpeed = curSpeed;
-            }
+// Damage per second is independent of the combat timer.
+function getAutoDamage() {
+    if (hiredMercenaries.length === 0) return 0;
+    const squads = new Map();
+    for (let i = 0; i < hiredMercenaries.length; i++) {
+        const merc = hiredMercenaries[i];
+        const squadId = merc.squad || Math.floor(i / 5) + 1;
+        let squad = squads.get(squadId);
+        if (!squad) {
+            squad = { damage: 0, speed: Math.max(0, merc.attackSpeedLevel || 0), members: 0 };
+            squads.set(squadId, squad);
         }
+        squad.damage += merc.level * Math.pow(2, merc.gearLevel);
+        squad.members++;
     }
-    if (query) {
-        return [totalDmg, topSpeed];
+    const attackMultiplier = mktUp(2) * mktUp(3) * (rallyActive ? 2 : 1);
+    let dps = 0;
+    for (const squad of squads.values()) {
+        const teamwork = 1 + 0.1 * (squad.members - 1);
+        dps += squad.damage * (squad.speed + 1) / 2 * teamwork;
     }
-    return totalDmg;
+    return dps * attackMultiplier;
 }
 
 function upgradeSkillCost(ability, query = false) {
     return estimateUpgradeCost({
         baseLevel: ability.level,
         upgradeEquation: (lvl) => Math.floor(ability.cost * lvl ** 2),
-        cap: structures.castle.level || ability.maxLevel <= 10,
+        cap: ability.maxLevel,
         resourceAvailable: gold,
         multiplier: 1,
         underfill: underfillEnabled,
@@ -120,24 +118,30 @@ function hireMercenaryCost() {
     return Math.floor(100 * hiredMercenaries.length ** 2.0);
 }
 
-function startSquadAttack(i) {
-    // const squadMercs = hiredMercenaries.filter(m => m.squad === i);
-    let getAuto = getAutoDamage(true);
-    if (squadAttackInterval[0]) {
-        clearInterval(squadAttackInterval[0]);
-    }
-    squadAttackInterval[0] = setInterval(() => {
-        let dmg = getAutoDamage();
-        // squadMercs.forEach((m, idx) => {
-        //     dmg += m.level * (2 ** m.gearLevel) * (rallyActive ? 2 : 1) * mktUp(2);
-        // });
-        enemyHealth -= dmg;
-        // showDamage(dmg);
+// Fixed-rate elapsed-time combat prevents very fast upgrades from overheating phones.
+const AUTO_COMBAT_TICK_MS = 250;
+let autoCombatTimer = null;
+let lastAutoCombatTick = 0;
+
+function startSquadAttack() {
+    if (autoCombatTimer !== null || hiredMercenaries.length === 0 || document.hidden) return;
+    lastAutoCombatTick = performance.now();
+    autoCombatTimer = setInterval(() => {
+        const now = performance.now();
+        const elapsed = Math.min(0.5, Math.max(0, (now - lastAutoCombatTick) / 1000));
+        lastAutoCombatTick = now;
+        if (deathCooldown || hiredMercenaries.length === 0) return;
+        const damage = getAutoDamage() * elapsed;
+        if (damage <= 0 || !Number.isFinite(damage)) return;
+        enemyHealth -= damage;
         if (enemyHealth <= 0) handleEnemyDefeat();
         updateUI();
-        // console.log(`Squad ${i} attacked for ${dmg} damage. Enemy health: ${enemyHealth}`);
-    }, getAuto[1]);
-    // Math.floor(2000 / (squadMercs[0].attackSpeedLevel + 1) / mktUp(3) / squadMercs.length)); // Adjust attack speed based on the first mercenary in the squad
+    }, AUTO_COMBAT_TICK_MS);
+}
+
+function stopSquadAttack() {
+    if (autoCombatTimer !== null) clearInterval(autoCombatTimer);
+    autoCombatTimer = null;
 }
 
 // === Hero Abilities ===
@@ -202,14 +206,14 @@ function strongAttack() {
 
 function estimateUpgradeCost({ baseLevel, upgradeEquation, cap, resourceAvailable, multiplier, underfill = false, query = false, capFunction = null }) {
     let totalCost = 0;
-    let unitsAffordable = multiplier;
+    let unitsAffordable = 0;
     let capReached = false;
     for (let i = 0; i < multiplier; i++) {
         if (baseLevel + i >= cap) {
             capReached = true;
             break;
         }
-        if (capFunction && capFunction(baseLevel)) {
+        if (capFunction && capFunction(baseLevel + i)) {
             capReached = true;
             break;
         }
@@ -240,10 +244,7 @@ function levelUpPlayer() {
     // Create the upgrade equation as a lambda function
     let costReturn = levelUpPlayerCost(true);
     let cost = costReturn[0];
-    let _upgradeMultiplier = upgradeMultiplier;
-    if (underfillEnabled && costReturn[1] > 0) {
-        _upgradeMultiplier = costReturn[1];
-    }
+    const _upgradeMultiplier = costReturn[1]; // only charge and grant the priced levels
     // 
     // if (gold >= cost && structures.castle.level * 10 + 100 >= playerLevel + _upgradeMultiplier) {
     if (cost > 0 && gold >= cost) {
