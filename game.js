@@ -234,6 +234,10 @@ function awardOfflineGold(seconds) {
 function saveGame() {
     submitScore();
     const saveData = {
+        schemaVersion: GAME_SCHEMA_VERSION,
+        seasonId: GAME_SEASON_ID,
+        dynastyCount,renown,bestSeasonStage,highestCastleEver,
+        dynastyInvestments,academyDisciplines,marketCharterRank,
         gold,
         playerLevel,
         playerGearLevel,
@@ -271,8 +275,22 @@ function saveGame() {
 function loadGame() {
     const saved = localStorage.getItem("clickerHeroSave");
     if (saved) {
-        const data = JSON.parse(saved);
-
+        let data;
+        try { data=JSON.parse(saved); }
+        catch(_err){prepareSeasonSave();return false;}
+        if(!isCurrentSeasonSave(data)){
+            prepareSeasonSave();
+            return false;
+        }
+        dynastyCount=Math.max(0,Math.floor(Number(data.dynastyCount)||0));
+        renown=Math.max(0,Math.floor(Number(data.renown)||0));
+        bestSeasonStage=Math.max(1,Math.floor(Number(data.bestSeasonStage)||1));
+        highestCastleEver=Math.max(1,Math.floor(Number(data.highestCastleEver)||1));
+        dynastyInvestments=Object.fromEntries(
+          Object.keys(dynastyInvestments).map(id=>[id,Math.max(0,Math.min(10000,Math.floor(Number(data.dynastyInvestments?.[id])||0)))]));
+        academyDisciplines=Object.fromEntries(
+          Object.keys(academyDisciplines).map(id=>[id,Math.max(0,Math.min(10000,Math.floor(Number(data.academyDisciplines?.[id])||0)))]));
+        marketCharterRank=Math.max(0,Math.min(2000,Math.floor(Number(data.marketCharterRank)||0)));
         stopSquadAttack();
         hiredMercenaries.length = 0;
         squadBuilds = data.squadBuilds && typeof data.squadBuilds === "object" && !Array.isArray(data.squadBuilds) ? data.squadBuilds : {};
@@ -299,15 +317,18 @@ function loadGame() {
 
         // Restore progression before restarting the single combat timer.
         // restore everything else...
-        gold = data.gold ?? 0;
-        playerLevel = data.playerLevel ?? 1;
-        playerGearLevel = data.playerGearLevel ?? 0;
+        gold = Math.max(0,Math.min(1e300,Number(data.gold)||0));
+        playerLevel = Math.max(1,Math.min(1e12,Number(data.playerLevel)||1));
+        playerGearLevel = Math.max(0,Math.min(300,Number(data.playerGearLevel)||0));
         playerUpgradeCost = data.playerUpgradeCost ?? 10;
         playerGearCost = data.playerGearCost ?? 100;
         nextPlayerGearLevelReq = data.nextPlayerGearLevelReq ?? 10;
-        currentLevel = data.currentLevel ?? 1;
-        maxLevel = data.maxLevel ?? currentLevel;
-        lastSubmittedScore = data.lastSubmittedScore ?? maxLevel;
+        currentLevel = Math.max(1,Math.min(1e12,Math.floor(Number(data.currentLevel)||1)));
+        maxLevel = Math.max(currentLevel,Math.min(1e12,Math.floor(Number(data.maxLevel)||currentLevel)));
+        bestSeasonStage = Math.max(bestSeasonStage,maxLevel);
+        highestCastleEver=Math.max(highestCastleEver,
+          Number(data.structures?.castle?.level)||1);
+        lastSubmittedScore = Math.max(0,Math.floor(Number(data.lastSubmittedScore)||0));
         baseEnemyHealth = data.baseEnemyHealth ?? 5;
         // guildLevel = data.guildLevel ?? 0;
         // maxMercenaries = data.maxMercenaries ?? 5;
@@ -368,6 +389,7 @@ function loadGame() {
         updateUI();
         updateStructureUI();
         startSquadAttack();
+        renderDynastyPanel();
         saveGame();
         if (typeof resetArmySelection === "function") resetArmySelection();
     }
@@ -402,9 +424,9 @@ function importGame() {
                     const decoded = decodeURIComponent(escape(atob(event.target.result)));
                     const data = JSON.parse(decoded);
 
-                    // Simple structure check (can add more)
-                    if (!data || typeof data !== "object" || !("gold" in data && "playerLevel" in data)) {
-                        throw new Error("Invalid save structure");
+                    if (!isCurrentSeasonSave(data) || !("gold" in data && "playerLevel" in data)) {
+                        alert("This save belongs to an older season. Export or keep your archived copy; only Season II saves can be imported.");
+                        return;
                     }
 
                     localStorage.setItem("clickerHeroSave", JSON.stringify(data));
@@ -469,15 +491,18 @@ underfillEnabled = underfillCheckbox.checked; // ensure variable matches UI
 underfillCheckbox.onchange = e => underfillEnabled = e.target.checked;
 
 window.addEventListener("DOMContentLoaded", () => {
+    prepareSeasonSave();
     if (localStorage.getItem("clickerHeroSave")) {
         loadGame();
     } else {
         drawRandomEnemy(); // fresh start
         updateUI();
+        saveGame(); // establish a Season II save immediately
     }
     updatePlayerLevelGearText();
     updateStructureUI();
     drawKingdom();
+    renderDynastyPanel();
     setUpgradeMultiplier(document.getElementById("shop"), upgradeMultiplier);
 });
 

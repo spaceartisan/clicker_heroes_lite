@@ -58,6 +58,7 @@ function estimateOfflineGold(seconds) {
         1+0.03*Math.max(0,passiveAbilities[2].level-1):1;
     const bounty=Math.max(1,Math.floor(2*Math.pow(stage,1.4)))*
         mktUp(0)*mktUp(6)*getSquadGoldMultiplier()*steward*
+        dynastyGoldMultiplier()*getMarketCharterBonus()*
         (1+getResearchBonus("enemyGold"));
     const goldReward=Math.floor(kills*bounty*mktUp(4)*(1+getResearchBonus("offlineGold")));
     return Number.isFinite(goldReward)&&goldReward>0?goldReward:0;

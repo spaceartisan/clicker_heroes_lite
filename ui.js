@@ -52,12 +52,9 @@ const soldierRanks = [
 
 
 function formatDigits(value, digits = 2, padding = 10) {
-    if (isNaN(value)) {
-        gold = 0;
-        value = 0;
-    }
+    if (isNaN(value)) value = 0;
     if (isNaN(value) || !isFinite(value)) {
-        return "Infinity".padStart(padding, "\u00A0");
+        return "Overflow".padStart(padding, "\u00A0");
     }
     const useScientificNotation = scientificNotation ?? false;
 
@@ -135,6 +132,7 @@ function switchView(view) {
     } else if (destination === "kingdom") {
         updateStructureUI();
         drawKingdom();
+        if(typeof renderDynastyPanel==="function")renderDynastyPanel();
     } else if (typeof renderArmyView === "function") {
         renderArmyView();
     }

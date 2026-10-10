@@ -36,8 +36,9 @@ function structureLockReason(id) {
 function getStructureCost(structure) {
     const id = Object.keys(structures).find(key => structures[key] === structure) || "castle";
     const growth = id === "castle" ? 1.35 : 1.45;
-    const base = Math.floor(structure.baseCost * Math.pow(growth, Math.max(0, structure.level)));
-    return Math.max(1, Math.ceil(base * getStructureCostFactor(id)));
+    const price=structure.baseCost*Math.pow(growth,Math.max(0,structure.level))*
+        getStructureCostFactor(id);
+    return Number.isFinite(price)?Math.max(1,Math.ceil(Math.min(1e290,price))):1e290;
 }
 function upgradeStructure(id) {
     const structure = structures[id];
@@ -54,6 +55,7 @@ function upgradeStructure(id) {
     }
     gold -= cost;
     structure.level++;
+    highestCastleEver=Math.max(highestCastleEver,structures.castle.level);
     updateStructureUI();
     updateUI();
     drawKingdom();
@@ -734,6 +736,22 @@ function MarketUpgradeUI(menu, upgradeButtons, container) {
     upgradeButtons.append(heading,hint);
     createButton(upgradeButtons,"📚 Royal Academy research", () => openResearchTree());
     container.replaceChildren();
+    const guild=document.createElement("article");
+    guild.className="market-charter";
+    const name=document.createElement("strong");
+    name.textContent="Long-term Guild Charters · Rank "+marketCharterRank;
+    const desc=document.createElement("p");
+    desc.textContent="Repeatable investments · +"+
+        Math.round((getMarketCharterBonus()-1)*100)+"% monster gold";
+    const invest=document.createElement("button");
+    invest.textContent=structures.market.level<4?"Requires Market Lv 4":
+      "Invest "+formatDigits(getMarketCharterCost(),2,0).trim()+" gold";
+    invest.disabled=structures.market.level<4||gold<getMarketCharterCost();
+    invest.addEventListener("click",()=>{
+        if(purchaseMarketCharter())MarketUpgradeUI(menu,upgradeButtons,container);
+    });
+    guild.append(name,desc,invest);
+    container.appendChild(guild);
     Object.entries(marketUpgrades).forEach(([key, market], index) => {
         const row = document.createElement("article");
         row.className = "upgrade-row market-project";

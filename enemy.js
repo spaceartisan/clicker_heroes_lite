@@ -2,7 +2,9 @@ let deathCooldown = false;
 
 function getEnemyHealth() {
     const type = enemyType || getEnemyType(currentLevel);
-    return Math.max(5, Math.floor(5 * Math.pow(currentLevel, 1.5) * type.hp));
+    const level=Math.max(1,Math.min(1e12,currentLevel));
+    const endless=level>200?1+Math.min(2.5,Math.log10(level/200)*0.24):1;
+    return Math.max(5,Math.min(1e290,Math.floor(5*Math.pow(level,1.5)*type.hp*endless)));
 }
 
 // Every archetype has a specific, hand-authored pixel silhouette.
@@ -64,17 +66,21 @@ function handleEnemyDefeat() {
     enemyHealth = 0;
     enemiesDefeated++;
     const type = enemyType || getEnemyType(currentLevel);
-    const goldGain = Math.floor(2 * Math.pow(currentLevel, 1.4) * type.gold);
+    const level=Math.max(1,Math.min(1e12,currentLevel));
+    const endless=level>200?1+Math.min(1,Math.log10(level/200)*0.12):1;
+    const goldGain=Math.floor(2*Math.pow(level,1.4)*type.gold*endless);
     const marketBounty = type.id === "dragon" ? mktUp(5) : mktUp(6);
     const royalSteward = 1 + 0.03 * Math.max(0, passiveAbilities[2].level - 1);
     let goldMult = mktUp(0) * marketBounty * getSquadGoldMultiplier() *
         royalSteward * (1 + getResearchBonus("enemyGold")) *
         (type.frontier ? 1 + getResearchBonus("frontierGold") : 1);
-    if (goldRushActive) goldMult *= 2;
-    const reward = Math.ceil(goldGain * goldMult);
-    gold += reward;
+    goldMult*=dynastyGoldMultiplier()*getMarketCharterBonus();
+    if(goldRushActive)goldMult*=2;
+    const reward=Math.min(1e290,Math.ceil(goldGain*goldMult));
+    gold=Math.min(1e300,gold+reward);
     showGoldEarned(reward);
     if (currentLevel === maxLevel) maxLevel++;
+    bestSeasonStage=Math.max(bestSeasonStage,maxLevel);
     if (autoAdvance) currentLevel++;
     deathCooldown = true;
     setTimeout(() => {

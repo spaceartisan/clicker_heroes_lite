@@ -954,3 +954,32 @@ input, textarea { font-size: 16px; user-select: text; -webkit-user-select: text;
         width: calc(100% + 24px);
     }
 }
+
+/* Season II dynasty card — no animation, responsive controls. */
+.dynasty-panel{margin:10px 0 18px;padding:14px;border:1px solid #c2a36f;
+  border-radius:9px;background:linear-gradient(135deg,#47341e,#31251c);text-align:left}
+.dynasty-panel h3{margin:0 0 8px;color:#edd397;font-size:18px}
+.dynasty-help{font:12px/1.6 Arial,sans-serif;color:#d9c5a6}
+.dynasty-perks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.dynasty-perks article{min-width:0;border:1px solid #876746;background:#31251e;
+  padding:10px;border-radius:7px;display:flex;flex-direction:column;justify-content:space-between;gap:7px}
+.dynasty-perks strong{color:#efd6a5;font:700 13px/1.4 Georgia,serif}
+.dynasty-perks p{font:12px/1.5 Arial,sans-serif;color:#c9b8a1}
+.dynasty-perks button,.dynasty-rebirth{min-height:44px;white-space:normal;font-size:13px}
+.dynasty-rebirth{width:100%;margin-top:10px;background:#634d2d}
+.season-transition .popup-content{width:min(92vw,480px);padding:20px;gap:12px;max-height:85dvh}
+.season-transition p{font:14px/1.5 Arial,sans-serif;color:#e7d2b5}
+.season-transition button{min-height:44px}
+@media(max-width:600px){
+  .dynasty-perks{grid-template-columns:1fr}
+  .dynasty-perks article{flex-direction:row;align-items:center}
+  .dynasty-perks article>div{flex:1;min-width:0}
+  .dynasty-perks article button{max-width:135px}
+}
+
+.market-charter{padding:12px;border:1px solid #98764a;border-radius:8px;
+ background:linear-gradient(130deg,#403126,#30241a);text-align:left;margin:10px 0}
+.market-charter strong{font:700 15px Georgia,serif;color:#f3d79e}
+.market-charter p{font:12px/1.5 Arial,sans-serif;color:#d9cab6}
+.market-charter button{width:100%;min-height:44px}
+.research-college{margin-top:12px;border:1px solid #a78b55;background:#333021}

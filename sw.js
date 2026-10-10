@@ -1,4 +1,4 @@
-const CACHE_NAME = "heroes-of-click-v0.5.1";
+const CACHE_NAME = "heroes-of-click-v1.0.0";
 const SHELL = [
     "./",
     "./index.html",
@@ -10,6 +10,7 @@ const SHELL = [
     "./army.js",
     "./hero.js",
     "./combat-content.js",
+    "./season.js",
     "./research.js",
     "./progression.js",
     "./frontier.js",

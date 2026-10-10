@@ -32,7 +32,7 @@ function attack(isRageAttack = false) {
 function getPlayerClickDamage() {
     const castleBonus = 1 + Math.min(0.60, 0.015 * Math.max(0, structures.castle.level - 1));
     const decreeBonus = 1 + 0.04 * Math.max(0, passiveAbilities[1].level - 1);
-    return playerLevel * (2 ** playerGearLevel) *
+    return playerLevel * safePowerOfTwo(playerGearLevel) *
         castleBonus * decreeBonus * (1 + getResearchBonus("heroDamage")) *
         (currentLevel>=101&&currentLevel<=200 ? 1+getResearchBonus("frontierHeroDamage"):1);
 }
@@ -49,7 +49,7 @@ function getAutoDamage() {
             squad = { id: squadId, damage: 0, speed: Math.max(0, merc.attackSpeedLevel || 0), members: 0 };
             squads.set(squadId, squad);
         }
-        squad.damage += merc.level * Math.pow(2, merc.gearLevel);
+        squad.damage += merc.level * safePowerOfTwo(merc.gearLevel);
         squad.members++;
     }
     const target = enemyType || getEnemyType(currentLevel);
@@ -72,7 +72,8 @@ function getAutoDamage() {
     }
     if (target.id === "dragon") researchedBonus *= 1 + getResearchBonus("bossDamage");
     if (target.champion) researchedBonus *= 1 + getResearchBonus("veteranDamage");
-    return dps * attackMultiplier * mktUp(7) * researchedBonus * target.resistance;
+    return Math.min(1e290,dps * attackMultiplier * mktUp(7) *
+        researchedBonus * target.resistance * dynastyDamageMultiplier());
 }
 
 function upgradeSkillCost(ability, query = false) {

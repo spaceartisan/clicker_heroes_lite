@@ -21,3 +21,7 @@ An authored Temple or Shrine location on the Kingdom canvas; optional patron sel
 3. Grant retroactive credit only when historical saved progression is sufficient to establish the award.
 4. Keep upgrade previews and actual prices equal in the Army, building panels, and any future Temple panel.
 5. Test high-stage/high-rank saves and mobile background performance whenever new economic multipliers are added.
+
+## Dynasty Season II boundary
+
+Renown is a secular, permanent prestige reward. Insight powers the Royal Academy and is based on lifetime achievements. Any future Faith economy remains entirely separate, optional, and cannot silently rewrite Dynasty investments or historical scoreboards. No automatic faith choices are made when changing seasons.

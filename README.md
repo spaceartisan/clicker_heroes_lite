@@ -1,121 +1,29 @@
-# Heroes of the Click
+# Heroes of the Click — Dynasty Season II (v1.0.0)
 
-An incremental fantasy RPG and kingdom-building clicker, written with plain HTML, CSS, and JavaScript. Attack monsters, develop hero skills, hire and improve mercenary squads, and build a kingdom whose structures unlock progression and market bonuses.
+**Play:** https://clicker-heroes-lite.netlify.app/ · **Source:** https://github.com/spaceartisan/clicker_heroes_lite
 
-**Play:** https://clicker-heroes-lite.netlify.app/  
-**Source:** https://github.com/spaceartisan/clicker_heroes_lite
+Season II is an intentionally fresh balance season. Older v0.5.1 saves are automatically archived in the same browser under `clickerHeroSave_before_dynasties`. An on-screen prompt offers **Export old save** before playing. Old .chs imports are rejected to prevent the previous economy from bypassing the new progression. Starting Season II does **not** delete the earlier local archive, and the previous leaderboard records remain untouched.
 
-> This is an AI-assisted project, not wholly AI-generated. I designed and implemented the game, with ChatGPT used for programming assistance.
+### Long-term progression
 
-## Playing and installing
+- **Dynasties:** After clearing stage 200, the player may voluntarily found a new Dynasty for **1–50 Renown**, based on the furthest stage of the run. Rebirth restarts gold, stage, hero, mercenaries, buildings, Decrees, Market projects, and Royal Treasury, but retains Dynasty investments and Royal Academy research. The original season-best stage continues to count toward leaderboard standings and Insight.
+- **Three Renown investments:** War Council improves mercenary DPS, Trade League increases gold, and Royal Administration reduces research/building costs. Each has growing cost and bounded square-root returns, so no runaway exponential stacking.
+- **Academy colleges:** Military, Merchant, and Civic College add repeatable, increasingly expensive Insight choices. The original twelve named research technologies and their prerequisites remain. College benefits grow logarithmically with a 10,000-rank safety cap and bounded returns.
+- **Market charters:** A new repeatable guild investment opens at Market level 4. Charter costs increase; returns scale with square roots and are capped at +60% enemy gold.
+- **Endless stages:** Stage health and gold gain a moderate logarithmic modifier beyond 200. Huge stage values, highly upgraded gear, and Castle costs are capped below JavaScript infinity. Historic 20-million-stage scores are deliberately excluded from the new season ranking.
 
-The game is hosted by Netlify and uses the GitHub repository for source management. This is a progressive web app (PWA): it uses a manifest, installation icons, standalone display mode, and a service worker that caches the game for offline startup.
+The Kingdom now displays a **Dynasty** panel for Renown choices, a rebirth button, and lifetime season-best stage. Research is carried across rebirths; the Market's old projects remain available and benefit from the new investment layer.
 
-- **Android:** Open the Netlify URL in Chrome, then use the browser menu → **Install app** or **Add to Home screen**.
-- **iPhone/iPad:** Open it in Safari, then tap **Share** → **Add to Home Screen** → **Add**. iOS installation requires Safari's Home Screen flow.
-- **PC/Mac:** Open the URL in Chrome or Edge and use the **Install** icon/menu if offered. In other browsers you can still play normally.
+### Leaderboard deployment note
 
-After the first fully loaded visit, the main game can start offline from its cache. The leaderboard and community message board need connectivity. Game progress is stored in the browser's localStorage, not in a cross-device cloud account, so installations on different browsers/devices do **not** automatically sync saves. Use **Game Config → Export Save / Import Save** to transfer progress.
+Season II reads and writes Firebase collection **`scores_dynasty_ii`**, leaving **`scores`** intact. This is a *logical leaderboard reset*; no user records are deleted. The Firestore project owner must verify its Security Rules grant appropriate read/write access to the new collection. Client code alone cannot modify the production Firestore Security Rules. If access is blocked, the leaderboard displays a meaningful error rather than pretending scores were submitted.
 
-## Controls and saving
+### Technical notes
 
-Click/tap enemies to attack. Advance through enemy levels, unlock abilities, and spend gold on the hero, mercenaries, and kingdom. The Tavern expands recruitment, Barracks improve attack speed, Blacksmith improves gear, Castle controls many level caps, and Market offers economic bonuses.
+The app remains static HTML/CSS/JavaScript, installable on Android/iOS/desktop with the existing PWA. No new animation loops or networking on every combat tick were introduced. The single 250-ms combat loop and background pause remain.
 
-Autosaving runs about once per minute while the game is in the foreground. The game also saves when the page is hidden or closed. The game pauses combat when backgrounded and awards bounded offline earnings upon return; this prevents extremely fast mercenary intervals from consuming power in the background.
+Run `node tests/smoke-test.cjs` to exercise combat, purchases, Dynasty state, the save transition, old-save archive, scaling at high stages, and research.
 
-## Kingdom and combat (v0.2.0)
+Faith/religion remains a separate future mechanic. Renown and Insight are secular resources.
 
-The kingdom and combat now influence each other. **Each squad has an independently selectable role and a forgeable equipment kit**, on top of its existing mercenary levels, equipment tiers and attack speeds.
-
-| Building | Unlock | Gameplay effect |
-| --- | --- | --- |
-| Barracks | Vanguard (default), Rangers at level 2, Mystics at 4, Raiders at 6 | Rangers counter evasive foes; Mystics counter spectral ones; Raiders sacrifice DPS for extra gold; Vanguards excel against armor. |
-| Blacksmith | Forged Steel at level 1, Piercing Arms at 2, Ember Blades at 4, Runic Weapons at 6 | Steel adds general damage; piercing counters armor; ember burns regenerators and stops their healing; runic counters spectral defenses. |
-| Castle | Higher building tiers and additional world details | The castle develops towers, a ward, housing, banners, and more as it levels. |
-| Tavern / Market | Recruiting and economic upgrades | Higher buildings become visibly developed on the map and strengthen the corresponding progression systems. |
-
-Open **Kingdom → Barracks** to assign a combat role to a squad. Open **Kingdom → Blacksmith** to forge a kit. A kit is purchased once for each squad; switching between owned kits is free. These controls are per squad, not per mercenary, to keep the UI usable with large armies.
-
-Monsters now have hand-authored pixel silhouettes and six distinct combat profiles: **Mire Slime** (regeneration), **Sky Harpy** (evasion), **Iron Golem** (armor), **Moon Wraith** (spectral resistance), **Goblin Marauder** (bonus bounty), and **Ash Dragon** (a powerful armored boss every ten stages). The current enemy's trait and weakness appear below its sprite. Mercenary DPS reflects its active target's resistance and the squads' loadouts.
-
-### Save compatibility and performance
-
-Your older local saves are supported. Missing squad role/kit data initializes to a standard Vanguard squad, and previously earned upgrades, hired mercenaries, gold and kingdom building levels are retained. New saves include the new `squadBuilds` object; do not remove that field when manually editing saves.
-
-The kingdom and enemy art are static Canvas rendering, performed on stage changes or menu actions rather than a continuous 60 FPS animation loop. The single 250 ms combat tick and pause-on-background behavior remain in place for battery/heat control. Performance still needs verification on representative physical Android and iOS devices.
-
-## Army Command (v0.3.0)
-
-Open the **⚔ Army** tab to manage every squad from one roster without reopening the Tavern, Barracks, or Blacksmith for each upgrade. The corresponding kingdom building menus also link directly to Army Command.
-
-- **Select all, clear selection, or check particular squads** — selection works across pages.
-- **Batch upgrade mercenary levels, squad gear or squad speed** by ×1, ×10, or ×100 per target. Pricing is calculated before the purchase, honors existing caps and market discounts, and only spends available gold. Partial purchases are intentionally allowed.
-- **Fair distribution:** mercenary levels are purchased in round-robin order across squads, one mercenary slot per squad at a time, rather than exhausting gold on the first squad.
-- **Quick squad actions:** each card has one-tap level, gear and speed upgrades; the expandable panel includes role and forged-kit controls and mercenary names.
-- **Squad sorting and pagination:** sort by squad number, weakest/strongest DPS, or lowest level; the roster shows eight squads at a time to avoid slow mobile rendering.
-- **Recruit up to five** additional mercenaries in one operation, up to your Tavern's capacity and budget.
-
-The Army Command selection is temporary UI state; your mercenary levels, roles, equipment purchases and other progression continue to use the existing save format. It requires no account or migration. Only the currently visible roster page is rendered and nothing in Army Command runs in the combat timer.
-
-## Royal Court, Market & Royal Academy (v0.4.0)
-
-The Castle now provides a small direct hero-click bonus (+1.5% per additional Castle level, capped at +60%) in addition to its existing hero-level cap, unlocks further buildings, and hosts the **Royal Academy**. The Castle offers three paid decrees: **Leadership** (mercenary level cap), **Royal Guard** (+4% hero click damage per additional rank), and **Crown Steward** (+3% gold from enemies per rank). Unlocks are enforced during purchases, not only visually.
-
-The Market gains **Bounty Contracts** (boss rewards), **Caravan Logistics** (normal-monster income), and **War Supplies** (mercenary DPS) alongside its five previous projects. Project unlock levels and building-level caps are enforced in the purchase function. Previous market research levels carry over.
-
-The Academy has a **three-branch dependency tree**: Warfare, Commerce, and Governance. Clear each tenth stage for the first time to earn one Insight; every fifth Castle level grants another. This is computed from all-time progression, meaning returning players are credited for past milestones. Insight is limited and permanent research has prerequisite nodes, stage and Castle gates. The Academy can be opened from the Kingdom or Castle/Market building menus. Research and purchased decrees persist in exported and local saves.
-
-### Balance adjustments
-
-- Market can first be built after clearing stage **20**, without the former Castle Lv 3 requirement. Blacksmith and Barracks first open after stage 25 and Castle Lv 2. Later building upgrades still need higher Castle levels.
-- Castle base cost is now **30,000** (previously 50,000) with **1.35×** growth instead of 1.5×; other buildings use **1.45×** growth.
-- Market research costs grow at **1.65× per rank** rather than doubling; level caps and unlock requirements remain in force. Merchant discounts and the Guild Charters research apply to purchases.
-- Mercenary gear-upgrade prices now grow as **(next rank)^6** instead of the previous eighth power, and attack-speed upgrades as **(next rank)^4**. The weaker marginal return from speed is thus priced more reasonably. Army Command and individual upgrades use identical formulas, including Market and research discounts.
-- Castle decrees also receive applicable upgrade-cost discounts.
-- Monster gold per defeat grows approximately with stage^1.4, versus stage^1.5 for monster HP. Research and Market benefits use bounded additive or modest multiplicative improvements; existing specialized squad counters remain important.
-- The previous description of Blacksmith's Touch was misleading: it boosts damage, not physical gear-upgrade cost efficiency.
-- The existing offline income limit (24 hours at a fraction of foreground mercenary DPS), fixed-rate combat loop, and no-constant-redraw approach remain intact.
-
-**Future religion system:** The Academy reserves a separate `faith` domain for a future progression layer but does not award Faith, add worship buildings, or choose a religion yet. Insight and Faith should remain distinct resources so future theology, patrons, blessings, and worship choices do not invalidate existing saves.
-
-## Stage 20–100 economy pass (v0.4.1)
-
-**Royal Treasury** in the Kingdom offers one-time milestone rewards: stage 20 (2,000g), 40 (8,000g), 60 (18,000g), 80 (32,000g) and 100 (50,000g), totaling 110,000g. Clear the stage, then claim in the Kingdom. Replaying an old boss cannot earn the bounty again. Existing saves can claim eligible unclaimed stages retroactively, while `claimedTreasury` persists with normal saves. This is separate from Academy Insight and the planned Faith economy.
-
-Offline gold now simulates 10%-efficiency encounters against ordinary enemies, bounded to one kill per 40 seconds and a maximum of 24 hours. Boss multipliers do not apply; Market, Raider, Steward, and research rewards still contribute. Without hired mercenaries no offline patrol income accrues. The foreground 250ms combat loop and background pause remain unchanged.
-
-**Projection:** clearing stages 21–100 once generates about 75,000g of base monster rewards. The 110,000g of Treasury milestones spreads additional capital across the midgame instead of increasing repeatable farming drops. Bounties stop at stage 100 until the next progression design pass.
-
-## Frontier Chapters (v0.5.0)
-
-**Stages 101–200** introduce five terrain campaigns: Ashen Marches (101–120, stronger regenerators), Iron Frontier (121–140, armor), Wisp Fen (141–160, spectral), Storm Pass (161–180, evasion), and Dragon Crown (181–200, stronger armored dragons). Squad roles and forging kits remain relevant counters. Stages divisible by five but not ten spawn Veteran enemies with 1.45× health and 1.6× gold (in addition to regional modifiers). Normal bosses still appear every ten stages and keep their existing identities. Distinct border colors, Veteran markers, Hero and Kingdom labels, and three map outposts are drawn only when needed, without any continuous animation or timers.
-
-The **Royal Treasury** expands to stage 120 (45,000g), 140 (65,000g), 160 (90,000g), 180 (115,000g), and 200 (145,000g): **460,000g** in new one-time bounties, **570,000g** across all ten milestones. Older saves receive any eligible unclaimed rewards retroactively, and completed milestones remain in the same `claimedTreasury` save field.
-
-The Royal Academy adds three permanent branches: **Veteran Drills** (stage 120, +18% damage against Veterans), **Frontier Charters** (stage 140, +12% Frontier gold), and **Frontier Council** (stage 160, +18% Frontier hero click damage), costing three existing Insight each. Prerequisites, Castle gates, and all original research are preserved; no new currency is introduced. The planned Faith system remains separate and optional.
-
-This pass stops at stage 200. Regional modifiers are modest and focused on individual traits; normal gold multipliers are 1.12–1.16. Early-stage profiles, the capped offline patrol, mobile-friendly render timing, old saves, and the 250ms combat interval are unchanged.
-
-## v0.5.1 Castle menu repair
-
-The Castle's Royal Court dialog now clears its content before any rerender, including after purchasing a Decree. This eliminates duplicated headings and Academy buttons. The Hero abilities section is collapsed by default. The Castle dialog uses one scrolling container rather than competing nested scrollbars, compact Decree cards, responsive full-width buttons on phones, and a sticky Close button. The empty mercenary notice stays hidden in Castle and Market menus. No save changes or new gameplay currencies were introduced.
-
-## Developer checks
-
-No dependencies, bundler, or build step are required; the site is static.
-
-```sh
-node tests/smoke-test.cjs
-```
-
-The test script verifies upgrade caps, enemy archetypes, squad roles, Castle and Market purchases, Royal Academy prerequisites and Insight, save migration, army progression, background throttling, and Firestore content safety.
-
-## Community security
-
-The leaderboard and message board use Firebase/Firestore. User-supplied content is inserted with DOM text APIs, rather than untrusted HTML.
-
-**Important:** Firebase configuration values in client-side code are normal public identifiers, not a substitute for access control. Firestore Security Rules should independently enforce who can create/change names and scores, message length and rate limits, and prevent unauthorized writes. These server rules are **not** supplied in this repository.
-
-## Older project notes
-
-This project began as a small JavaScript exercise and grew into a hybrid clicker/kingdom RPG. The old monolithic `script.js` implementation was removed because the active game now uses the separate `hero.js`, `kingdom.js`, `enemy.js`, `database.js`, `ui.js`, and `game.js` modules (classic script tags, loaded in dependency order).
+**QA note:** The release includes explicit smoke checks for Season II leaderboard collection routing, legacy-save archival, Dynasty rebirth persistence, and finite numerical calculations at twenty million stages. Visual QA uses responsive layout previews; actual device performance and Firestore permissions must still be checked on deployed infrastructure.

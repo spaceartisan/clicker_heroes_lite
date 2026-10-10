@@ -88,6 +88,7 @@
         </div>
 
         <div id="kingdom-view" style="display:none;">
+            <section id="dynasty-panel" class="dynasty-panel" aria-label="Dynasty legacy"></section>
             <h2>🏰 Your Kingdom</h2>
             <div class="research-entry">
                 <button type="button" onclick="openResearchTree()">📚 Royal Academy · Research</button>
@@ -225,7 +226,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v0.5.0 – Heroes of the Click
+        v1.0.0 – Heroes of the Click
     </p>
     <br>
 
@@ -234,9 +235,20 @@
     </div>
 
 
+    <div id="season-transition" class="popup season-transition" role="dialog" aria-modal="true"
+         aria-label="Welcome to Dynasty Season II" style="display:none;">
+        <div class="popup-content">
+            <h3>👑 Dynasty Season II</h3>
+            <p>A new balance season begins with fresh progression and a new leaderboard.</p>
+            <p>Your previous save was archived on this device. Export it now to keep an independent copy.</p>
+            <button type="button" onclick="exportLegacySave()">Export old save (.chs)</button>
+            <button type="button" onclick="closeSeasonTransition()">Start new season</button>
+        </div>
+    </div>
+
     <div id="leaderboard-popup" class="popup">
         <div class="popup-content">
-            <h3>🏆 Leaderboard</h3>
+            <h3>🏆 Dynasty Season II Leaderboard</h3>
             <div id="leaderboard-scroll">
                 <!-- Scores will be injected here -->
             </div>
@@ -335,6 +347,7 @@
     <!-- Firebase SDKs -->
 
     <script src="config.js"></script>
+    <script src="season.js"></script>
     <script src="research.js"></script>
     <script src="progression.js"></script>
     <script src="frontier.js"></script>

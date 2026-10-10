@@ -23,6 +23,29 @@ const RESEARCH_NODES = [
     { id:"frontier_council", branch:"governance", name:"Frontier Council", cost:3, stage:160, castle:6, requires:["royal_academy"], description:"+18% hero click damage in Frontier", bonus:"frontierHeroDamage", value:0.18 }
 ];
 let researchState = {};
+const ACADEMY_DISCIPLINES=[
+ {id:"warfare",name:"Military College",effect:"squad damage",bonus:"squadDamage"},
+ {id:"commerce",name:"Merchant College",effect:"monster gold",bonus:"enemyGold"},
+ {id:"governance",name:"Civic College",effect:"upgrade discounts",bonus:"discount"}
+];
+function getAcademyDisciplineCost(id){
+ const rank=academyDisciplines[id]||0;
+ return 3+Math.floor(Math.pow(rank+1,1.4));
+}
+function getAcademyDisciplineBonus(id){
+ const rank=academyDisciplines[id]||0;
+ const rate=id==="governance"?0.0125:0.025;
+ return Math.min(id==="governance"?0.15:0.50,rate*Math.log2(1+rank));
+}
+function upgradeAcademyDiscipline(id){
+ if(!Object.prototype.hasOwnProperty.call(academyDisciplines,id)||
+    academyDisciplines[id]>=10000)return false;
+ const price=getAcademyDisciplineCost(id);
+ if(getResearchInsightAvailable()<price)return false;
+ academyDisciplines[id]++;
+ saveGame();renderResearchTree();updateUI();
+ return true;
+}
 
 function getResearchNode(id) {
     return RESEARCH_NODES.find(node => node.id === id) || null;
@@ -33,14 +56,26 @@ function getResearchBonus(type) {
     for (const node of RESEARCH_NODES) {
         if (node.bonus === type && researchState[node.id] === true) bonus += node.value;
     }
+    for(const college of ACADEMY_DISCIPLINES)
+        if(college.bonus===type)bonus+=getAcademyDisciplineBonus(college.id);
     return bonus;
 }
 function getResearchInsightEarned() {
-    return Math.max(0, Math.floor((maxLevel - 1) / 10)) +
-        Math.max(0, Math.floor(structures.castle.level / 5));
+    const highest=Math.max(maxLevel,bestSeasonStage);
+    const highestCastle=Math.max(structures.castle.level,highestCastleEver);
+    return Math.max(0,Math.floor((highest-1)/10))+
+        Math.max(0,Math.floor(highestCastle/5));
 }
 function getResearchInsightSpent() {
-    return RESEARCH_NODES.reduce((sum, node) => sum + (researchState[node.id] === true ? node.cost : 0), 0);
+    const fixed=RESEARCH_NODES.reduce((sum,node)=>
+        sum+(researchState[node.id]===true?node.cost:0),0);
+    const colleges=ACADEMY_DISCIPLINES.reduce((sum,college)=>{
+        const ranks=Math.min(10000,Math.max(0,academyDisciplines[college.id]||0));
+        for(let rank=0;rank<ranks;rank++)
+            sum+=3+Math.floor(Math.pow(rank+1,1.4));
+        return sum;
+    },0);
+    return fixed+colleges;
 }
 function getResearchInsightAvailable() {
     return Math.max(0, getResearchInsightEarned() - getResearchInsightSpent());
@@ -75,7 +110,7 @@ function buyResearchNode(id) {
     return true;
 }
 function getResearchCostFactor() {
-    return Math.max(0.60, 1 - getResearchBonus("discount"));
+    return Math.max(0.55,(1-getResearchBonus("discount"))*dynastyDiscountFactor());
 }
 function getStructureCostFactor(id) {
     const academyFactor = getResearchCostFactor() * mktUp(1);
@@ -145,6 +180,23 @@ function renderResearchTree() {
             nodes.appendChild(card);
         }
         section.appendChild(nodes);
+        const college=ACADEMY_DISCIPLINES.find(d=>d.id===branch.id);
+        if(college){
+            const card=document.createElement("article");
+            card.className="research-node research-college";
+            const name=document.createElement("strong");
+            name.textContent=college.name+" · Rank "+academyDisciplines[college.id];
+            const desc=document.createElement("p");
+            desc.textContent="Repeatable "+college.effect+" · "+
+                Math.round(getAcademyDisciplineBonus(college.id)*100)+"% so far";
+            const btn=document.createElement("button");
+            const cost=getAcademyDisciplineCost(college.id);
+            btn.textContent="Advance · "+cost+" Insight";
+            btn.disabled=available<cost;
+            btn.addEventListener("click",()=>upgradeAcademyDiscipline(college.id));
+            card.append(name,desc,btn);
+            section.appendChild(card);
+        }
         root.appendChild(section);
     }
 }

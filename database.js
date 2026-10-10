@@ -36,12 +36,12 @@ function deleteSave() {
 
 
 function submitScore() {
-    if (!nameConfirm || maxLevel <= lastSubmittedScore) {
+    if (!nameConfirm || currentDynastyPeak() <= lastSubmittedScore) {
         return;
     }
-    const score = maxLevel; // or your desired metric
+    const score = currentDynastyPeak(); // historical best stage this season
 
-    db.collection("scores").doc(playerName).set({
+    db.collection(GAME_SCORE_COLLECTION).doc(playerName).set({
         name: playerName,
         score: score,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -49,7 +49,7 @@ function submitScore() {
         statusSpan.textContent = "✔️ Name and score saved!";
         statusSpan.style.color = "#0f0";
         localStorage.setItem("playerName", playerName);
-        lastSubmittedScore = maxLevel;
+        lastSubmittedScore = currentDynastyPeak();
         nameInput.disabled = true;
     }).catch((error) => {
         console.error("Error writing to leaderboard: ", error);
@@ -71,11 +71,11 @@ function submitScore() {
 
 function showLeaderboard() {
     const scrollDiv = document.getElementById("leaderboard-scroll");
-    scrollDiv.innerHTML = "<p>Loading leaderboard...</p>";
+    scrollDiv.textContent = "Loading Season II leaderboard...";
 
     if (leaderboardUnsub) leaderboardUnsub();
 
-    leaderboardUnsub = db.collection("scores")
+    leaderboardUnsub = db.collection(GAME_SCORE_COLLECTION)
         .orderBy("score", "desc")
         .limit(50)
         .onSnapshot(snapshot => {
@@ -95,7 +95,7 @@ function showLeaderboard() {
             if (i === 0) scrollDiv.textContent = "No entries yet.";
         }, error => {
             console.error("Error fetching leaderboard:", error);
-            scrollDiv.innerHTML = "<p>Error loading leaderboard.</p>";
+            scrollDiv.textContent = "Season II leaderboard unavailable. Firebase rules may need updating.";
         });
 
     document.getElementById("leaderboard-popup").style.display = "flex";
@@ -204,7 +204,7 @@ function confirmName() {
         return;
     }
 
-    db.collection("scores").doc(name).get().then(doc => {
+    db.collection(GAME_SCORE_COLLECTION).doc(name).get().then(doc => {
         if (doc.exists) {
             statusSpan.textContent = "❌ Name is already taken.";
             statusSpan.style.color = "red";
