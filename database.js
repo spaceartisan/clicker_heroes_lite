@@ -107,13 +107,13 @@ function submitScore(manual = false) {
         } catch (error) {
             console.warn("Leaderboard synced but score could not be cached locally:", error);
         }
-        statusSpan.textContent = "✔️ Score synchronized!";
+        statusSpan.textContent = "Score synchronized.";
         statusSpan.style.color = "#7fcf91";
         updateScoreSyncStatus("Synced through stage " + score + ".");
     }).catch(error => {
         scoreUploadPending = false;
         scoreUploadRetryAt = Date.now() + SCORE_FAILURE_RETRY_MS;
-        statusSpan.textContent = "❌ Score not uploaded.";
+        statusSpan.textContent = "Score upload failed.";
         statusSpan.style.color = "#e6a99d";
         updateScoreSyncStatus(
             "Score saved locally. Online sync failed; retry below. " +
@@ -152,7 +152,7 @@ function showLeaderboard() {
                 const isPlayer = name === playerName;
                 const line = document.createElement("p");
                 if (isPlayer) line.classList.add("highlight-player");
-                line.textContent = `${++i}. ${isPlayer ? "🛡️ " : ""}${name} — Level ${score}`;
+                line.textContent = `${++i}. ${isPlayer ? "(You) " : ""}${name} — Level ${score}`;
                 fragment.appendChild(line);
             });
             scrollDiv.replaceChildren(fragment);
@@ -176,7 +176,7 @@ function closeLeaderboard() {
 
 function sendMessage() {
     if (!nameConfirm) {
-        messageStatusSpan.textContent = "❌ Please confirm your name first in leaderboard.";
+        messageStatusSpan.textContent = "Please confirm your name first in the leaderboard.";
         messageStatusSpan.style.color = "red";
         return;
     }
@@ -193,11 +193,11 @@ function sendMessage() {
         msg: msg,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => {
-        messageStatusSpan.textContent = "✔️ Message Send!";
+        messageStatusSpan.textContent = "Message sent.";
         messageStatusSpan.style.color = "#0f0";
     }).catch((error) => {
         console.error("Error writing message: ", error);
-        messageStatusSpan.textContent = "❌ Failed to send. Try again.";
+        messageStatusSpan.textContent = "Message failed to send. Try again.";
         messageStatusSpan.style.color = "red";
     });
     messageBody.value = ""; // Clear input after sending
@@ -255,7 +255,7 @@ function disableNameInput() {
     console.log("Name confirmed:", playerName);
     nameInput.disabled = true;
     nameConfirmButton.disabled = true;
-    statusSpan.textContent = "✔️ Name confirmed!";
+    statusSpan.textContent = "Name confirmed.";
     statusSpan.style.color = "#0f0";
 }
 
@@ -263,7 +263,7 @@ function confirmName() {
     if (nameRegistrationPending || nameConfirm) return;
     const requestedName = nameInput.value.trim();
     if (!/^[\p{L}\p{N} _.-]{1,20}$/u.test(requestedName)) {
-        statusSpan.textContent = "❌ Use 1–20 letters, numbers, spaces, _, . or -.";
+        statusSpan.textContent = "Use 1–20 letters, numbers, spaces, _, . or -.";
         statusSpan.style.color = "#e6a99d";
         statusSpan.style.visibility = "visible";
         statusSpan.style.opacity = "1";
@@ -289,7 +289,7 @@ function confirmName() {
 
     record.get().then(doc => {
         if (doc.exists) {
-            statusSpan.textContent = "❌ Name is already taken this season.";
+            statusSpan.textContent = "That name is already taken this season.";
             statusSpan.style.color = "#e6a99d";
             return null;
         }
@@ -310,7 +310,7 @@ function confirmName() {
             updateScoreSyncStatus("Season II name and stage registered.");
         });
     }).catch(error => {
-        statusSpan.textContent = "❌ Couldn't register name. Try again.";
+        statusSpan.textContent = "Could not register name. Try again.";
         statusSpan.style.color = "#e6a99d";
         updateScoreSyncStatus(error && error.code === "permission-denied"
             ? "Firebase denied Season II registration. The game owner must review its rules."

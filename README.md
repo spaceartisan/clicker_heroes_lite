@@ -70,3 +70,11 @@ This is a CPU/DOM workload reduction, **not a claim of verified lower device tem
 ### v1.1.3 — Fixed-width enemy card
 
 The enemy encounter row is now a three-track CSS grid with fixed-width Previous/Next controls and a bounded center card. Enemy names and trait text wrap **inside** that card without shifting the stage arrows. The arrows are anchored to the sprite position instead of vertically centering on variable text, and long names (including Veteran and Frontier modifiers) are supported at phone and desktop widths. The enemy-name label is now authored in the HTML rather than appended at runtime, keeping the sprite, health, stage, name, and trait in a predictable order. Sprite rendering and attack mechanics are unchanged; no new timers or redraws are introduced.
+
+### v1.2.0 — cohesive UI art and selectable Dark Theme
+
+- Replaced device-rendered emoji icons in navigation, game actions, Kingdom/Army, Academy branches, achievements, currencies, save actions and stats with **24 authored SVG icons**. These are local assets and are included in the service-worker offline cache; a new local SVG crown emblem replaces the external emoji favicon.
+- Refreshed the backdrop with lightweight CSS gradients and a restrained pattern, replacing remote texture dependencies. The existing warm medieval style is the default; **Dark Theme** uses charcoal-blue surfaces and brass accents across the game, enemy card, menus, form controls, and fixed HUD.
+- Game Config includes a Dark Theme checkbox. Theme choice is stored independently under `heroes-of-click-theme` in device-local storage, restored before stylesheet painting, and synchronized whenever Game Config opens. It is intentionally not part of Dynasty/save resets. Browser theme-color updates to match the chosen theme.
+- The PWA manifest advertises an SVG emblem and keeps existing PNG home-screen icons for compatibility. The service worker precaches the new icons and theme script with a v1.2.0 cache version. No additional combat loops, animation timers, or backend changes were introduced.
+- Validated with dependency-free smoke tests and responsive layout previews at 320px, 390px, and desktop widths. The visual previews are representations of the updated palette and icon language rather than captures of the live Netlify deployment.

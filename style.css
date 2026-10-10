@@ -7,7 +7,7 @@ html {
 
 body {
     font-family: 'MedievalSharp', serif;
-    background: #440c0c url('https://www.transparenttextures.com/patterns/brick-wall-dark.png') repeat;
+    background: #2e1914;
     color: #fdf6e3;
     text-align: center;
     padding: 20px;
@@ -46,7 +46,7 @@ body {
 }
 
 #enemy-box {
-    background: #222 url('https://www.transparenttextures.com/patterns/skulls.png') repeat;
+    background: #251c17;
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
@@ -119,7 +119,7 @@ body {
 #health-bar {
     width: min(150px, 100%);
     height: 24px;
-    background: url('https://www.transparenttextures.com/patterns/wood-pattern.png') repeat;
+    background: #201912;
     border: 2px solid #ffde9e;
     border-radius: 6px;
     box-shadow: inset 0 0 5px #000, 0 0 8px #8b0000;
@@ -444,7 +444,7 @@ button.mult-btn-tiny {
     width: 100%;
     max-width: 400px;
     aspect-ratio: 1 / 1; /* Keeps square */
-    background: #222 url('https://www.transparenttextures.com/patterns/skulls.png') repeat;
+    background: #251c17;
     padding: 10px;
     border: 3px double #c9b79c;
     border-radius: 8px;
@@ -1464,3 +1464,223 @@ summary:focus-visible {
     .inline-form { grid-template-columns: minmax(0,1fr) auto; }
     #name-entry > label { grid-column: 1 / -1; }
 }
+
+
+/* UI art direction v1.2: all iconography comes from local SVG assets. */
+:root {
+    --page-core: #2e1914;
+    --page-edge: #140f12;
+    --glow: rgba(184, 116, 56, .17);
+    --pattern: rgba(214, 161, 100, .027);
+    --panel-fill: #261b17;
+    --panel-raised: #3d2b20;
+    --panel-inset: #1f1717;
+    --panel-line: #98724b;
+    --ink: #f6e9d4;
+    --ink-muted: #d4bfa4;
+    --ink-heading: #f7d99f;
+    --accent: #c4a071;
+    --nav-fill: #301d16;
+    --footer-fill: #302019;
+    --button-top: #80532d;
+    --button-bottom: #51331e;
+    --button-over: #9d6836;
+    --field-fill: #221913;
+    --scrim: rgba(12, 8, 7, .78);
+    color-scheme: dark;
+}
+:root[data-theme="dark"] {
+    --page-core: #141c26;
+    --page-edge: #0a0e16;
+    --glow: rgba(68, 113, 146, .10);
+    --pattern: rgba(161, 191, 213, .025);
+    --panel-fill: #151c27;
+    --panel-raised: #202c38;
+    --panel-inset: #111923;
+    --panel-line: #607184;
+    --ink: #e6edf2;
+    --ink-muted: #b9c9d7;
+    --ink-heading: #e8c98e;
+    --accent: #d4af72;
+    --nav-fill: #131b27;
+    --footer-fill: #121a25;
+    --button-top: #354758;
+    --button-bottom: #233445;
+    --button-over: #425b72;
+    --field-fill: #0e1620;
+    --scrim: rgba(5, 9, 15, .86);
+}
+body {
+    color: var(--ink);
+    background-color: var(--page-edge);
+    background-image:
+        radial-gradient(ellipse 75% 30% at 50% 2%, var(--glow), transparent 90%),
+        repeating-linear-gradient(115deg, transparent 0, transparent 78px, var(--pattern) 79px, transparent 80px),
+        linear-gradient(160deg, var(--page-core), var(--page-edge) 84%);
+    background-attachment: scroll;
+    min-height: 100dvh;
+}
+#game-container {
+    color: var(--ink);
+    background: radial-gradient(ellipse at 50% 0%, var(--panel-raised), var(--panel-fill) 65%);
+    border: 2px solid var(--panel-line);
+    box-shadow: 0 14px 48px rgba(0,0,0,.36), inset 0 0 0 4px rgba(195, 150, 89, .04);
+}
+#enemy-box {
+    background: linear-gradient(135deg, var(--panel-inset), var(--panel-raised));
+    border-color: var(--panel-line);
+    box-shadow: 0 8px 24px rgba(0,0,0,.32), inset 0 0 0 1px rgba(229, 193, 140, .09);
+}
+#health-bar {
+    background: linear-gradient(180deg, var(--field-fill), var(--panel-inset));
+    border-color: var(--accent);
+}
+#switch-mode,#gold-bar {
+    background: var(--nav-fill);
+    color: var(--ink-heading);
+    border-color: var(--panel-line);
+}
+#gold-bar { background: var(--footer-fill); }
+button, .modal-close {
+    color: var(--ink);
+    background: linear-gradient(var(--button-top), var(--button-bottom));
+    border-color: var(--panel-line);
+}
+button:hover:not(:disabled) {
+    background: linear-gradient(var(--button-over), var(--button-bottom));
+}
+button:disabled {
+    color: var(--ink-muted);
+    background: var(--panel-inset);
+    border-color: var(--panel-line);
+}
+#view-switch button.is-active,
+#view-switch button[aria-pressed="true"] {
+    color: var(--ink-heading);
+    background: linear-gradient(var(--button-top), var(--panel-raised));
+    border-color: var(--accent);
+}
+#prev-level,#next-level {
+    background: var(--panel-inset);
+    border: 1px solid var(--panel-line);
+    color: var(--ink-heading);
+}
+#prev-level:disabled,#next-level:disabled { background: var(--panel-inset); color: var(--ink-muted); }
+h1,h2,h3,h4,.popup-content h3,.research-branch h4 {
+    color: var(--ink-heading);
+    border-color: var(--panel-line);
+}
+.popup { background: var(--scrim); }
+.popup-content,.popup-message {
+    color: var(--ink);
+    background: var(--panel-fill);
+    border-color: var(--panel-line);
+}
+.structure-card,.market-charter,.castle-decree,.upgrade-row,
+.research-branch,.research-node,.treasury-card,.dynasty-panel,
+.achievement, #achievement-menu .achievement,
+.battery-saver-option,.theme-option,.research-college,
+.frontier-hero,.frontier-kingdom {
+    color: var(--ink);
+    background: var(--panel-raised);
+    border-color: var(--panel-line);
+}
+.research-node.researched,.achievement.unlocked,#achievement-menu .achievement.unlocked {
+    background: var(--panel-raised);
+    border-color: var(--accent);
+}
+:root[data-theme="dark"] .castle-decree p,
+:root[data-theme="dark"] .market-project p,
+:root[data-theme="dark"] .structure-card > p,
+:root[data-theme="dark"] .dynasty-help,
+:root[data-theme="dark"] .treasury-desc,
+:root[data-theme="dark"] .research-branch-desc,
+:root[data-theme="dark"] #achievement-menu .achievement p,
+:root[data-theme="dark"] #options-popup .popup-content > p,
+:root[data-theme="dark"] .research-node p,
+:root[data-theme="dark"] .market-charter p {
+    color: var(--ink-muted);
+}
+input,select,textarea, .achievement-toolbar select {
+    color: var(--ink);
+    background-color: var(--field-fill);
+    border-color: var(--panel-line);
+}
+input[type="checkbox"] { accent-color: var(--accent); }
+#leaderboard-scroll,#message-scroll,#achievement-list {
+    scrollbar-color: var(--panel-line) var(--panel-inset);
+}
+#enemy-level,#enemy-name,#enemy-trait,#squad-summary {
+    color: var(--ink);
+}
+.ui-icon {
+    --icon-mask: none;
+    width: 1.13em;
+    height: 1.13em;
+    display: inline-block;
+    flex: 0 0 1.13em;
+    vertical-align: -.12em;
+    background-color: currentColor;
+    -webkit-mask: var(--icon-mask) center / contain no-repeat;
+    mask: var(--icon-mask) center / contain no-repeat;
+}
+button:has(> .ui-icon),#view-switch button,#gold-bar {
+    align-items: center;
+    justify-content: center;
+    gap: .45em;
+}
+button:has(> .ui-icon) { display: inline-flex; }
+#view-switch button { display: inline-flex; }
+#gold-bar .ui-icon { color: var(--accent); }
+#autosave-indicator .ui-icon { color: #8dd9b1; }
+#prev-level .ui-icon,#next-level .ui-icon { font-size: 21px; }
+.theme-option {
+    grid-column: 1 / -1;
+    border: 1px solid var(--panel-line);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 2px 0;
+    text-align: left;
+}
+.theme-option label {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    cursor: pointer;
+    font: 13px/1.5 Arial,sans-serif;
+}
+.theme-option label > span:last-child { flex:1; min-width:0; }
+.theme-option input { flex: 0 0 20px; width:20px; height:20px; }
+.theme-option small { display:block; color:var(--ink-muted); margin-top:3px; }
+#export-import-controls .theme-option { grid-column: 1 / -1; }
+.theme-option .ui-icon { color:var(--accent); font-size: 20px; }
+:root[data-theme="dark"] #enemy-canvas { background:#0c1118; }
+@media(max-width:560px) {
+    .ui-icon { flex-basis:1.02em; width:1.02em; height:1.02em; }
+    #view-switch button { gap:.35em; }
+    .game-actions button { gap:.35em; }
+}
+.ui-icon-hero { --icon-mask: url("./icons/ui-hero.svg"); }
+.ui-icon-kingdom { --icon-mask: url("./icons/ui-kingdom.svg"); }
+.ui-icon-army { --icon-mask: url("./icons/ui-army.svg"); }
+.ui-icon-leaderboard { --icon-mask: url("./icons/ui-leaderboard.svg"); }
+.ui-icon-message { --icon-mask: url("./icons/ui-message.svg"); }
+.ui-icon-settings { --icon-mask: url("./icons/ui-settings.svg"); }
+.ui-icon-research { --icon-mask: url("./icons/ui-research.svg"); }
+.ui-icon-treasury { --icon-mask: url("./icons/ui-treasury.svg"); }
+.ui-icon-dynasty { --icon-mask: url("./icons/ui-dynasty.svg"); }
+.ui-icon-achievements { --icon-mask: url("./icons/ui-achievements.svg"); }
+.ui-icon-stats { --icon-mask: url("./icons/ui-stats.svg"); }
+.ui-icon-save { --icon-mask: url("./icons/ui-save.svg"); }
+.ui-icon-delete { --icon-mask: url("./icons/ui-delete.svg"); }
+.ui-icon-export { --icon-mask: url("./icons/ui-export.svg"); }
+.ui-icon-import { --icon-mask: url("./icons/ui-import.svg"); }
+.ui-icon-gold { --icon-mask: url("./icons/ui-gold.svg"); }
+.ui-icon-previous { --icon-mask: url("./icons/ui-previous.svg"); }
+.ui-icon-next { --icon-mask: url("./icons/ui-next.svg"); }
+.ui-icon-battle { --icon-mask: url("./icons/ui-battle.svg"); }
+.ui-icon-market { --icon-mask: url("./icons/ui-market.svg"); }
+.ui-icon-governance { --icon-mask: url("./icons/ui-governance.svg"); }
+.ui-icon-battery { --icon-mask: url("./icons/ui-battery.svg"); }
+.ui-icon-clock { --icon-mask: url("./icons/ui-clock.svg"); }
+.ui-icon-shield { --icon-mask: url("./icons/ui-shield.svg"); }

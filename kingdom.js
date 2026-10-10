@@ -333,7 +333,9 @@ function updateLabeledParagraph(parent, label, value, className) {
 
 function createButton(parent, text, ...listeners) {
     const btn = document.createElement("button");
-    btn.textContent = text;
+    if (text.includes("Royal Academy")) setIconLabel(btn, "research", text);
+    else if (text.includes("Manage Entire Army")) setIconLabel(btn, "army", text);
+    else btn.textContent = text;
     listeners.forEach(listener => btn.addEventListener("click", listener));
     parent.appendChild(btn);
 }
@@ -621,7 +623,7 @@ function CastleUpgradeUI(menu, upgradeButtons, upgradeButtons2, container, conta
 
     const research = document.createElement("button");
     research.className = "castle-research-button";
-    research.textContent = "📚 Open Royal Academy";
+    setIconLabel(research, "research", "Open Royal Academy");
     research.addEventListener("click", openResearchTree);
     upgradeButtons.appendChild(research);
 
@@ -734,7 +736,7 @@ function MarketUpgradeUI(menu, upgradeButtons, container) {
     const hint = document.createElement("p");
     hint.textContent = "Upgrade Market buildings to open more guild projects. Research lowers some expenses and increases rewards.";
     upgradeButtons.append(heading,hint);
-    createButton(upgradeButtons,"📚 Royal Academy research", () => openResearchTree());
+    createButton(upgradeButtons,"Royal Academy research", () => openResearchTree());
     container.replaceChildren();
     const guild=document.createElement("article");
     guild.className="market-charter";
@@ -805,7 +807,7 @@ function showMenu(name) {
         hiredMercenaries.length > 0) ? "none" : "block";
 
     if (["tavern", "barracks", "blacksmith"].includes(name)) {
-        createButton(upgradeButtons, "⚔️ Manage Entire Army", () => {
+        createButton(upgradeButtons, "Manage Entire Army", () => {
             closeMenu(name);
             switchView("army");
         });

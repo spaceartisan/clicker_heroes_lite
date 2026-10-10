@@ -149,7 +149,7 @@ function renderDynastyPanel(){
   if(!root)return;
   root.replaceChildren();
   const title=document.createElement("h3");
-  title.textContent="👑 Dynasty "+(dynastyCount+1);
+  setIconLabel(title, "dynasty", "Dynasty "+(dynastyCount+1));
   const intro=document.createElement("p");
   intro.className="dynasty-help";
   intro.textContent="Highest Season II stage: "+currentDynastyPeak().toLocaleString()+

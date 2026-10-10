@@ -234,6 +234,7 @@ function updatePlayerLevelGearText() {
 }
 
 function showOptions() {
+    applyGameTheme(readGameTheme());
     const oldExport = document.getElementById("export-legacy-save");
     if (oldExport) oldExport.hidden = !localStorage.getItem(GAME_LEGACY_BACKUP_KEY);
     const optionsPopup = document.getElementById("options-popup");
@@ -311,7 +312,7 @@ function showAchievementPopup(ach, additionalCount = 0) {
     const popup = document.getElementById("achievement-popup");
     const heading = document.createElement("strong");
     heading.textContent = ach.name;
-    popup.replaceChildren(document.createTextNode("🏅 "), heading,
+    popup.replaceChildren(makeUIIcon("achievements"), heading,
         document.createTextNode(additionalCount
             ? " · +" + additionalCount + " more achievements"
             : " · " + ach.description));
@@ -402,7 +403,7 @@ function generalMenu(menuType) {
 }
 
 function statsMenu(menu, content, genHeader, genBody) {
-    genHeader.innerHTML = `<h3>📊 Game Stats</h3>`;
+    genHeader.replaceChildren(setIconLabel(document.createElement("h3"), "stats", "Game Stats"));
     genBody.innerHTML = `
         <p>Player Level: ${formatDigits(playerLevel, 2, 0)}</p>
         <p>Gear Level: ${formatDigits(playerGearLevel, 2, 0)}</p>

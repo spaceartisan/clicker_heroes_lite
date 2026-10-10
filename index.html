@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="https://emojicdn.elk.sh/⚔️" type="image/png">
+    
     <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#3e1f0d">
@@ -14,8 +14,10 @@
     <meta name="description" content="Build your kingdom, command mercenaries, and climb the hero leaderboard.">
     <link rel="manifest" href="./manifest.webmanifest">
     <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+    <link rel="icon" href="./icons/emblem.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
     <title>Heroes of the Click</title>
+    <script src="./theme.js"></script>
     <link rel="stylesheet" href="style.css">
     <!-- Firebase SDK (compat version, no module needed) -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -25,9 +27,9 @@
 <body>
     <nav id="switch-mode" aria-label="Game sections">
         <div id="view-switch">
-            <button type="button" id="view-tab-hero" class="is-active" aria-pressed="true" onclick="switchView('hero')">🏹 Hero</button>
-            <button type="button" id="view-tab-kingdom" class="" aria-pressed="false" onclick="switchView('kingdom')">🏰 Kingdom</button>
-            <button type="button" id="view-tab-army" class="" aria-pressed="false" onclick="switchView('army')">⚔️ Army</button>
+            <button type="button" id="view-tab-hero" class="is-active" aria-pressed="true" onclick="switchView('hero')"><span class="ui-icon ui-icon-hero" aria-hidden="true"></span><span>Hero</span></button>
+            <button type="button" id="view-tab-kingdom" class="" aria-pressed="false" onclick="switchView('kingdom')"><span class="ui-icon ui-icon-kingdom" aria-hidden="true"></span><span>Kingdom</span></button>
+            <button type="button" id="view-tab-army" class="" aria-pressed="false" onclick="switchView('army')"><span class="ui-icon ui-icon-army" aria-hidden="true"></span><span>Army</span></button>
         </div>
     </nav>
     <div id="game-container">
@@ -35,7 +37,7 @@
 
         <div id="hero-view">
             <div id="enemy-container">
-                <button id="prev-level" onclick="goToPrevLevel()">⬅</button>
+                <button type="button" id="prev-level" aria-label="Previous stage" onclick="goToPrevLevel()"><span class="ui-icon ui-icon-previous" aria-hidden="true"></span></button>
 
                 <div id="enemy-box">
                     <div id="enemy-wrapper">
@@ -52,7 +54,7 @@
                 </div>
 
 
-                <button id="next-level" onclick="goToNextLevel()">➡</button>
+                <button type="button" id="next-level" aria-label="Next stage" onclick="goToNextLevel()"><span class="ui-icon ui-icon-next" aria-hidden="true"></span></button>
             </div>
 
             <div id="auto-level-container">
@@ -91,15 +93,15 @@
 
         <div id="kingdom-view" style="display:none;">
             <section id="dynasty-panel" class="dynasty-panel" aria-label="Dynasty legacy"></section>
-            <h2>🏰 Your Kingdom</h2>
+            <h2><span class="ui-icon ui-icon-kingdom" aria-hidden="true"></span> Your Kingdom</h2>
             <div class="research-entry">
-                <button type="button" onclick="openResearchTree()">📚 Royal Academy · Research</button>
+                <button type="button" onclick="openResearchTree()"><span class="ui-icon ui-icon-research" aria-hidden="true"></span> Royal Academy · Research</button>
                 <span id="kingdom-research-hint">Earn Insight from first-time bosses and Castle milestones.</span>
             </div>
 
             <section id="royal-treasury" class="treasury-card" aria-label="Royal Treasury">
                 <div class="treasury-main">
-                    <div class="treasury-title"><strong>🪙 Royal Treasury</strong>
+                    <div class="treasury-title"><strong><span class="ui-icon ui-icon-treasury" aria-hidden="true"></span> Royal Treasury</strong>
                         <small id="treasury-chapter">CHAPTER I</small></div>
                     <p class="treasury-desc">One-time rewards for reaching new stages. Farming earlier bosses never repeats them.</p>
                     <div class="treasury-track" role="progressbar" aria-label="Next Royal Treasury milestone">
@@ -158,7 +160,7 @@
         <div id="army-view" style="display:none;">
             <header class="army-header">
                 <div>
-                    <h2>⚔️ Army Command</h2>
+                    <h2><span class="ui-icon ui-icon-army" aria-hidden="true"></span> Army Command</h2>
                     <p id="army-stats">Your mercenaries, all in one place.</p>
                 </div>
                 <button type="button" id="army-recruit">Recruit up to 5</button>
@@ -217,7 +219,7 @@
         <div class="popup-content research-popup-content">
             <header class="research-popup-header">
                 <div>
-                    <h3>📚 Royal Academy</h3>
+                    <h3><span class="ui-icon ui-icon-research" aria-hidden="true"></span> Royal Academy</h3>
                     <p id="research-points">Insight from boss clears and Castle milestones.</p>
                 </div>
                 <button type="button" onclick="closeResearchTree()">Close</button>
@@ -229,31 +231,31 @@
     </div>
 
         <nav class="game-actions" aria-label="Community and game settings">
-            <button type="button" onclick="showLeaderboard()">🏆 Leaderboard</button>
-            <button type="button" onclick="showMessage()">📜 Message</button>
-            <button type="button" onclick="showOptions()">⚙️ Game Config</button>
+            <button type="button" onclick="showLeaderboard()"><span class="ui-icon ui-icon-leaderboard" aria-hidden="true"></span> Leaderboard</button>
+            <button type="button" onclick="showMessage()"><span class="ui-icon ui-icon-message" aria-hidden="true"></span> Message</button>
+            <button type="button" onclick="showOptions()"><span class="ui-icon ui-icon-settings" aria-hidden="true"></span> Game Config</button>
         </nav>
 
         <div>
-            <span id="autosave-indicator" style="opacity: 0;">💾 Autosaved!</span>
+            <span id="autosave-indicator" style="opacity: 0;"><span class="ui-icon ui-icon-save" aria-hidden="true"></span> Autosaved!</span>
         </div>
         <div id="achievement-popup" class="popup-toast" style="display:none;"></div>
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.1.3 – Heroes of the Click
+        v1.2.0 – Heroes of the Click
     </p>
     <br>
 
     <div id="gold-bar">
-        💰 Gold: <span id="gold-fixed">0</span>
+        <span class="ui-icon ui-icon-gold" aria-hidden="true"></span> Gold: <span id="gold-fixed">0</span>
     </div>
 
 
     <div id="season-transition" class="popup season-transition" role="dialog" aria-modal="true"
          aria-label="Welcome to Dynasty Season II" style="display:none;">
         <div class="popup-content">
-            <h3>👑 Dynasty Season II</h3>
+            <h3><span class="ui-icon ui-icon-dynasty" aria-hidden="true"></span> Dynasty Season II</h3>
             <p>A new balance season begins with fresh progression and a new leaderboard.</p>
             <p>Your previous save was archived on this device. Export it now to keep an independent copy.</p>
             <button type="button" onclick="exportLegacySave()">Export old save (.chs)</button>
@@ -263,7 +265,7 @@
 
     <div id="leaderboard-popup" class="popup">
         <div class="popup-content">
-            <h3>🏆 Dynasty Season II Leaderboard</h3>
+            <h3><span class="ui-icon ui-icon-leaderboard" aria-hidden="true"></span> Dynasty Season II Leaderboard</h3>
             <div id="leaderboard-scroll">
                 <!-- Scores will be injected here -->
             </div>
@@ -281,7 +283,7 @@
 
     <div id="message-popup" class="popup">
         <div class="popup-content">
-            <h3>📜 Message Board</h3>
+            <h3><span class="ui-icon ui-icon-message" aria-hidden="true"></span> Message Board</h3>
             <div id="message-scroll">
                 <!-- Messages will be injected here -->
             </div>
@@ -297,19 +299,19 @@
 
     <div id="options-popup" class="popup">
         <div class="popup-content">
-            <h3>⚙️ Game Config</h3>
+            <h3><span class="ui-icon ui-icon-settings" aria-hidden="true"></span> Game Config</h3>
             <p><b>Instructions:</b> Click the enemy to attack it. Use abilities to gain an advantage. Upgrade your hero and hire mercenaries
                 to progress faster. To join the message board or leaderboard, create a name under the leaderboard.</p>
             <div id="save-load-controls" class="settings-actions">
-                <button onclick="saveGame()">💾 Save Game</button>
-                <button onclick="deleteSave()">🗑️ Delete Save</button>
+                <button onclick="saveGame()"><span class="ui-icon ui-icon-save" aria-hidden="true"></span> Save Game</button>
+                <button onclick="deleteSave()"><span class="ui-icon ui-icon-delete" aria-hidden="true"></span> Delete Save</button>
             </div>
             <div id="export-import-controls">
-                <button onclick="exportGame()">📦 Export Save</button>
-                <button type="button" id="export-legacy-save" onclick="exportLegacySave()">📜 Export Previous-Season Save</button>
-                <button onclick="importGame()">📥 Import Save</button>
-                <button onclick="showAchievements()">📜 View Achievements</button>
-                <button onclick="generalMenu('stats')">📊 Game Stats</button>
+                <button onclick="exportGame()"><span class="ui-icon ui-icon-export" aria-hidden="true"></span> Export Save</button>
+                <button type="button" id="export-legacy-save" onclick="exportLegacySave()"><span class="ui-icon ui-icon-export" aria-hidden="true"></span> Export Previous-Season Save</button>
+                <button onclick="importGame()"><span class="ui-icon ui-icon-import" aria-hidden="true"></span> Import Save</button>
+                <button onclick="showAchievements()"><span class="ui-icon ui-icon-achievements" aria-hidden="true"></span> View Achievements</button>
+                <button onclick="generalMenu('stats')"><span class="ui-icon ui-icon-stats" aria-hidden="true"></span> Game Stats</button>
                 <div class="checkbox-group">
                     <label class="checkbox-option" for="use-scientific">
                         <input type="checkbox" id="use-scientific">
@@ -318,6 +320,14 @@
                     <label class="checkbox-option" for="underfill-toggle">
                         <input type="checkbox" id="underfill-toggle">
                         Enable Underfill
+                    </label>
+                </div>
+                <div class="theme-option">
+                    <label for="dark-theme-toggle">
+                        <input type="checkbox" id="dark-theme-toggle" onchange="setGameTheme(this.checked ? 'dark' : 'default')">
+                        <span class="ui-icon ui-icon-settings" aria-hidden="true"></span>
+                        <span><strong>Dark Theme</strong>
+                        <small>Obsidian panels and muted brass accents. Your choice is saved on this device.</small></span>
                     </label>
                 </div>
                 <div class="battery-saver-option">
@@ -334,7 +344,7 @@
 
     <div id="achievement-menu" class="popup">
         <div class="popup-content">
-            <h3>🏆 Achievements</h3>
+            <h3><span class="ui-icon ui-icon-achievements" aria-hidden="true"></span> Achievements</h3>
             <p id="achievement-summary" class="achievement-summary" aria-live="polite"></p>
             <div class="achievement-toolbar">
                 <label for="achievement-filter">Show</label>

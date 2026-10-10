@@ -2,9 +2,9 @@
 // One Insight per first-time cleared 10th stage, plus one per five Castle levels.
 // Total Insight is derived from progression, so existing saves earn retroactive credit.
 const RESEARCH_BRANCHES = [
-    { id: "warfare", name: "Warfare", icon: "⚔️", description: "Military doctrine and enemy-counter tactics" },
-    { id: "commerce", name: "Commerce", icon: "⚖️", description: "Trade, discounts, and monster bounties" },
-    { id: "governance", name: "Governance", icon: "🏰", description: "Administration, scholarship, and royal power" }
+    { id: "warfare", name: "Warfare", icon: "army", description: "Military doctrine and enemy-counter tactics" },
+    { id: "commerce", name: "Commerce", icon: "market", description: "Trade, discounts, and monster bounties" },
+    { id: "governance", name: "Governance", icon: "governance", description: "Administration, scholarship, and royal power" }
 ];
 // Future faith/religion systems can add their own domain without touching Insight.
 const RESEARCH_FUTURE_DOMAINS = ["faith"];
@@ -149,7 +149,7 @@ function renderResearchTree() {
         const section = document.createElement("section");
         section.className = "research-branch";
         const heading = document.createElement("h4");
-        heading.textContent = branch.icon + " " + branch.name;
+        setIconLabel(heading, branch.id === "warfare" ? "army" : branch.id === "commerce" ? "market" : "governance", branch.name);
         section.appendChild(heading);
         const desc = document.createElement("p");
         desc.className = "research-branch-desc";
