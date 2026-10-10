@@ -1468,9 +1468,9 @@ summary:focus-visible {
 
 /* UI art direction v1.2: all iconography comes from local SVG assets. */
 :root {
-    --page-core: #2e1914;
-    --page-edge: #140f12;
-    --glow: rgba(184, 116, 56, .17);
+    --page-core: #440c0c;
+    --page-edge: #23100f;
+    --glow: rgba(176, 92, 58, .14);
     --pattern: rgba(214, 161, 100, .027);
     --panel-fill: #261b17;
     --panel-raised: #3d2b20;
@@ -1489,37 +1489,56 @@ summary:focus-visible {
     --scrim: rgba(12, 8, 7, .78);
     color-scheme: dark;
 }
-:root[data-theme="dark"] {
-    --page-core: #141c26;
-    --page-edge: #0a0e16;
-    --glow: rgba(68, 113, 146, .10);
-    --pattern: rgba(161, 191, 213, .025);
-    --panel-fill: #151c27;
-    --panel-raised: #202c38;
-    --panel-inset: #111923;
-    --panel-line: #607184;
-    --ink: #e6edf2;
-    --ink-muted: #b9c9d7;
-    --ink-heading: #e8c98e;
-    --accent: #d4af72;
-    --nav-fill: #131b27;
-    --footer-fill: #121a25;
-    --button-top: #354758;
-    --button-bottom: #233445;
-    --button-over: #425b72;
-    --field-fill: #0e1620;
-    --scrim: rgba(5, 9, 15, .86);
+:root[data-theme="stone"] {
+    --page-core: #292d30;
+    --page-edge: #111417;
+    --glow: rgba(174, 169, 143, .12);
+    --pattern: rgba(186, 191, 185, .025);
+    --panel-fill: #1d2022;
+    --panel-raised: #303438;
+    --panel-inset: #171a1c;
+    --panel-line: #82837d;
+    --ink: #ece9e0;
+    --ink-muted: #bdc1bc;
+    --ink-heading: #f0d9aa;
+    --accent: #d0b582;
+    --nav-fill: #222629;
+    --footer-fill: #24282a;
+    --button-top: #51575a;
+    --button-bottom: #33383b;
+    --button-over: #646c6d;
+    --field-fill: #171b1d;
+    --scrim: rgba(6, 8, 9, .85);
 }
+
+/* Restore the original brick wall behind the game; preserve the texture independently
+   of the enemy card. The warm color remains usable if the external tile is offline. */
 body {
     color: var(--ink);
-    background-color: var(--page-edge);
+    background-color: var(--page-core);
     background-image:
+        url("https://www.transparenttextures.com/patterns/brick-wall-dark.png"),
         radial-gradient(ellipse 75% 30% at 50% 2%, var(--glow), transparent 90%),
-        repeating-linear-gradient(115deg, transparent 0, transparent 78px, var(--pattern) 79px, transparent 80px),
         linear-gradient(160deg, var(--page-core), var(--page-edge) 84%);
+    background-repeat: repeat, no-repeat, no-repeat;
     background-attachment: scroll;
     min-height: 100dvh;
 }
+/* Stone keeps the brickwork as weathered masonry and adds subtle block joints.
+   These gradients are decorative and require no new image assets or animations. */
+:root[data-theme="stone"] body {
+    background-image:
+        radial-gradient(ellipse 25% 30% at 7% 85%, rgba(166, 165, 153, .14), transparent 90%),
+        radial-gradient(ellipse 24% 28% at 96% 12%, rgba(164, 167, 161, .13), transparent 90%),
+        url("https://www.transparenttextures.com/patterns/brick-wall-dark.png"),
+        repeating-linear-gradient(0deg, rgba(7, 10, 12, .42) 0 3px, transparent 3px 55px),
+        repeating-linear-gradient(90deg, rgba(7, 10, 12, .22) 0 2px, transparent 2px 116px),
+        linear-gradient(155deg, var(--page-core), var(--page-edge) 85%);
+    background-repeat: no-repeat, no-repeat, repeat, repeat, repeat, no-repeat;
+    background-size: cover, cover, auto, auto, 116px 116px, cover;
+    background-blend-mode: normal, normal, soft-light, normal, normal, normal;
+}
+
 #game-container {
     color: var(--ink);
     background: radial-gradient(ellipse at 50% 0%, var(--panel-raised), var(--panel-fill) 65%);
@@ -1589,16 +1608,16 @@ h1,h2,h3,h4,.popup-content h3,.research-branch h4 {
     background: var(--panel-raised);
     border-color: var(--accent);
 }
-:root[data-theme="dark"] .castle-decree p,
-:root[data-theme="dark"] .market-project p,
-:root[data-theme="dark"] .structure-card > p,
-:root[data-theme="dark"] .dynasty-help,
-:root[data-theme="dark"] .treasury-desc,
-:root[data-theme="dark"] .research-branch-desc,
-:root[data-theme="dark"] #achievement-menu .achievement p,
-:root[data-theme="dark"] #options-popup .popup-content > p,
-:root[data-theme="dark"] .research-node p,
-:root[data-theme="dark"] .market-charter p {
+:root[data-theme="stone"] .castle-decree p,
+:root[data-theme="stone"] .market-project p,
+:root[data-theme="stone"] .structure-card > p,
+:root[data-theme="stone"] .dynasty-help,
+:root[data-theme="stone"] .treasury-desc,
+:root[data-theme="stone"] .research-branch-desc,
+:root[data-theme="stone"] #achievement-menu .achievement p,
+:root[data-theme="stone"] #options-popup .popup-content > p,
+:root[data-theme="stone"] .research-node p,
+:root[data-theme="stone"] .market-charter p {
     color: var(--ink-muted);
 }
 input,select,textarea, .achievement-toolbar select {
@@ -1654,7 +1673,7 @@ button:has(> .ui-icon) { display: inline-flex; }
 .theme-option small { display:block; color:var(--ink-muted); margin-top:3px; }
 #export-import-controls .theme-option { grid-column: 1 / -1; }
 .theme-option .ui-icon { color:var(--accent); font-size: 20px; }
-:root[data-theme="dark"] #enemy-canvas { background:#0c1118; }
+:root[data-theme="stone"] #enemy-canvas { background:#0c1118; }
 @media(max-width:560px) {
     .ui-icon { flex-basis:1.02em; width:1.02em; height:1.02em; }
     #view-switch button { gap:.35em; }
@@ -1684,3 +1703,78 @@ button:has(> .ui-icon) { display: inline-flex; }
 .ui-icon-battery { --icon-mask: url("./icons/ui-battery.svg"); }
 .ui-icon-clock { --icon-mask: url("./icons/ui-clock.svg"); }
 .ui-icon-shield { --icon-mask: url("./icons/ui-shield.svg"); }
+
+/* Stone theme audit: legacy feature-specific backgrounds must not override the
+   selected appearance. Theme-scoped important backgrounds take precedence over
+   older ID selectors without affecting the Classic theme or game behavior. */
+:root[data-theme="stone"] :is(button, .modal-close) {
+    background: linear-gradient(160deg, var(--button-top), var(--button-bottom)) !important;
+    border-color: var(--panel-line) !important;
+    color: var(--ink) !important;
+    box-shadow: inset 0 1px rgba(244, 238, 219, .13), inset 0 -2px rgba(0, 0, 0, .22);
+}
+:root[data-theme="stone"] button:hover:not(:disabled) {
+    background: linear-gradient(160deg, var(--button-over), var(--button-bottom)) !important;
+    border-color: var(--accent) !important;
+}
+:root[data-theme="stone"] button:disabled {
+    background: var(--panel-inset) !important;
+    color: var(--ink-muted) !important;
+    border-color: var(--panel-line) !important;
+    box-shadow: none !important;
+}
+:root[data-theme="stone"] :is(
+    #view-switch button.is-active,
+    #view-switch button[aria-pressed="true"],
+    .upgrade-multiplier button.active
+) {
+    background: linear-gradient(160deg, #6e6859, #454842) !important;
+    border-color: var(--accent) !important;
+    color: #fff4d5 !important;
+    box-shadow: inset 0 -3px rgba(215, 178, 111, .36) !important;
+}
+:root[data-theme="stone"] .structure-row button.locked {
+    background: var(--panel-inset) !important;
+    color: var(--ink-muted) !important;
+    border-color: var(--panel-line) !important;
+}
+:root[data-theme="stone"] :is(
+    .research-entry button,
+    #upgrade-menu.castle-menu .castle-research-button
+):not(:disabled) {
+    background: linear-gradient(160deg, #575760, #393940) !important;
+    border-color: #9990a2 !important;
+}
+:root[data-theme="stone"] #ability-bar .ability-buttons button.ability-active,
+:root[data-theme="stone"] #ability-bar .ability-buttons button.ability-active:disabled {
+    background: linear-gradient(145deg, #4b6957, #2d463b) !important;
+    border-color: #a4ca9e !important;
+    color: #e7f6df !important;
+    box-shadow: inset 0 0 0 1px rgba(183, 229, 149, .16) !important;
+    opacity: 1;
+}
+:root[data-theme="stone"] #ability-bar .ability-buttons button.ability-cooling:not(.ability-active) {
+    background: var(--panel-inset) !important;
+    color: var(--ink-muted) !important;
+    border-color: var(--panel-line) !important;
+}
+/* Match legacy Army, Academy, Castle, and Dynasty surfaces to Stone tokens. */
+:root[data-theme="stone"] :is(
+    .army-command, .army-card, .loadout-row, .research-popup-header,
+    #upgrade-menu.castle-menu .castle-abilities,
+    #upgrade-menu.castle-menu .castle-decree, .dynasty-perks article
+) {
+    background: var(--panel-raised);
+    border-color: var(--panel-line);
+}
+:root[data-theme="stone"] #army-view select {
+    background: var(--field-fill);
+    border-color: var(--panel-line);
+    color: var(--ink);
+}
+:root[data-theme="stone"] :is(.battery-saver-option strong, .army-header h2) {
+    color: var(--ink-heading);
+}
+:root[data-theme="stone"] :is(.army-header p, .army-help, .research-guidance) {
+    color: var(--ink-muted);
+}

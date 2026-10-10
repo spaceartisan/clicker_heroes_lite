@@ -78,3 +78,10 @@ The enemy encounter row is now a three-track CSS grid with fixed-width Previous/
 - Game Config includes a Dark Theme checkbox. Theme choice is stored independently under `heroes-of-click-theme` in device-local storage, restored before stylesheet painting, and synchronized whenever Game Config opens. It is intentionally not part of Dynasty/save resets. Browser theme-color updates to match the chosen theme.
 - The PWA manifest advertises an SVG emblem and keeps existing PNG home-screen icons for compatibility. The service worker precaches the new icons and theme script with a v1.2.0 cache version. No additional combat loops, animation timers, or backend changes were introduced.
 - Validated with dependency-free smoke tests and responsive layout previews at 320px, 390px, and desktop widths. The visual previews are representations of the updated palette and icon language rather than captures of the live Netlify deployment.
+
+### v1.2.1 — Brick backdrop restored and Stone theme completed
+
+- Restored the original dark-brick wall texture behind the game in Classic mode. The clean, fixed-width enemy encounter card stays untouched. Stone uses the same masonry texture with restrained slate-colored block joints and stone-like lighting.
+- Renamed Dark Theme to **Stone Theme** in Game Config. Existing `heroes-of-click-theme=dark` preferences still load as Stone; save data and Dynasty state are unchanged.
+- Audited themed buttons throughout Hero, Army, Castle, Market, Research, popups, and settings. Stone now overrides legacy hard-coded colors while retaining distinct selected, locked, disabled, cooling, and active-ability states.
+- Bumped the offline shell cache to v1.2.1 so installed PWAs pick up the updated stylesheet, controller, and tests. The restored original brick texture is hosted externally, so the underlying solid-color fallback remains available offline.

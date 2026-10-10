@@ -126,9 +126,9 @@ const visualAssetChecks = (() => {
  const glyphNames=["hero","kingdom","army","leaderboard","message","settings","research",
      "treasury","dynasty","achievements","stats","save","delete","export","import",
      "gold","previous","next","battle","market","governance","battery","clock","shield"];
- ok(source.includes('id="dark-theme-toggle"'),"Dark theme toggle exists in Game Config");
- ok(source.includes("setGameTheme(this.checked ? 'dark' : 'default')"),
-    "Dark setting is wired to the theme controller");
+ ok(source.includes('id="stone-theme-toggle"'),"Stone theme toggle exists in Game Config");
+ ok(source.includes("setGameTheme(this.checked ? 'stone' : 'default')"),
+    "Stone setting is wired to the theme controller");
  ok(source.indexOf('<script src="./theme.js"></script>') < source.indexOf('href="style.css"'),
     "Saved theme loads before CSS to prevent flashing");
  ok(source.includes('aria-label="Previous stage"')&&source.includes('aria-label="Next stage"'),
@@ -136,11 +136,11 @@ const visualAssetChecks = (() => {
  ok(source.includes('icons/emblem.svg')&&!source.includes("emojicdn"),
     "Favicon is a local scalable crown");
  ok(!/\p{Extended_Pictographic}/u.test(source),"Static UI contains no device-rendered emoji");
- ok(!css.includes("transparenttextures.com"),"Backdrop no longer loads remote textures");
- ok(css.includes(':root[data-theme="dark"]')&&css.includes("--panel-fill"),
-    "Dark mode uses semantic design tokens");
+ ok(css.includes("brick-wall-dark.png"),"Classic brick texture is restored behind the game");
+ ok(css.includes(':root[data-theme="stone"]')&&css.includes("--panel-fill"),
+    "Stone mode uses semantic design tokens");
  ok(css.includes("background-attachment: scroll"),"Background avoids fixed-position mobile repaint");
- ok(sw.includes("heroes-of-click-v1.2.0")&&sw.includes('"./theme.js"'),
+ ok(sw.includes("heroes-of-click-v1.2.1")&&sw.includes('"./theme.js"'),
     "Theme controller is precached in PWA");
  for(const name of glyphNames){
     const file="icons/ui-"+name+".svg";
@@ -159,7 +159,7 @@ const visualAssetChecks = (() => {
 })();
 visualAssetChecks.forEach(label=>console.log('PASS '+label));
 console.log('Visual asset tests: '+visualAssetChecks.length+' passed.');
-const themeChecks=vm.runInContext("(() => {\n const done=[],ok=(v,label)=>{if(!v)throw Error(\"Theme: \"+label);done.push(label)};\n const before=localStorage.getItem(GAME_THEME_KEY),root=document.documentElement;\n const attributes={};\n document.documentElement={setAttribute(k,v){attributes[k]=v}};\n const checkbox=document.getElementById(\"dark-theme-toggle\");\n try{\n   localStorage.removeItem(GAME_THEME_KEY);\n   ok(readGameTheme()===\"default\",\"Default theme used when no preference exists\");\n   ok(setGameTheme(\"dark\")===\"dark\",\"Game Config can select Dark\");\n   ok(readGameTheme()===\"dark\"&&attributes[\"data-theme\"]===\"dark\",\n      \"Dark theme persists locally and applies to document\");\n   ok(checkbox.checked===true,\"Checkbox reflects the active Dark theme\");\n   saveGame();\n   ok(localStorage.getItem(GAME_THEME_KEY)===\"dark\",\n      \"Player save does not overwrite appearance settings\");\n   showOptions();\n   ok(checkbox.checked===true,\"Reopening Game Config synchronizes toggle\");\n   ok(setGameTheme(\"default\")===\"default\"&&checkbox.checked===false,\n      \"Default appearance restores without reloading\");\n   ok(setGameTheme(\"unknown\")===\"default\",\"Invalid theme falls back safely\");\n   ok(makeUIIcon(\"hero\").className.includes(\"ui-icon-hero\"),\n      \"Runtime icons use the local SVG mask class\");\n   const button=document.createElement(\"button\");\n   setIconLabel(button,\"research\",\"Royal Academy\");\n   ok(button.childNodes.length===2&&button.childNodes[0].className.includes(\"ui-icon-research\"),\n      \"Dynamic buttons contain a vector icon and readable label\");\n   return done;\n } finally {\n   if(before===null)localStorage.removeItem(GAME_THEME_KEY);\n   else localStorage.setItem(GAME_THEME_KEY,before);\n   document.documentElement=root;\n   applyGameTheme(readGameTheme());\n }\n})()",ctx,{timeout:3000});
+const themeChecks=vm.runInContext("(() => {\n const done=[],ok=(v,label)=>{if(!v)throw Error(\"Theme: \"+label);done.push(label)};\n const before=localStorage.getItem(GAME_THEME_KEY),root=document.documentElement;\n const attributes={};\n document.documentElement={setAttribute(k,v){attributes[k]=v}};\n const checkbox=document.getElementById(\"stone-theme-toggle\");\n try{\n   localStorage.removeItem(GAME_THEME_KEY);\n   ok(readGameTheme()===\"default\",\"Default theme used when no preference exists\");\n   ok(setGameTheme(\"stone\")===\"stone\",\"Game Config can select Stone\");\n   ok(readGameTheme()===\"stone\"&&attributes[\"data-theme\"]===\"stone\",\n      \"Stone theme persists locally and applies to document\");\n   ok(checkbox.checked===true,\"Checkbox reflects the active Stone theme\");\n   saveGame();\n   ok(localStorage.getItem(GAME_THEME_KEY)===\"stone\",\n      \"Player save does not overwrite appearance settings\");\n   showOptions();\n   ok(checkbox.checked===true,\"Reopening Game Config synchronizes toggle\");\n   ok(setGameTheme(\"default\")===\"default\"&&checkbox.checked===false,\n      \"Default appearance restores without reloading\");\n   ok(setGameTheme(\"unknown\")===\"default\",\"Invalid theme falls back safely\");\n   localStorage.setItem(GAME_THEME_KEY,\"dark\");\n   ok(readGameTheme()===\"stone\",\"Legacy Dark preference remains enabled as Stone\");\n   setGameTheme(\"default\");\n   ok(makeUIIcon(\"hero\").className.includes(\"ui-icon-hero\"),\n      \"Runtime icons use the local SVG mask class\");\n   const button=document.createElement(\"button\");\n   setIconLabel(button,\"research\",\"Royal Academy\");\n   ok(button.childNodes.length===2&&button.childNodes[0].className.includes(\"ui-icon-research\"),\n      \"Dynamic buttons contain a vector icon and readable label\");\n   return done;\n } finally {\n   if(before===null)localStorage.removeItem(GAME_THEME_KEY);\n   else localStorage.setItem(GAME_THEME_KEY,before);\n   document.documentElement=root;\n   applyGameTheme(readGameTheme());\n }\n})()",ctx,{timeout:3000});
 themeChecks.forEach(label=>console.log('PASS '+label));
 console.log('Theme interaction tests: '+themeChecks.length+' passed.');
 
