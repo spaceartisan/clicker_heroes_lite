@@ -14,6 +14,17 @@ let baseEnemyHealth = 5;
 let enemyHealth = baseEnemyHealth;
 let autoAdvance = true;
 let scientificNotation = false;
+// Default battery savings on coarse-pointer phones, while keeping desktop
+// timing unchanged. Existing Season II saves without the setting are supported.
+function getDefaultBatterySaver() {
+    return Boolean(typeof window.matchMedia === "function" &&
+        window.matchMedia("(pointer: coarse)").matches);
+}
+let batterySaverEnabled = getDefaultBatterySaver();
+// Lightweight per-Dynasty diagnostics: no telemetry, network calls, or timers.
+let runEnemyDefeats = 0;
+let runCombatSeconds = 0;
+let runGoldEarned = 0;
 
 // let maxMercenaries = 5;
 // let guildLevel = 1;
@@ -293,7 +304,11 @@ function saveGame() {
         lastSaved: Date.now(),
         scientificNotation,
         autoAdvance,
-        underfillEnabled
+        underfillEnabled,
+        batterySaverEnabled,
+        runEnemyDefeats,
+        runCombatSeconds,
+        runGoldEarned
     };
     localStorage.setItem("clickerHeroSave", JSON.stringify(saveData));
 }
@@ -369,6 +384,10 @@ function loadGame() {
         scientificNotation = data.scientificNotation ?? false;
         autoAdvance = data.autoAdvance ?? autoAdvance;
         underfillEnabled = data.underfillEnabled ?? false;
+        runEnemyDefeats = Math.max(0, Math.floor(Number(data.runEnemyDefeats) || 0));
+        runCombatSeconds = Math.max(0, Number(data.runCombatSeconds) || 0);
+        runGoldEarned = Math.max(0, Math.min(1e300, Number(data.runGoldEarned) || 0));
+        applyBatterySaver(data.batterySaverEnabled ?? getDefaultBatterySaver(), false);
         autoNextToggle.checked = autoAdvance;
         scientificCheckbox.checked = scientificNotation;
         underfillCheckbox.checked = underfillEnabled; // restore scientific notation preference
@@ -509,6 +528,21 @@ window.addEventListener("pagehide", () => saveGame());
 enemyCanvas.onclick = () => attack(false);
 kingdomCanvas.onclick = (event) => checkClickLocation(event);
 const autoNextToggle = document.getElementById("auto-next-toggle");
+const batterySaverToggle = document.getElementById("battery-saver-toggle");
+function applyBatterySaver(enabled, restartCombat = true) {
+    batterySaverEnabled = Boolean(enabled);
+    batterySaverToggle.checked = batterySaverEnabled;
+    document.body.classList.toggle("battery-saver", batterySaverEnabled);
+    if (restartCombat && autoCombatTimer !== null) {
+        stopSquadAttack();
+        startSquadAttack();
+    }
+}
+applyBatterySaver(batterySaverEnabled, false);
+batterySaverToggle.onchange = () => {
+    applyBatterySaver(batterySaverToggle.checked);
+    saveGame();
+};
 autoAdvance = autoNextToggle.checked; // ensure variable matches UI
 scientificNotation = scientificCheckbox.checked; // ensure variable matches UI
 autoNextToggle.onchange = e => autoAdvance = e.target.checked;

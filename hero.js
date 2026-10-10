@@ -142,17 +142,29 @@ function hireMercenaryCost() {
 
 // Fixed-rate elapsed-time combat prevents very fast upgrades from overheating phones.
 const AUTO_COMBAT_TICK_MS = 250;
+// Stage-clear throughput matters even when enemies die from a single tick.
+// Do not slow the actual combat timer in Battery Saver mode.
+const BATTERY_SAVER_HUD_INTERVAL_MS = 500;
 let autoCombatTimer = null;
 let lastAutoCombatTick = 0;
+let lastCombatHudTick = 0;
+function getCombatTickIntervalMs() {
+    return AUTO_COMBAT_TICK_MS;
+}
 
 function startSquadAttack() {
     if (autoCombatTimer !== null || hiredMercenaries.length === 0 || document.hidden) return;
     lastAutoCombatTick = performance.now();
+    lastCombatHudTick = lastAutoCombatTick;
+    const tickMs = getCombatTickIntervalMs();
     autoCombatTimer = setInterval(() => {
         const now = performance.now();
-        const elapsed = Math.min(0.5, Math.max(0, (now - lastAutoCombatTick) / 1000));
+        // The original four-combat-ticks-per-second cap remains in both modes,
+        // preserving rapid one-shot stage clearing as well as elapsed-time DPS.
+        const elapsed = Math.min(tickMs / 500, Math.max(0, (now - lastAutoCombatTick) / 1000));
         lastAutoCombatTick = now;
-        if (deathCooldown || hiredMercenaries.length === 0) return;
+        if (deathCooldown || hiredMercenaries.length === 0 || document.hidden) return;
+        runCombatSeconds += elapsed;
         const maxHealth = getEnemyHealth();
         if (enemyType && enemyType.regen && !squadsSuppressRegeneration()) {
             enemyHealth = Math.min(maxHealth, enemyHealth + maxHealth * enemyType.regen * elapsed);
@@ -161,8 +173,13 @@ function startSquadAttack() {
         if (damage <= 0 || !Number.isFinite(damage)) return;
         enemyHealth -= damage;
         if (enemyHealth <= 0) handleEnemyDefeat();
-        updateUI();
-    }, AUTO_COMBAT_TICK_MS);
+        // Fewer layout/text updates on touch devices; combat keeps its
+        // original per-second damage and enemy defeat semantics.
+        if (!batterySaverEnabled || now - lastCombatHudTick >= BATTERY_SAVER_HUD_INTERVAL_MS) {
+            lastCombatHudTick = now;
+            updateUI();
+        }
+    }, tickMs);
 }
 
 function stopSquadAttack() {

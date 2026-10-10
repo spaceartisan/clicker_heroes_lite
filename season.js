@@ -111,6 +111,7 @@ function foundNewDynasty(){
   bestSeasonStage=Math.max(bestSeasonStage,maxLevel);
   highestCastleEver=Math.max(highestCastleEver,structures.castle.level);
   renown+=reward;dynastyCount++;
+  runEnemyDefeats=0;runCombatSeconds=0;runGoldEarned=0;
   gold=0;playerLevel=1;playerGearLevel=0;playerUpgradeCost=10;
   playerGearCost=100;nextPlayerGearLevelReq=10;
   currentLevel=1;maxLevel=1;enemyHealth=5;
@@ -153,7 +154,12 @@ function renderDynastyPanel(){
   intro.className="dynasty-help";
   intro.textContent="Highest Season II stage: "+currentDynastyPeak().toLocaleString()+
     " · Renown: "+renown+" · Next rebirth: "+getDynastyReward()+" Renown";
-  root.append(title,intro);
+  const runSummary=document.createElement("p");
+  runSummary.className="dynasty-run-summary";
+  runSummary.textContent="This Dynasty: "+runEnemyDefeats.toLocaleString()+
+    " enemies defeated · "+Math.floor(runCombatSeconds/60).toLocaleString()+
+    " min mercenary combat · "+formatDigits(runGoldEarned,2,0).trim()+" gold won";
+  root.append(title,intro,runSummary);
   const grid=document.createElement("div");grid.className="dynasty-perks";
   for(const perk of DYNASTY_PERKS){
     const rank=dynastyInvestments[perk.id];

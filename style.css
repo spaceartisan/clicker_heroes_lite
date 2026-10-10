@@ -1183,3 +1183,20 @@ input, textarea { font-size: 16px; user-select: text; -webkit-user-select: text;
         max-height: 92dvh;
     }
 }
+
+
+/* v1.1.1: battery option and concise per-Dynasty pacing diagnostics. */
+.battery-saver-option { margin: 12px 0; border: 1px solid #77634a;
+    border-radius: 8px; background: #30231a; padding: 12px; text-align: left; }
+.battery-saver-option label { display: flex; gap: 11px; align-items: center;
+    font: 13px/1.5 Arial,sans-serif; cursor: pointer; }
+.battery-saver-option input { flex-shrink:0; width: 20px; height: 20px; }
+.battery-saver-option strong { display:block; color:#f2d9a6; font: bold 14px/1.5 Arial,sans-serif; }
+.battery-saver-option small { display:block; color:#d0bd9e; font: 12px/1.5 Arial,sans-serif; }
+.dynasty-run-summary { margin: 5px 0 11px; color: #e6cfa1;
+    font: 12px/1.6 Arial,sans-serif; overflow-wrap: anywhere; }
+body.battery-saver button:hover { transform: none; }
+@media(max-width:400px) {
+  .battery-saver-option { padding: 10px; }
+  .battery-saver-option label { gap: 9px; }
+}

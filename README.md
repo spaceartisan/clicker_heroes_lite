@@ -49,3 +49,11 @@ Faith/religion remains a separate future mechanic. Renown and Insight are secula
 ### Post-200 pacing review
 
 The stage scaling was checked at stages 200, 500, 1,000, 10,000, and 20 million. For comparable boss encounters before multipliers, boss HP rises roughly 13× between 200 and 1,000, while base gold rises roughly 10×. Renown earned per reset goes from 1 (stage 200), to 2 (stage 500), 3 (stage 1,000), and 6 (stage 10,000), with gradual diminishing returns. There is no change to the economy formula in v1.1.0; empirical time-to-clear and device temperature should be measured during subsequent player tests.
+
+### v1.1.1 — phone battery and run pacing
+
+Battery Saver defaults **on for coarse-pointer/touch devices** and **off for desktop pointers**, and can be changed in Game Config. The combat tick remains at 250ms in both modes to preserve fast one-shot stage clearing. In battery mode only the combat HUD is throttled to at most two refreshes per second (normally four), eliminating duplicate damage and squad-summary recomputations without reducing attack rate or theoretical DPS. Manual attacks and hero skills remain immediate, and hidden tabs continue to pause combat. Battery Saver is saved per Season II game and requires no new network activity or timer.
+
+The Dynasty panel now displays **this run's enemies defeated, active mercenary combat minutes, and gold earned from enemy kills**. These simple local counters survive saves and are reset with each new Dynasty. They do not count offline patrols as foreground combat and do not create background telemetry.
+
+This is a CPU/DOM workload reduction, **not a claim of verified lower device temperature**. Test on physical iPhones and Android phones, particularly during extended sessions.

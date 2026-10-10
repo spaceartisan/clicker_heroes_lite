@@ -65,6 +65,7 @@ function handleEnemyDefeat() {
     if (deathCooldown) return;
     enemyHealth = 0;
     enemiesDefeated++;
+    runEnemyDefeats++;
     const type = enemyType || getEnemyType(currentLevel);
     const level=Math.max(1,Math.min(1e12,currentLevel));
     const endless=level>200?1+Math.min(1,Math.log10(level/200)*0.12):1;
@@ -78,6 +79,7 @@ function handleEnemyDefeat() {
     if(goldRushActive)goldMult*=2;
     const reward=Math.min(1e290,Math.ceil(goldGain*goldMult));
     gold=Math.min(1e300,gold+reward);
+    runGoldEarned=Math.min(1e300,runGoldEarned+reward);
     showGoldEarned(reward);
     if (currentLevel === maxLevel) maxLevel++;
     bestSeasonStage=Math.max(bestSeasonStage,maxLevel);
