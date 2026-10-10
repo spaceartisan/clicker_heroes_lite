@@ -585,148 +585,132 @@ function BlacksmithUpgradeUI(menu, upgradeButtons, container, multContainer) {
 
 }
 
-function CastleUpgradeUI(menu, upgradeButtons, upgradeButtons2, container, container2, multContainer) {
-    // Implement Castle upgrade UI elements
-    addLabeledParagraph(upgradeButtons, "Active Skills", "", "active-skills-list");
-    container.innerHTML = ""; // Clear previous content
-    abilities.forEach((ability, index) => {
-        const row = document.createElement("div");
-        row.className = "upgrade-row";
-        row.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span>${ability.name} (Required Lvl ${ability.unlockLevel}) - ${ability.description}</span>
-                        </div>
-                        `;
-        // Change the left border color
-        if (playerLevel >= ability.unlockLevel) {
-            row.style.borderLeft = "5px solid #4CAF50"; // Green color
-            row.style.color = "#fff"; // Text color
-        }
-        container.appendChild(row);
-    });
-    addLabeledParagraph(upgradeButtons2, "Passive Skills", "", "passive-skills-list");
-    container2.innerHTML = ""; // Clear previous content
-    passiveAbilities.forEach((ability, index) => {
-        const row = document.createElement("div");
-        row.className = "upgrade-row";
-        let upBtn = "";
-        if (ability.maxLevel) {
-            upBtn = `<span><button class="mult-btn-tiny">${formatDigits(upgradeSkillCost(ability), 2, 5)} g</button></span>`;
-        }
-        row.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span id="passive-skill-${index}">${ability.name} (Required Lvl ${ability.unlockLevel}) - ${ability.description}</span>
-                            ${ability.maxLevel ? upBtn : ""}
-                        </div>
-                        `;
-        const passiveSkillText = row.querySelector(`#passive-skill-${index}`);
-        if (upBtn !== "") {
-            row.querySelector(".mult-btn-tiny").onclick = () => {
-                upgradeSkill(ability);
-                passiveSkillText.textContent = `${ability.name} (lvl ${ability.level}) - ${ability.description}`;
-                row.querySelector(".mult-btn-tiny").textContent = `${formatDigits(upgradeSkillCost(ability), 2, 5)} g`;
-            };
-        }
-        if (playerLevel >= ability.unlockLevel) {
-            row.classList.remove("locked");
-            passiveSkillText.textContent = `${ability.name} (lvl ${ability.level}) - ${ability.description}`;
+function isRoyalSkillUnlocked(ability) {
+    return playerLevel >= ability.unlockLevel &&
+        structures.castle.level >= (ability.castleLevel || 1);
+}
+function CastleUpgradeUI(menu, upgradeButtons, upgradeButtons2, container, container2) {
+    const heading = document.createElement("h4");
+    heading.textContent = "Royal Court";
+    upgradeButtons.appendChild(heading);
+    const help = document.createElement("p");
+    help.textContent = "The Castle raises your hero level cap and increases click damage by 1.5% per Castle level (up to +60%).";
+    upgradeButtons.appendChild(help);
+    createButton(upgradeButtons, "📚 Open Royal Academy · Research Tree", () => openResearchTree());
+    const insight = document.createElement("p");
+    insight.textContent = getResearchInsightAvailable() + " Insight available. First-time boss clears and Castle milestones earn Insight.";
+    upgradeButtons.appendChild(insight);
+    container.replaceChildren();
+    const activeLabel = document.createElement("h4");
+    activeLabel.textContent = "Hero abilities";
+    container.appendChild(activeLabel);
+    for (const ability of abilities) {
+        const p = document.createElement("p");
+        p.className = "castle-skill-summary";
+        p.textContent = ability.name + " · Hero Lv " + ability.unlockLevel + " · " + ability.description;
+        container.appendChild(p);
+    }
 
-        } else {
-            row.classList.add("locked");
-        }
-        if (playerLevel >= ability.unlockLevel) {
-            row.style.borderLeft = "5px solid #4CAF50"; // Green color
-            row.style.color = "#fff"; // Text color
-        }
+    upgradeButtons2.replaceChildren();
+    const title = document.createElement("h4");
+    title.textContent = "Royal Decrees";
+    upgradeButtons2.appendChild(title);
+    const note = document.createElement("p");
+    note.textContent = "Permanent passive upgrades. Each requires an appropriate Castle and hero level.";
+    upgradeButtons2.appendChild(note);
+    container2.replaceChildren();
+    for (const ability of passiveAbilities) {
+        const row = document.createElement("article");
+        row.className = "upgrade-row castle-decree";
+        const info = document.createElement("div");
+        const heading = document.createElement("strong");
+        heading.textContent = ability.name + " · Rank " + ability.level + "/" + ability.maxLevel;
+        const effect = document.createElement("p");
+        effect.textContent = ability.description;
+        info.append(heading,effect);
+        const button = document.createElement("button");
+        const unlocked = isRoyalSkillUnlocked(ability);
+        const capped = ability.level >= ability.maxLevel;
+        const cost = upgradeSkillCost(ability, true);
+        button.textContent = capped ? "Max rank" : !unlocked ?
+            "Hero Lv " + ability.unlockLevel + " · Castle Lv " + (ability.castleLevel || 1) :
+            "Upgrade " + formatDigits(cost[0], 2, 0).trim() + " g";
+        button.disabled = capped || !unlocked || !cost[1] || gold < cost[0];
+        button.onclick = () => {
+            if (!upgradeSkill(ability)) return;
+            CastleUpgradeUI(menu,upgradeButtons,upgradeButtons2,container,container2);
+        };
+        row.append(info,button);
         container2.appendChild(row);
-    });
-}
-
-function marketUpgradeCost(m, query = false) {
-    const key = Object.keys(marketUpgrades)[m];
-    return estimateUpgradeCost({
-        baseLevel: marketUpgrades[key].level,
-        upgradeEquation: (lvl) => Math.ceil(marketUpgrades[key].cost * Math.pow(2, lvl + 1)),
-        cap: structures.market.level,
-        resourceAvailable: gold,
-        multiplier: 1,
-        underfill: underfillEnabled,
-        query,
-        capFunction: (lvl) => { return lvl >= marketUpgrades[key].maxLevel }
-    });
-}
-
-function upgradeMarket(i) {
-    const key = Object.keys(marketUpgrades)[i];
-    const cost = marketUpgradeCost(i, true);
-    let s = marketUpgrades[key];
-    if (cost[0] > 0 && gold >= cost[0]) {
-        gold -= cost[0];
-        s.level++;
-    } else if (cost[2]) {
-        showPopupMessage("You have reached the level cap!", null, 700);
-    } else {
-        showPopupMessage("Not enough gold!", null, 700);
     }
 }
-
-function MarketUpgradeUI(menu, upgradeButtons, container, multContainer) {
-    marketUpgradeCostTextArray = [];
-
-    addLabeledParagraph(upgradeButtons, "Market Research", "", "active-skills-list");
-    container.innerHTML = ""; // Clear previous content
+function getMarketUpgradeLockReason(index) {
+    const key = Object.keys(marketUpgrades)[index];
+    const market = marketUpgrades[key];
+    if (!market) return "Unknown upgrade";
+    if (structures.market.level < market.unlockLevel) return "Market Lv " + market.unlockLevel;
+    if (market.level >= market.maxLevel) return "Max rank";
+    if (market.level >= structures.market.level) return "Upgrade Market building";
+    return "";
+}
+function marketUpgradeCost(index, query = false) {
+    const key = Object.keys(marketUpgrades)[index];
+    const market = marketUpgrades[key];
+    if (!market) return query ? [0,0,true] : 0;
+    const isLocked = !!getMarketUpgradeLockReason(index);
+    if (isLocked) return query ? [0,0,true] : 0;
+    // Earlier 2^level prices made high Market ranks effectively inaccessible.
+    // The new 1.65 growth remains steep, but keeps 5-10 ranks in reachable ranges.
+    const raw = market.cost * 2 * Math.pow(1.65, market.level);
+    const price = Math.max(1, Math.ceil(raw * mktUp(1) * getResearchCostFactor()));
+    return query ? [price,1,false] : price;
+}
+function upgradeMarket(index) {
+    const key = Object.keys(marketUpgrades)[index];
+    const market = marketUpgrades[key];
+    const locked = getMarketUpgradeLockReason(index);
+    if (locked) {
+        showPopupMessage(locked,false,1500);
+        return false;
+    }
+    const cost = marketUpgradeCost(index);
+    if (!(cost > 0) || gold < cost) {
+        showPopupMessage("Not enough gold!",false,900);
+        return false;
+    }
+    gold -= cost;
+    market.level++;
+    updateUI();
+    saveGame();
+    return true;
+}
+function MarketUpgradeUI(menu, upgradeButtons, container) {
+    upgradeButtons.replaceChildren();
+    const heading = document.createElement("h4");
+    heading.textContent = "Merchant Guild";
+    const hint = document.createElement("p");
+    hint.textContent = "Upgrade Market buildings to open more guild projects. Research lowers some expenses and increases rewards.";
+    upgradeButtons.append(heading,hint);
+    createButton(upgradeButtons,"📚 Royal Academy research", () => openResearchTree());
+    container.replaceChildren();
     Object.entries(marketUpgrades).forEach(([key, market], index) => {
-        const row = document.createElement("div");
-        row.className = "upgrade-row";
-        row.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <span id="market-upgrade-${index}">${market.name} (Required Lvl ${market.unlockLevel}) - ${market.description}</span>
-                            <span><button class="mult-btn-tiny" onclick="upgradeMarket(${index})">${formatDigits(marketUpgradeCost(index), 2, 5)} g</button></span>
-                        </div>
-                        `;
-        const costBtn = row.querySelector("button");
-        const marketText = row.querySelector(`#market-upgrade-${index}`);
-        costBtn.textContent = `${formatDigits(marketUpgradeCost(index), 2, 5)} g`;
-        if (structures.market.level >= market.unlockLevel) {
-            row.style.borderLeft = "5px solid #4CAF50"; // Green color
-            row.style.color = "#fff"; // Text color
-        }
-        let isLocked = false;
-        if (structures.market.level > market.level && structures.market.level >= market.unlockLevel) {
-            marketText.textContent = `${market.name} (Level ${market.level}) - ${market.description}`;
-        } else {
-            let val = market.level + 1;
-            if (structures.market.level < market.unlockLevel) {
-                val = market.unlockLevel;
-            }
-            marketText.textContent = `${market.name} (Required Lvl ${val}) - ${market.description}`;
-            isLocked = true;
-        }
-        marketUpgradeCostTextArray[index] = costBtn;
-        costBtn.addEventListener("click", () => {
-            costBtn.textContent = `${formatDigits(marketUpgradeCost(index), 2, 5)} g`;
-            if (structures.market.level >= market.unlockLevel) {
-                row.style.borderLeft = "5px solid #4CAF50"; // Green color
-                row.style.color = "#fff"; // Text color
-            }
-            let islocked = false;
-            if (structures.market.level > market.level && structures.market.level >= market.unlockLevel) {
-                marketText.textContent = `${market.name} (Level ${market.level}) - ${market.description}`;
-            } else {
-                let val = market.level + 1;
-                if (structures.market.level < market.unlockLevel) {
-                    val = market.unlockLevel;
-                }
-                marketText.textContent = `${market.name} (Required Lvl ${val}) - ${market.description}`;
-                islocked = true;
-            }
-            if (market.name === "Better Bunks") {
-                // For each squad restart attack interval
-                for (let i = 1; i <= Math.ceil(hiredMercenaries.length / 5); i++) {
-                    startSquadAttack(i);
-                }
-            }
-        });
+        const row = document.createElement("article");
+        row.className = "upgrade-row market-project";
+        const description = document.createElement("div");
+        const name = document.createElement("strong");
+        name.textContent = market.name + " · Rank " + market.level + "/" + market.maxLevel;
+        const detail = document.createElement("p");
+        detail.textContent = market.description;
+        description.append(name,detail);
+        const button = document.createElement("button");
+        const locked = getMarketUpgradeLockReason(index);
+        const cost = marketUpgradeCost(index);
+        button.disabled = !!locked || gold < cost;
+        button.textContent = locked || "Buy " + formatDigits(cost, 2, 0).trim() + " g";
+        button.onclick = () => {
+            if (upgradeMarket(index)) MarketUpgradeUI(menu,upgradeButtons,container);
+        };
+        row.append(description,button);
         container.appendChild(row);
     });
 }
