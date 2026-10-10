@@ -85,305 +85,187 @@ function updateStructureUI() {
 let persistentMiniBuildings = [];
 
 function drawKingdom() {
-    let debug = false;
     const canvas = document.getElementById("kingdom-canvas");
     const ctx = canvas.getContext("2d");
-    const gridSize = 20;
-    const cellSize = canvas.width / gridSize;
-
-    const grassColor = "#2d6b22";
-    const castleColor = "#a0a0a0";
-    const towerColor = "#666666";
-    const annexColor = "#888888";
-    const roadColor = "#8b7d7b"; // road color
-
-    const structureColors = {
-        tavern: "#b84f4f",
-        blacksmith: "#4f4f4f",
-        barracks: "#704214",
-        market: "#b58900",
+    const unit = canvas.width / 20;
+    const paint = (x, y, w, h, color) => {
+        ctx.fillStyle = color;
+        ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+    };
+    const tile = (x, y, w, h, color) => paint(x * unit, y * unit, w * unit, h * unit, color);
+    const roof = (x, y, w, h, main, edge) => {
+        tile(x, y, w, h, "#20202a");
+        tile(x + .12, y + .12, w - .24, h - .24, main);
+        tile(x + .12, y + .12, w - .24, .32, edge);
+        tile(x + .15, y + h - .37, w - .3, .17, edge);
+    };
+    const banner = (x, y, color) => {
+        tile(x, y, .12, 1.1, "#e4cfa4");
+        tile(x + .13, y + .08, .52, .42, color);
+        tile(x + .51, y + .38, .14, .12, color);
     };
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = false;
 
-    // Draw grass
-    for (let y = 0; y < gridSize; y++) {
-        for (let x = 0; x < gridSize; x++) {
-            ctx.fillStyle = grassColor;
-            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+    // Consistent, low-cost pixel landscape: no animation or external images.
+    tile(0, 0, 20, 20, "#365b35");
+    for (let y = 0; y < 20; y++) {
+        for (let x = 0; x < 20; x++) {
+            const n = ((x * 89 + y * 47 + x * y * 13) % 17);
+            if (n <= 4) tile(x + .1, y + .2, .72, .5, n % 2 ? "#456b40" : "#3d6339");
+            if (n === 6) tile(x + .3, y + .62, .28, .14, "#73934b");
         }
     }
 
+    // River, embankments, old stones, orchard.
+    tile(0, 0, 2.1, 5.6, "#284956");
+    tile(.2, 0, 1.45, 5.6, "#356b78");
+    tile(.45, .5, .8, 2.2, "#438595");
+    tile(.5, 3.4, .78, 1.6, "#438595");
+    for (const tree of [[2,1],[3,3],[16,2],[18,4],[1,17],[18,17],[2,7],[17,7],[4,18]]) {
+        tile(tree[0] + .34, tree[1] + .7, .25, .45, "#5d4230");
+        tile(tree[0], tree[1] - .06, 1, .9, "#24442e");
+        tile(tree[0] + .15, tree[1] + .1, .72, .62, "#4d8743");
+        tile(tree[0] + .28, tree[1] + .14, .25, .17, "#79a95b");
+    }
+    for (const stone of [[4,6],[15,5],[18,14],[1,13]]) {
+        tile(stone[0],stone[1],.8,.4,"#798478");
+        tile(stone[0]+.15,stone[1],.5,.15,"#adb1a2");
+    }
 
-    // === Castle ===
+    // Roads gain detail as the castle expands, and connect all built structures.
     const castleLevel = structures.castle.level;
-
-    // === Seedable Random Utility ===
-    function seededRandom(seed) {
-        let x = Math.sin(seed) * 10000;
-        return x - Math.floor(x);
+    tile(9.5, 6.3, 1.5, 13.7, "#73634e");
+    tile(9.72, 6.3, 1.06, 13.7, "#a99365");
+    for (let i = 7; i < 20; i += 2) {
+        tile(9.72, i, 1.04, .12, "#d1b27e");
+    }
+    const built = [["tavern",2,10],["blacksmith",6,14],["barracks",12,14],["market",16,10]];
+    for (const item of built) {
+        const [id,x,y] = item;
+        if (structures[id].level === 0) continue;
+        const from = x < 10 ? x + 2 : 10.8;
+        const to = x < 10 ? 9.8 : x;
+        tile(from, y + .95, Math.max(.25, to - from), .56, "#baa077");
+        tile(from, y + 1.17, Math.max(.25, to - from), .14, "#d6b787");
     }
 
-    // === Mini Buildings for Castle Levels 15+ ===
-    if (castleLevel >= 15 || debug) {
-        const structurePerTier = 3;
-        const extraTiers = Math.floor((castleLevel - 15) / 5) + 1;
-
-        const possiblePositions = [
-            { x: 96, y: 42 },
-            { x: 169, y: 13 },
-            { x: 284, y: 181 },
-            { x: 303, y: 352 },
-            { x: 160, y: 200 },
-            { x: 12, y: 308 },
-            { x: 201, y: 10 },
-            { x: 344, y: 90 },
-            { x: 40, y: 108 },
-            { x: 240, y: 165 },
-            { x: 302, y: 120 },
-            { x: 81, y: 332 },
-            { x: 88, y: 114 },
-            { x: 270, y: 350 },
-            { x: 53, y: 159 },
-            { x: 365, y: 25 },
-            { x: 62, y: 359 },
-            { x: 144, y: 153 },
-            { x: 106, y: 158 },
-            { x: 165, y: 363 },
-            { x: 89, y: 305 },
-            { x: 82, y: 85 },
-            { x: 63, y: 50 },
-            { x: 39, y: 266 },
-            { x: 24, y: 136 },
-            { x: 306, y: 147 },
-            { x: 352, y: 305 },
-            { x: 112, y: 195 },
-            { x: 333, y: 176 },
-            { x: 364, y: 134 },
-            { x: 12, y: 345 },
-            { x: 166, y: 256 },
-            { x: 131, y: 361 },
-            { x: 350, y: 67 },
-            { x: 365, y: 350 },
-            { x: 245, y: 368 },
-            { x: 313, y: 75 },
-            { x: 308, y: 297 },
-            { x: 32, y: 61 },
-            { x: 252, y: 191 },
-            { x: 339, y: 19 },
-            { x: 34, y: 36 },
-            { x: 58, y: 300 },
-            { x: 17, y: 159 },
-            { x: 330, y: 353 },
-            { x: 88, y: 264 },
-            { x: 63, y: 26 },
-            { x: 34, y: 11 },
-            { x: 300, y: 322 },
-            { x: 333, y: 274 },
-            { x: 328, y: 118 },
-            { x: 230, y: 142 },
-            { x: 14, y: 195 },
-            { x: 34, y: 84 },
-            { x: 231, y: 12 },
-            { x: 139, y: 177 },
-            { x: 11, y: 231 },
-            { x: 366, y: 271 },
-            { x: 237, y: 255 },
-            { x: 166, y: 176 },
-            { x: 278, y: 256 },
-            { x: 244, y: 343 },
-            { x: 315, y: 39 },
-            { x: 102, y: 361 },
-            { x: 274, y: 156 },
-            { x: 111, y: 11 },
-            { x: 361, y: 171 },
-            { x: 77, y: 172 },
-            { x: 10, y: 280 },
-            { x: 50, y: 323 },
-            { x: 57, y: 132 },
-            { x: 298, y: 12 },
-            { x: 10, y: 34 },
-            { x: 82, y: 137 },
-            { x: 262, y: 13 },
-            { x: 304, y: 261 },
-            { x: 10, y: 113 },
-            { x: 330, y: 330 },
-            { x: 36, y: 361 },
-            { x: 334, y: 147 }];
-
-
-
-        let totalBuildings = Math.min(extraTiers * structurePerTier, possiblePositions.length); // max 54 buildings
-        if (debug) {
-            totalBuildings = possiblePositions.length; // for debugging, use all positions
+    // Castle becomes an expanding visible keep, not a single flat gray square.
+    tile(7.55, 2.15, 5.1, 4.8, "#2c302c");
+    tile(7.8, 2.35, 4.64, 4.35, "#8c8d7c");
+    tile(8, 2.55, 4.2, 3.85, "#b0a994");
+    roof(8.35, 3.0, 3.55, 2.75, "#667282", "#9eabb0");
+    tile(9.73, 4.45, .7, 1.32, "#2b292e");
+    tile(9.85, 4.65, .45, 1.1, "#493d34");
+    banner(11.85, 2.05, "#eec65e");
+    if (castleLevel >= 2) {
+        for (const xy of [[7.5,2],[11.9,2],[7.5,5.8],[11.9,5.8]]) {
+            tile(xy[0],xy[1],.8,.8,"#343845");
+            tile(xy[0]+.09,xy[1]+.07,.62,.55,"#acb5ae");
+            tile(xy[0]+.16,xy[1]+.12,.22,.18,"#d5dbcb");
         }
-
-
-        const safePositions = possiblePositions.filter(pos => Math.abs(pos.x - 10) > 2);
-
-        // Only regenerate if we need more than previously stored
-        if (persistentMiniBuildings.length < totalBuildings) {
-            const rng = (offset) => seededRandom(42 + offset);
-            const shuffled = [...safePositions].sort((a, b) => rng(a.x + a.y) - rng(b.x + b.y));
-            persistentMiniBuildings = shuffled.slice(0, totalBuildings);
-        }
-
-        const miniBuildingColor = "#8b5e3c";
-
-        persistentMiniBuildings.forEach((pos, i) => {
-            // console.log(`Mini Building ${i + 1}:`, pos);
-            const size = cellSize * 1.1;
-            const offset = (cellSize - size) / 2;
-            const x = pos.x
-            const y = pos.y
-
-            ctx.fillStyle = miniBuildingColor;
-            ctx.fillRect(x, y, size, size);
-
-            // Optional: darker roof
-            ctx.fillStyle = "#5a3b22";
-            ctx.fillRect(x, y, size, size * 0.6);
-        });
     }
-
-    // === Draw main road if castle is level 13 or higher ===
-    if (castleLevel >= 13 || debug) {
-        ctx.fillStyle = roadColor;
-        const roadX = Math.floor(gridSize / 2);
-        const startY = 6;
-
-        for (let y = startY; y < gridSize; y++) {
-            ctx.fillRect((roadX - 0.5) * cellSize, y * cellSize, cellSize, cellSize);
+    if (castleLevel >= 4) {
+        roof(6.7,3.4,1.7,1.7,"#687e81","#c0cfc6");
+        roof(11.65,3.4,1.7,1.7,"#687e81","#c0cfc6");
+        banner(7.2,2.4,"#af4944");
+    }
+    if (castleLevel >= 8) {
+        tile(8.2,5.9,3.7,.4,"#44424a");
+        for (let i = 0; i < 4; i++) tile(8.3 + i*.95,5.6,.64,.56,"#d0ccb6");
+    }
+    if (castleLevel >= 12) {
+        // Outer ward with additional housing and a bustling wall.
+        tile(6.45,1.7,7.2,.25,"#b4b4a1");
+        tile(6.45,6.85,7.2,.25,"#b4b4a1");
+        roof(5.5,7.7,1.5,1.2,"#94563e","#e09e64");
+        roof(13.2,7.7,1.5,1.2,"#7e5c46","#c08c66");
+    }
+    if (castleLevel >= 20) {
+        for (const xy of [[4.3,8.4],[15.0,8.8],[5.2,5.8],[14.3,5.4]]) {
+            roof(xy[0],xy[1],1.2,1,"#a56f48","#deb481");
         }
     }
 
-
-    if (castleLevel >= 2 || debug) {
-        const castleWidth = 4;
-        const castleHeight = 4;
-        const startX = Math.floor((gridSize - castleWidth) / 2);
-        const startY = 2;
-
-        ctx.fillStyle = castleColor;
-        ctx.fillRect(startX * cellSize, startY * cellSize, castleWidth * cellSize, castleHeight * cellSize);
-
-        if (castleLevel >= 4 || debug) {
-            const annexWidth = 2;
-            const annexHeight = 3;
-            const annexY = 2 * cellSize;
-            ctx.fillStyle = annexColor;
-            ctx.fillRect((startX + castleWidth) * cellSize, annexY, annexWidth * cellSize, annexHeight * cellSize);
-            ctx.fillRect((startX - annexWidth) * cellSize, annexY, annexWidth * cellSize, annexHeight * cellSize);
+    // All sites remain legible before construction; each upgraded building
+    // acquires recognizable decorations representing its gameplay purpose.
+    for (const [id,x,y] of built) {
+        const lvl = structures[id].level;
+        tile(x-.12,y-.12,2.24,2.28,"#2b2925");
+        tile(x,y,2,2,lvl > 0 ? "#9b8765" : "#545947");
+        if (lvl === 0) {
+            tile(x+.25,y+.27,1.5,1.48,"#5b614e");
+            tile(x+.4,y+.45,1.2,.12,"#a4a187");
+            tile(x+.5,y+1.3,1,.12,"#8f907b");
+            continue;
         }
-
-        if (castleLevel >= 3 || debug) {
-            ctx.fillStyle = towerColor;
-            const towerSize = 1;
-            const drawTower = (x, y) => {
-                ctx.fillRect(Math.round(x), Math.round(y), towerSize * cellSize, towerSize * cellSize);
-            };
-            drawTower(startX * cellSize - towerSize * cellSize / 2, startY * cellSize - towerSize * cellSize / 2);
-            drawTower((startX + castleWidth - 1) * cellSize + towerSize * cellSize / 2, startY * cellSize - towerSize * cellSize / 2);
-            drawTower(startX * cellSize - towerSize * cellSize / 2, (startY + castleHeight - 1) * cellSize + towerSize * cellSize / 2);
-            drawTower((startX + castleWidth - 1) * cellSize + towerSize * cellSize / 2, (startY + castleHeight - 1) * cellSize + towerSize * cellSize / 2);
-        }
-    }
-
-    // === Other Structures ===
-    const buildingSize = 2;
-    const structurePositions = {
-        tavern: { x: 2, y: 10 },
-        blacksmith: { x: 6, y: 14 },
-        barracks: { x: 12, y: 14 },
-        market: { x: 16, y: 10 }
-    };
-
-    Object.entries(structurePositions).forEach(([name, pos]) => {
-        const level = structures[name]?.level || 0;
-        const { x, y } = pos;
-
-        // === Connector Road (after building) ===
-        if (level >= 6 && castleLevel >= 13 || debug) {
-            ctx.fillStyle = roadColor;
-
-            const roadX = Math.floor(gridSize / 2);
-            const pathY = y + 1;
-            const connectorHeight = cellSize * 0.4;
-            const connectorYOffset = (cellSize - connectorHeight) / 2;
-
-            if (x < roadX) {
-                for (let i = x + 2; i <= roadX; i++) {
-                    ctx.fillRect(i * cellSize, pathY * cellSize + connectorYOffset, cellSize, connectorHeight);
-                }
-            } else if (x > roadX) {
-                for (let i = x; i >= roadX + 1; i--) {
-                    ctx.fillRect(i * cellSize, pathY * cellSize + connectorYOffset, cellSize, connectorHeight);
-                }
+        if (id === "tavern") {
+            roof(x+.16,y+.17,1.68,1.5,"#995449","#db9470");
+            tile(x+.72,y+1.18,.47,.56,"#403329");
+            tile(x+.08,y+1.7,.55,.18,"#e5c16d");
+            tile(x+1.5,y+1.65,.28,.25,"#ffca60");
+            if (lvl >= 3) {
+                tile(x-.6,y+.3,.54,.56,"#ae6d4f");
+                tile(x-.5,y+.46,.32,.15,"#e7bd7c");
+            }
+            if (lvl >= 6) {
+                tile(x+2.15,y+.35,.52,.4,"#99714b");
+                tile(x+2.18,y+.22,.46,.15,"#e7af77");
+            }
+        } else if (id === "blacksmith") {
+            roof(x+.12,y+.21,1.72,1.53,"#5e5657","#958782");
+            tile(x+.35,y+1.0,.46,.68,"#27242a");
+            tile(x+.45,y+1.16,.27,.3,"#e98539");
+            tile(x+1.47,y-.56,.3,1.0,"#544448");
+            tile(x+1.43,y-.61,.4,.18,"#a2998e");
+            tile(x+1.16,y+1.7,.5,.17,"#b5afac");
+            if (lvl >= 2) {
+                tile(x-.5,y+1.3,.42,.37,"#a1a2a1");
+                tile(x-.39,y+1.08,.20,.33,"#d4d8d3");
+            }
+            if (lvl >= 4) {
+                tile(x+1.9,y+.6,.22,.43,"#ef843f");
+                tile(x+1.84,y+.7,.30,.19,"#ffd36a");
+            }
+            if (lvl >= 6) banner(x+1.63,y-1.15,"#8d6bda");
+        } else if (id === "barracks") {
+            roof(x+.18,y+.15,1.65,1.57,"#3e6680","#77adc4");
+            tile(x+.73,y+1.24,.42,.49,"#3a3330");
+            banner(x+1.51,y-.97,"#6ca5c6");
+            if (lvl >= 2) {
+                tile(x+2.15,y+.32,.17,.7,"#e7c494");
+                tile(x+1.99,y+.42,.48,.13,"#c8a77d");
+                tile(x+2.17,y+1.23,.15,.54,"#d8b589");
+            }
+            if (lvl >= 4) banner(x-.56,y-.85,"#ba8fe4");
+            if (lvl >= 6) banner(x+2.25,y-.8,"#d0a856");
+            // Selected army composition appears on the training field.
+            const colors = { vanguard:"#d38768", ranger:"#7eae81", mystic:"#c1a3e6", raider:"#efc56a" };
+            const squads = [...new Set(hiredMercenaries.map(m => m.squad))].slice(0,6);
+            for (let i = 0; i < squads.length; i++) {
+                tile(x-.6+i*.37,y+2.1,.25,.24,colors[getSquadBuild(squads[i]).role] || "#ddd");
+            }
+        } else if (id === "market") {
+            roof(x+.11,y+.24,1.75,1.32,"#a9853d","#ecc065");
+            tile(x+.2,y+1.4,1.58,.2,"#543d2e");
+            tile(x+.4,y+1.62,.25,.23,"#d4673d");
+            tile(x+.78,y+1.62,.25,.23,"#e9bd63");
+            tile(x+1.15,y+1.62,.25,.23,"#74a34e");
+            if (lvl >= 2) {
+                roof(x+2.22,y+.8,.95,.65,"#a75547","#e8a75a");
+            }
+            if (lvl >= 5) {
+                roof(x+2.2,y+1.7,.93,.65,"#7b5f9c","#c9afdf");
             }
         }
-
-        // === Land plot ===
-        if (level >= 1 || debug) {
-            ctx.fillStyle = "#3b1e01";
-            ctx.fillRect(
-                x * cellSize - 3,
-                y * cellSize - 3,
-                buildingSize * cellSize + 6,
-                buildingSize * cellSize + 6
-            );
+        if (lvl >= 10) {
+            tile(x-.16,y-.16,.28,.28,"#ead382");
+            tile(x+1.88,y-.16,.28,.28,"#ead382");
         }
-
-        // === Building ===
-        if (level >= 2 || debug) {
-            const padding = 4;
-            const buildingX = x * cellSize + padding;
-            const buildingY = y * cellSize + padding;
-            const buildingSizePx = buildingSize * cellSize - 2 * padding;
-
-            ctx.fillStyle = structureColors[name] || "#888";
-            ctx.fillRect(buildingX, buildingY, buildingSizePx, buildingSizePx);
-
-            if (level >= 3 || debug) {
-                ctx.fillStyle = "#fff";
-                const doorWidth = 4;
-                const doorHeight = 6;
-                const doorX = buildingX + (buildingSizePx - doorWidth) / 2;
-                const doorY = buildingY + buildingSizePx - doorHeight;
-                ctx.fillRect(doorX, doorY, doorWidth, doorHeight);
-            }
-
-            if (level >= 8 || debug) {
-                ctx.fillStyle = "#442200"; // roof color
-
-                const roofHeight = buildingSizePx * 0.65;
-                const roofY = buildingY; // aligned with top of building
-
-                ctx.fillRect(buildingX, roofY, buildingSizePx, roofHeight);
-                // === Draw shingles on roof ===
-                const shingleRows = 4;
-                const shingleCols = 6;
-                const shinglePadding = 1;
-
-                const shingleWidth = (buildingSizePx - (shingleCols + 1) * shinglePadding) / shingleCols;
-                const shingleHeight = (roofHeight - (shingleRows + 1) * shinglePadding) / shingleRows;
-
-                ctx.fillStyle = "#5a3c1a"; // darker color for shingles
-
-                for (let row = 0; row < shingleRows; row++) {
-                    for (let col = 0; col < shingleCols; col++) {
-                        const x = buildingX + shinglePadding + col * (shingleWidth + shinglePadding);
-                        const y = buildingY + shinglePadding + row * (shingleHeight + shinglePadding);
-                        ctx.fillRect(x, y, shingleWidth, shingleHeight);
-                    }
-                }
-
-            }
-
-
-
-        }
-    });
+    }
 }
+
 
 function drawStructure(ctx, x, y, width, height, color) {
     for (let i = 0; i < width; i++) {
