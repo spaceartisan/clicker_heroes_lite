@@ -273,6 +273,10 @@ function awardOfflineGold(seconds) {
 }
 
 function saveGame() {
+    // A cloud restore has already written its validated payload to localStorage.
+    // Page-exit, visibilitychange and interval saves must NOT replace it with
+    // the old in-memory game during navigation to the newly restored state.
+    if (window.__hotcCloudRestorePending === true) return;
     submitScore();
     const saveData = {
         schemaVersion: GAME_SCHEMA_VERSION,

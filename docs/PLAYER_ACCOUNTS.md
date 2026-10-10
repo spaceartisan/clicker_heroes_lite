@@ -173,3 +173,7 @@ To transfer PC progress to phone for the first time:
 4. Do not enable automatic backups on both devices simultaneously while actively playing different runs. The revision guard will pause uploads when the second device changes cloud progress.
 
 If no cloud save appears, inspect **Cloud check failed** or **No cloud backup** in Game Config. Verify that the `player_saves/{uid}` rules are published and that both clients are signed into the same Firebase account. Local saves and Export Save are unaffected by cloud errors.
+
+## v1.10.2 — restore overwrite fix
+
+When using **Restore Cloud Save** on a phone, the old game's page-exit autosave no longer writes stale phone progress over the newly downloaded PC save. A temporary, in-memory navigation guard protects the restored `clickerHeroSave` until the new page starts. The guard clears on the new load, and normal autosaving resumes. This changes no Firebase collection, rule, or document format.

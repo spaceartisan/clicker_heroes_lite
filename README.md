@@ -171,3 +171,8 @@ The enemy encounter row is now a three-track CSS grid with fixed-width Previous/
 - Cloud discovery also runs when the tab is re-opened and while active (throttled to one read every three minutes), with meaningful permission/network errors instead of a misleading "synced" label. The account panel shows a short UID suffix to help confirm both devices use the same Firebase identity.
 - A new device without a cloud anchor detects an available cloud save. The original **Back Up Local Save** and **Restore Cloud Save** protections remain; restoring always saves a local recovery copy and requires player confirmation.
 - Automatic cloud backup remains opt-in, backup-only, guarded by revision checks. The banner surfaces concurrent-device progress instead of silently erasing it. No new Firestore collections or rules beyond the already-documented `player_saves` rule.
+
+### v1.10.2 — cloud restore lifecycle fix
+
+- Fixed a mobile/cloud-restore race: the outgoing page's `pagehide`, `visibilitychange`, or autosave callback could overwrite the restored PC save with stale in-memory phone progress just before reload. Saves are now guarded while a validated cloud restore navigates; after reload the guard resets with the new page.
+- The pre-restore local recovery copy remains available, Google account/cloud permissions are unchanged, and a failed restore releases the temporary guard. Cross-device restore now has a regression covering the actual page-exit autosave event.

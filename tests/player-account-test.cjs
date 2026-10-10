@@ -6,7 +6,7 @@ const assert=require("node:assert/strict");
 const root=path.join(__dirname,"..");
 const storage=new Map();
 const nodes=new Map();
-let confirmDecision=true,reloads=0,remote=null,permissionDenied=false;
+let confirmDecision=true,reloads=0,reloadGuardObserved=false,remote=null,permissionDenied=false;
 let simulateConcurrentEdit=false,saveCalls=0,transactionCount=0;
 let currentUser={uid:"test-user-123",email:"test@example.com",isAnonymous:false};
 let signIns=0,links=0,authEvent=null;
@@ -61,7 +61,12 @@ const db={
 };
 const ctx=vm.createContext({
  document,localStorage,db,firebase,
- window:{location:{reload(){reloads++}}},
+ window:{location:{reload(){
+    reloads++;
+    // A mobile reload fires pagehide while the old phone state is in memory.
+    // The guard must already be active before this event can occur.
+    reloadGuardObserved=ctx.window.__hotcCloudRestorePending===true;
+ }}},
  setInterval:()=>1,
  confirm:()=>confirmDecision,console,Date,
  saveGame(){saveCalls++},isCurrentSeasonSave:undefined
@@ -114,10 +119,11 @@ async function run(){
     JSON.parse(localStorage.getItem("clickerHeroSave")).gold===999,
     "Rejecting restore leaves current local game unchanged");
  confirmDecision=true;
- ok(await ctx.playerRestoreCloudSave()&&reloads===1 &&
+ ok(await ctx.playerRestoreCloudSave()&&reloads===1 &&reloadGuardObserved &&
     JSON.parse(localStorage.getItem("clickerHeroSave")).gold===390 &&
     JSON.parse(localStorage.getItem("clickerHeroSave_before_cloud_restore")).gold===999,
-    "Restore writes recovery copy before replacing local save and reloading");
+    "Restore arms the page-exit guard before reloading and writes recovery first");
+ ctx.window.__hotcCloudRestorePending=false; // emulate the new page after navigation
  ok(ctx.accountValidSave(JSON.parse(localStorage.getItem("clickerHeroSave_before_cloud_restore"))) &&
     ctx.playerExportCloudRecovery !== undefined,
     "Recovery export is available without Firebase or a developer console");
@@ -248,6 +254,7 @@ async function run(){
     JSON.parse(localStorage.getItem("clickerHeroSave")).gold===9900&&
     localStorage.getItem("clickerHeroSave_before_cloud_restore")===localBeforeRestore,
     "Accepted PC-to-phone restore preserves a recovery copy and reloads");
+ ctx.window.__hotcCloudRestorePending=false; // new phone document
  remote=null;
  ok(await ctx.playerCloudDiscover(true)&&
     document.getElementById("cloud-sync-notice").hidden&&

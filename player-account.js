@@ -333,6 +333,9 @@ async function playerRestoreCloudSave() {
         // Both storage operations may fail (private mode/quota). Never destroy
         // the original before its recovery copy has been written successfully.
         if(prior) localStorage.setItem(PLAYER_CLOUD_BACKUP_KEY,prior);
+        // Stop outgoing page's pagehide/visibilitychange/autosave handlers
+        // from overwriting the newly restored save with stale memory.
+        window.__hotcCloudRestorePending=true;
         localStorage.setItem("clickerHeroSave",cloudText);
         playerSyncSetAnchor(user.uid,Number(record.revision),record.save);
         // Restore is manual; never silently opt into future uploads.
@@ -341,6 +344,8 @@ async function playerRestoreCloudSave() {
         window.location.reload();
         return true;
     }catch(error) {
+        // If navigation was prevented, don't lock this tab's future saves.
+        window.__hotcCloudRestorePending=false;
         accountCloudMessage(accountErrorMessage(error),true);
         return false;
     }finally {
