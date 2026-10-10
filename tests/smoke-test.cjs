@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 
-const paths = ["config.js", "combat-content.js", "hero.js", "kingdom.js", "enemy.js", "database.js", "ui.js", "game.js", "army.js"];
+const paths = ["config.js", "research.js", "combat-content.js", "hero.js", "kingdom.js", "enemy.js", "database.js", "ui.js", "game.js", "army.js"];
 const source = paths.map(file => fs.readFileSync(path.join(__dirname, "..", file), "utf8")).join("\n");
 const nodes = new Map(), intervals = new Map(), listeners = {}, storage = new Map();
 let nextInterval = 0, unsubscribed = 0, mockNow = 1000;
