@@ -47,6 +47,8 @@ const collection = {
 function firestore() { return { collection() { return collection; } }; }
 firestore.FieldValue = { serverTimestamp: () => new Date() };
 const ctx = vm.createContext({
+    intervals, nodes, listeners, userContent,
+    get unsubscribed() { return unsubscribed; },
     document, window: { addEventListener() {} }, firebase: { initializeApp() {}, firestore },
     localStorage: {
         getItem: key => storage.get(key) || null,
