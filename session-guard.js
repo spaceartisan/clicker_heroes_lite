@@ -1,4 +1,4 @@
-// v1.12.0 — Spark-compatible device handoff. Coordination, not cheat-proof scoring.
+// v1.12.1 — Spark-compatible device handoff, origin-aware offline earnings. Coordination, not cheat-proof scoring.
 // Uses Firebase Auth + Firestore transactions/rules; no Cloud Functions or billing.
 const HANDOFF_COLLECTION="player_sessions";
 const HANDOFF_INSTALL_KEY="hotc_install_id_v1";
@@ -103,6 +103,7 @@ function sessionGuardSet(phase,message){
     }
     if(paused){
         window.__hotcDeferredOfflineSavedAt=null;
+        window.__hotcDeferredOfflineSourceDeviceId=null;
         if(typeof stopSquadAttack==="function")stopSquadAttack();
         if(typeof pauseBossClock==="function")pauseBossClock();
     }else if(!document.hidden&&typeof startSquadAttack==="function"){
@@ -152,12 +153,17 @@ async function sessionGuardReview(uid,generation,allowOffline=false){
             }
         }
         sessionGuardSet("active","This browser tab is active. Other tabs/devices must take over before uploading; scores remain unverified.");
-        if(allowOffline&&Number.isFinite(window.__hotcDeferredOfflineSavedAt)&&
+        const savedAt=window.__hotcDeferredOfflineSavedAt;
+        const savedBy=window.__hotcDeferredOfflineSourceDeviceId;
+        window.__hotcDeferredOfflineSavedAt=null;
+        window.__hotcDeferredOfflineSourceDeviceId=null;
+        // Reacquiring the same Firestore tab ID is not enough: the saved
+        // payload must ALSO originate from that tab. A restored PC save must
+        // never earn offline gold again on the phone after its reload.
+        if(allowOffline&&savedBy===sessionGuardDeviceId()&&
+            Number.isFinite(savedAt)&&
             typeof awardOfflineGold==="function"&&typeof saveGame==="function"){
-            const elapsed=Math.max(0,(Date.now()-window.__hotcDeferredOfflineSavedAt)/1000);
-            window.__hotcDeferredOfflineSavedAt=null;
-            // Only the device that previously owned the lease may receive
-            // local time-away earnings. Any takeover must restore a snapshot.
+            const elapsed=Math.max(0,(Date.now()-savedAt)/1000);
             if(elapsed>2){awardOfflineGold(elapsed);saveGame()}
         }
     }catch(error){

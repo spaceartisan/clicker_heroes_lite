@@ -310,6 +310,11 @@ function saveGame() {
         passiveAbilities,
         unlockedAchievements: Array.from(unlockedAchievements), // convert Set to Array
         lastSaved: Date.now(),
+        // Origin of the local checkpoint. Cross-device restored saves keep
+        // their original origin until the receiving tab authors a new save.
+        // This is a coordination marker, not cryptographic proof.
+        lastSavedDeviceId:localStorage.getItem("hotc_account_linked_device_v1")==="1" &&
+            typeof sessionGuardDeviceId==="function" ? sessionGuardDeviceId():null,
         scientificNotation,
         autoAdvance,
         underfillEnabled,
@@ -435,10 +440,16 @@ function loadGame() {
         // Old save files used a timestamp 60 seconds in the future; a negative
         // elapsed time simply means no offline reward yet.
         if (typeof data.lastSaved === "number") {
-            if(localStorage.getItem("hotc_account_linked_device_v1")==="1")
+            if(localStorage.getItem("hotc_account_linked_device_v1")==="1"){
                 window.__hotcDeferredOfflineSavedAt=data.lastSaved;
-            else
+                window.__hotcDeferredOfflineSourceDeviceId=
+                    /^[0-9a-f]{64}$/.test(data.lastSavedDeviceId||"") ?
+                    data.lastSavedDeviceId:null;
+            }else{
+                window.__hotcDeferredOfflineSavedAt=null;
+                window.__hotcDeferredOfflineSourceDeviceId=null;
                 awardOfflineGold(Math.max(0,(Date.now()-data.lastSaved)/1000));
+            }
         }
 
         if (nameConfirm) {

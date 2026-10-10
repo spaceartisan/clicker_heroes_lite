@@ -190,3 +190,7 @@ The enemy encounter row is now a three-track CSS grid with fixed-width Previous/
 - **No Cloud Functions or Blaze required.** The `functions/` directory is archived and not used by the browser. Publish the two replacement Firestore rule blocks in [Spark Device Handoff](docs/SPARK_DEVICE_HANDOFF.md). Do not deploy the older paid backend instructions for this release.
 
 The old paid-functions `functions/` source is archived as a future reference only. The root `firebase.json` no longer contains a Functions deployment target; only Spark Firestore Rules are needed.
+
+### v1.12.1 — guard against restored-save offline double dipping
+
+- Persist the originating browser tab ID in newly authored local saves, and require a matching origin, matching cloud revision and same-tab lease reacquisition before paying linked-account time-away gold. PC-to-phone restores cannot re-award the PC's offline interval on the phone after the reload. Legacy saves without an origin remain readable and are not awarded unknown-origin offline time. No new Firestore rules or collections are needed for this patch.

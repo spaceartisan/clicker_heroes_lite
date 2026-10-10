@@ -83,7 +83,7 @@ function makeDevice(mobile=false){
   firebase:{firestore:{FieldValue:{serverTimestamp}}},
   db:firebaseDb(),accountAuth:()=>({currentUser:account}),
   accountControlsUpdate(){},playerSyncPause(){},
-  playerSyncAnchor(){return null},
+  playerSyncAnchor(){const value=local.get("test_cloud_anchor");return value?JSON.parse(value):null},
   playerSyncFingerprint:save=>save?JSON.stringify(save):null,
   inspectSeasonSave:raw=>raw?JSON.parse(raw):null,
   accountCloudRef:({uid:id})=>firebaseDb().collection("player_saves").doc(id),
@@ -133,6 +133,31 @@ async function run(){
  const phoneProgress={...progress,gold:75,maxLevel:14,bestSeasonStage:14,currentLevel:14};
  ok(await phone.context.sessionGuardCheckpoint(phoneProgress,1,true)===2&&
     phase(phone)==="active"&&uploads===2,"Explicit keep-local choice checkpoints new owner");
+ // Simulate refreshing the phone immediately after restoring the PC save.
+ // The phone owns the session and the revision matches, but the payload
+ // originated on the PC, so its old offline interval must NOT pay again.
+ phone.storage.set("clickerHeroSave",JSON.stringify(phoneProgress));
+ phone.storage.set("test_cloud_anchor",JSON.stringify({
+   revision:2,fingerprint:JSON.stringify(phoneProgress)
+ }));
+ phone.context.window.__hotcDeferredOfflineSavedAt=Date.now()-3600000;
+ phone.context.window.__hotcDeferredOfflineSourceDeviceId=owner1;
+ await phone.context.sessionGuardClaim(false);await settle();
+ ok(phase(phone)==="active"&&phone.reward===0,
+   "Phone reload with imported PC provenance never duplicates offline gold");
+ ok(phone.context.window.__hotcDeferredOfflineSavedAt===null&&
+    phone.context.window.__hotcDeferredOfflineSourceDeviceId===null,
+    "Imported offline entitlement is discarded after the handoff review");
+ // A later refresh of the original tab's OWN saved checkpoint can still
+ // receive the normal time-away reward exactly once.
+ phone.context.window.__hotcDeferredOfflineSavedAt=Date.now()-3600000;
+ phone.context.window.__hotcDeferredOfflineSourceDeviceId=owner2;
+ await phone.context.sessionGuardClaim(false);await settle();
+ ok(phone.reward===1&&
+    phone.context.window.__hotcDeferredOfflineSavedAt===null,
+    "Only a same-tab authored checkpoint may earn its offline reward once");
+ await phone.context.sessionGuardClaim(false);await settle();
+ ok(phone.reward===1,"Repeated claim cannot replay a consumed offline interval");
  const another=makeDevice();
  another.context.sessionGuardAccountChanged(another.account);await settle();
  ok(phase(another)==="occupied","Different tab also treated as another session");
