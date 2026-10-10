@@ -78,6 +78,14 @@ The Academy has a **three-branch dependency tree**: Warfare, Commerce, and Gover
 
 **Future religion system:** The Academy reserves a separate `faith` domain for a future progression layer but does not award Faith, add worship buildings, or choose a religion yet. Insight and Faith should remain distinct resources so future theology, patrons, blessings, and worship choices do not invalidate existing saves.
 
+## Stage 20–100 economy pass (v0.4.1)
+
+**Royal Treasury** in the Kingdom offers one-time milestone rewards: stage 20 (2,000g), 40 (8,000g), 60 (18,000g), 80 (32,000g) and 100 (50,000g), totaling 110,000g. Clear the stage, then claim in the Kingdom. Replaying an old boss cannot earn the bounty again. Existing saves can claim eligible unclaimed stages retroactively, while `claimedTreasury` persists with normal saves. This is separate from Academy Insight and the planned Faith economy.
+
+Offline gold now simulates 10%-efficiency encounters against ordinary enemies, bounded to one kill per 40 seconds and a maximum of 24 hours. Boss multipliers do not apply; Market, Raider, Steward, and research rewards still contribute. Without hired mercenaries no offline patrol income accrues. The foreground 250ms combat loop and background pause remain unchanged.
+
+**Projection:** clearing stages 21–100 once generates about 75,000g of base monster rewards. The 110,000g of Treasury milestones spreads additional capital across the midgame instead of increasing repeatable farming drops. Bounties stop at stage 100 until the next progression design pass.
+
 ## Developer checks
 
 No dependencies, bundler, or build step are required; the site is static.

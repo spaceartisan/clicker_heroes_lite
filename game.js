@@ -222,8 +222,7 @@ function mktUp(idx) {
 // This is intentionally a quarter of live DPS, consistent with previous offline rewards.
 function awardOfflineGold(seconds) {
     if (!Number.isFinite(seconds) || seconds < 2) return 0;
-    const effectiveSeconds = Math.min(seconds, 24 * 60 * 60);
-    const reward = Math.floor(effectiveSeconds * getAutoDamage() * 0.25 * mktUp(4) * (1 + getResearchBonus("offlineGold")));
+    const reward = estimateOfflineGold(seconds);
     if (reward > 0 && Number.isFinite(reward)) {
         gold += reward;
         showPopupMessage(`Offline earnings: ${formatDigits(reward, 2, 0)} gold`, false, 3500);
@@ -249,6 +248,7 @@ function saveGame() {
         hiredMercenaries,
         squadBuilds,
         researchState,
+        claimedTreasury,
         nameConfirm,
         playerName,
         lastSubmittedScore,
@@ -276,6 +276,10 @@ function loadGame() {
         stopSquadAttack();
         hiredMercenaries.length = 0;
         squadBuilds = data.squadBuilds && typeof data.squadBuilds === "object" && !Array.isArray(data.squadBuilds) ? data.squadBuilds : {};
+        claimedTreasury = Array.isArray(data.claimedTreasury)
+            ? [...new Set(data.claimedTreasury.filter(stage=>
+                ROYAL_TREASURY_STAGES.includes(stage)))].sort((a,b)=>a-b)
+            : [];
         researchState = {};
         if (data.researchState && typeof data.researchState === "object") {
             for (const node of RESEARCH_NODES) {

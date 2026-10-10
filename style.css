@@ -750,3 +750,29 @@ input, textarea { font-size: 16px; user-select: text; -webkit-user-select: text;
     .research-popup-header button { min-height:44px; }
     .castle-decree button,.market-project button { width:100%; }
 }
+
+
+/* Royal Treasury: event-driven content and touch-friendly layout. */
+.treasury-card{display:flex;align-items:center;justify-content:space-between;gap:16px;
+    flex-wrap:wrap;text-align:left;padding:15px;margin:14px 0 20px;border-radius:9px;
+    border:1px solid #b49a65;border-left:4px solid #e5bd69;
+    background:linear-gradient(135deg,#4d371e,#2d2920)}
+.treasury-main{flex:1;min-width:215px}
+.treasury-title{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.treasury-title strong{font-size:18px;color:#f9dc9c}
+#treasury-chapter{font:12px Arial,sans-serif;letter-spacing:.05em;color:#dbba78}
+.treasury-desc{font:12px/1.5 Arial,sans-serif;color:#dac9ae;margin:7px 0}
+.treasury-track{height:9px;overflow:hidden;background:#19150f;border:1px solid #7f6844;
+    border-radius:8px;margin:12px 0 8px}
+#treasury-progress-fill{display:block;width:0;height:100%;
+    background:linear-gradient(90deg,#b89140,#f5d17c)}
+.treasury-status{font:12px/1.5 Arial,sans-serif;color:#d3b98d;margin:4px 0}
+#treasury-claim{min-width:155px;min-height:44px;flex-shrink:0;
+    background:linear-gradient(#977037,#6b481f)}
+#treasury-claim:disabled{opacity:.55}
+@media(max-width:600px){
+ .treasury-card{padding:12px;gap:9px}
+ .treasury-main{min-width:0;flex:0 0 100%}
+ .treasury-title strong{font-size:16px}
+ #treasury-claim{width:100%}
+}

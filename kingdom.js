@@ -77,6 +77,7 @@ function updateStructureUI() {
                 "Upgrade " + formatDigits(getStructureCost(structure), 2, 0).trim() + " g");
         }
     }
+    if(typeof updateTreasuryUI === "function") updateTreasuryUI();
 }
 
 let persistentMiniBuildings = [];

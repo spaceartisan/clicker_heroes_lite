@@ -93,6 +93,19 @@
                 <span id="kingdom-research-hint">Earn Insight from first-time bosses and Castle milestones.</span>
             </div>
 
+            <section id="royal-treasury" class="treasury-card" aria-label="Royal Treasury">
+                <div class="treasury-main">
+                    <div class="treasury-title"><strong>🪙 Royal Treasury</strong>
+                        <small id="treasury-chapter">CHAPTER I</small></div>
+                    <p class="treasury-desc">One-time rewards for reaching new stages. Farming earlier bosses never repeats them.</p>
+                    <div class="treasury-track" role="progressbar" aria-label="Next Royal Treasury milestone">
+                        <span id="treasury-progress-fill"></span>
+                    </div>
+                    <p id="treasury-status" class="treasury-status">Clear stage 20 for your first Royal Bounty.</p>
+                </div>
+                <button id="treasury-claim" type="button" onclick="claimRoyalTreasury()" disabled>No unclaimed bounties</button>
+            </section>
+
             <div id="kingdom-box">
                 <canvas id="kingdom-canvas" width="400" height="400"></canvas>
             </div>
@@ -210,7 +223,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v0.4.0 – Heroes of the Click
+        v0.4.1 – Heroes of the Click
     </p>
     <br>
 
@@ -329,6 +342,7 @@
 
     <script src="config.js"></script>
     <script src="research.js"></script>
+    <script src="progression.js"></script>
     <script src="combat-content.js"></script>
     <script src="hero.js"></script>
     <script src="kingdom.js"></script>
