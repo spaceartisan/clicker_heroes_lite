@@ -44,6 +44,19 @@ Your older local saves are supported. Missing squad role/kit data initializes to
 
 The kingdom and enemy art are static Canvas rendering, performed on stage changes or menu actions rather than a continuous 60 FPS animation loop. The single 250 ms combat tick and pause-on-background behavior remain in place for battery/heat control. Performance still needs verification on representative physical Android and iOS devices.
 
+## Army Command (v0.3.0)
+
+Open the **⚔ Army** tab to manage every squad from one roster without reopening the Tavern, Barracks, or Blacksmith for each upgrade. The corresponding kingdom building menus also link directly to Army Command.
+
+- **Select all, clear selection, or check particular squads** — selection works across pages.
+- **Batch upgrade mercenary levels, squad gear or squad speed** by ×1, ×10, or ×100 per target. Pricing is calculated before the purchase, honors existing caps and market discounts, and only spends available gold. Partial purchases are intentionally allowed.
+- **Fair distribution:** mercenary levels are purchased in round-robin order across squads, one mercenary slot per squad at a time, rather than exhausting gold on the first squad.
+- **Quick squad actions:** each card has one-tap level, gear and speed upgrades; the expandable panel includes role and forged-kit controls and mercenary names.
+- **Squad sorting and pagination:** sort by squad number, weakest/strongest DPS, or lowest level; the roster shows eight squads at a time to avoid slow mobile rendering.
+- **Recruit up to five** additional mercenaries in one operation, up to your Tavern's capacity and budget.
+
+The Army Command selection is temporary UI state; your mercenary levels, roles, equipment purchases and other progression continue to use the existing save format. It requires no account or migration. Only the currently visible roster page is rendered and nothing in Army Command runs in the combat timer.
+
 ## Developer checks
 
 No dependencies, bundler, or build step are required; the site is static.
