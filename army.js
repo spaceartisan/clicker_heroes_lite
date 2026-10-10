@@ -399,6 +399,15 @@ function renderArmyView() {
     updateArmyQuote();
 }
 
+function resetArmySelection() {
+    armySelectedSquads.clear();
+    armyExpandedSquads.clear();
+    armySelectionInitialized = false;
+    armyPage = 0;
+    const view = document.getElementById("army-view");
+    if (view && view.style.display !== "none") renderArmyView();
+}
+
 function initArmyManager() {
     document.getElementById("army-select-all").addEventListener("click", armySelectAll);
     document.getElementById("army-clear").addEventListener("click", armyClearSelection);
