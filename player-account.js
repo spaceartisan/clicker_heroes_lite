@@ -73,7 +73,9 @@ function accountControlsUpdate() {
     }
     for(const id of ["player-cloud-check","player-cloud-upload","player-cloud-restore"]) {
         const control=document.getElementById(id);
-        if(control) control.disabled=!signedIn||playerAccountCloudBusy||playerSyncInFlight;
+        if(control) control.disabled=!signedIn||playerAccountCloudBusy||playerSyncInFlight||
+            (id==="player-cloud-upload"&&typeof sessionGuardWritesBlocked==="function"&&
+                sessionGuardWritesBlocked());
     }
     const actions=document.getElementById("player-cloud-controls");
     if(actions) actions.hidden=!signedIn;
@@ -259,10 +261,35 @@ async function playerCheckCloudSave() {
         accountControlsUpdate();
     }
 }
+// Server checkpoints are used only after a server session has been established.
+// Until the backend is deployed this remains the original guarded Firestore
+// transaction, which is NOT competitive anti-cheat protection.
+async function accountCommitSave(user,save,expected,allowReview=false){
+    if(typeof sessionGuardUsesServer==="function"&&sessionGuardUsesServer()){
+        return sessionGuardCheckpoint(save,expected,allowReview);
+    }
+    if(typeof sessionGuardWritesBlocked==="function"&&sessionGuardWritesBlocked())
+        throw new Error("This device does not own the active session.");
+    const ref=accountCloudRef(user);
+    await db.runTransaction(async transaction=>{
+        const existing=await transaction.get(ref);
+        const actual=existing.exists?Number(existing.data().revision):0;
+        if(actual!==expected)
+            throw new Error("Cloud save changed on another device. Check the cloud save again before choosing a version.");
+        if(accountCurrentUser().uid!==user.uid)
+            throw new Error("Account changed during backup.");
+        transaction.set(ref,accountCloudDocument(user,save,expected+1));
+    });
+    return expected+1;
+}
 // Every overwrite is explicit. The transaction rejects a remote revision that
 // changed after the player examined it, avoiding races between two devices.
 async function playerBackupCloudSave() {
     if(playerAccountCloudBusy||playerSyncInFlight)return false;
+    if(typeof sessionGuardWritesBlocked==="function"&&sessionGuardWritesBlocked()){
+        accountCloudMessage("Cannot upload: another device owns the server session. Take over and compare saves first.",true);
+        return false;
+    }
     playerAccountCloudBusy=true;
     accountControlsUpdate();
     try {
@@ -283,21 +310,12 @@ async function playerBackupCloudSave() {
         const expected=previous?Number(previous.revision):0;
         if(!Number.isSafeInteger(expected)||expected<0)
             throw new Error("Cloud revision is invalid; refusing overwrite.");
-        const ref=accountCloudRef(user);
-        await db.runTransaction(async transaction=>{
-            const existing=await transaction.get(ref);
-            const actual=existing.exists?Number(existing.data().revision):0;
-            if(actual!==expected)
-                throw new Error("Cloud save changed on another device. Check the cloud save again before choosing a version.");
-            if(accountCurrentUser().uid!==user.uid)
-                throw new Error("Account changed during backup.");
-            transaction.set(ref,accountCloudDocument(user,save,expected+1));
-        });
-        playerCloudPreview=accountCloudDocument(user,save,expected+1);
+        const nextRevision=await accountCommitSave(user,save,expected,true);
+        playerCloudPreview=accountCloudDocument(user,save,nextRevision);
         accountPreviewCloud(playerCloudPreview);
-        playerSyncSetAnchor(user.uid,expected+1,save);
+        playerSyncSetAnchor(user.uid,nextRevision,save);
         playerCloudUpdateNotice(playerCloudPreview);
-        accountCloudMessage("Cloud backup saved (revision "+(expected+1)+"). This device's save is unchanged.");
+        accountCloudMessage("Cloud backup saved (revision "+nextRevision+"). This device's save is unchanged.");
         return true;
     }catch(error){
         accountCloudMessage(accountErrorMessage(error),true);
@@ -488,22 +506,17 @@ async function playerSyncCloudTick(){
             return false;
         }
         if(fingerprint===anchor.fingerprint)return false;
-        const reference=accountCloudRef(user);
-        await db.runTransaction(async transaction=>{
-            const current=await transaction.get(reference);
-            if(!current.exists||Number(current.data().revision)!==anchor.revision)
-                throw new Error("Cloud save changed on another device during backup.");
-            const currentSave=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
-            if(playerSyncFingerprint(currentSave)!==fingerprint ||
-                accountCurrentUser().uid!==user.uid ||
-                document.hidden || !playerSyncEnabled())
-                throw new Error("Local save or account changed during backup; upload cancelled.");
-            transaction.set(reference,accountCloudDocument(user,local,anchor.revision+1));
-        });
-        playerSyncSetAnchor(user.uid,anchor.revision+1,local);
-        playerCloudPreview=accountCloudDocument(user,local,anchor.revision+1);
+        const currentSave=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
+        if(playerSyncFingerprint(currentSave)!==fingerprint ||
+            accountCurrentUser().uid!==user.uid ||
+            document.hidden||!playerSyncEnabled()||
+            (typeof sessionGuardWritesBlocked==="function"&&sessionGuardWritesBlocked()))
+            throw new Error("Local save or device session changed during backup.");
+        const revision=await accountCommitSave(user,local,anchor.revision);
+        playerSyncSetAnchor(user.uid,revision,local);
+        playerCloudPreview=accountCloudDocument(user,local,revision);
         accountPreviewCloud(playerCloudPreview);
-        accountCloudMessage("Automatic cloud backup saved · revision "+(anchor.revision+1)+".");
+        accountCloudMessage("Automatic cloud backup saved · revision "+revision+".");
         return true;
     }catch(error){
         const code=error&&error.code;
@@ -602,6 +615,7 @@ async function playerAccountSignOut(){
     playerSyncPause();
     playerAccountBusy=true;accountControlsUpdate();
     try{
+        if(typeof sessionGuardRelease==="function")await sessionGuardRelease();
         await auth.signOut();
         playerCloudPreview=null;
         accountDisplayMessage("Signed out. You can keep playing as a guest.");
@@ -635,6 +649,7 @@ function playerAccountInit(){
             accountPreviewCloud(null);
         }
         accountControlsUpdate();
+        if(typeof sessionGuardAccountChanged==="function")sessionGuardAccountChanged(user);
         if(typeof accountRankingAuthChanged==="function")accountRankingAuthChanged();
         if(!linked)accountDisplayMessage("Guest · Your progress is saved on this device only.");
         else {

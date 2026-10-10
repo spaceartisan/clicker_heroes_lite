@@ -266,6 +266,34 @@ async function run(){
     !document.getElementById("cloud-sync-notice").hidden,
     "Firestore read errors show a discoverable error without changing local saves");
  permissionDenied=false;
+ // Once a server session is active, client writes must route through callable
+ // checkpoints; a lost lease must not fall back to direct Firestore writes.
+ freshUser("server-session-user");
+ remote=null;
+ const transactionCountBeforeServer=transactionCount;
+ let serverCheckpointCalls=0;
+ ctx.sessionGuardUsesServer=()=>true;
+ ctx.sessionGuardWritesBlocked=()=>false;
+ ctx.sessionGuardCheckpoint=async (save,revision)=>{
+   serverCheckpointCalls++;
+   assert.equal(revision,remote?remote.revision:0);
+   remote={ownerUid:currentUser.uid,schemaVersion:1,seasonId:"dynasty-ii",
+     revision:revision+1,save};
+   return revision+1;
+ };
+ editLocal({...local,gold:8800,maxLevel:31,bestSeasonStage:31});
+ ok(await ctx.playerBackupCloudSave()&&serverCheckpointCalls===1&&
+    transactionCount===transactionCountBeforeServer &&
+    remote.revision===1&&remote.save.gold===8800,
+    "Active server session routes cloud backup exclusively through callable checkpoint");
+ ctx.sessionGuardWritesBlocked=()=>true;
+ editLocal({...local,gold:9000,maxLevel:32,bestSeasonStage:32});
+ ok(!await ctx.playerBackupCloudSave()&&serverCheckpointCalls===1&&
+    transactionCount===transactionCountBeforeServer&&remote.save.gold===8800,
+    "Lost server session blocks upload and never falls back to direct Firestore");
+ delete ctx.sessionGuardUsesServer;
+ delete ctx.sessionGuardWritesBlocked;
+ delete ctx.sessionGuardCheckpoint;
  console.log("Player Account regression: "+passed+" passed.");
 }
 run().catch(error=>{console.error(error);process.exitCode=1});

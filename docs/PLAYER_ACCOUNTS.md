@@ -177,3 +177,7 @@ If no cloud save appears, inspect **Cloud check failed** or **No cloud backup** 
 ## v1.10.2 — restore overwrite fix
 
 When using **Restore Cloud Save** on a phone, the old game's page-exit autosave no longer writes stale phone progress over the newly downloaded PC save. A temporary, in-memory navigation guard protects the restored `clickerHeroSave` until the new page starts. The guard clears on the new load, and normal autosaving resumes. This changes no Firebase collection, rule, or document format.
+
+## v1.11.0 — Optional server-owned sessions
+
+The game now contains client-side session takeover controls and backend Functions source. **This is not yet a deployed Firebase backend.** Follow [Secure Sessions rollout](SECURE_SESSIONS.md) and its explicit order: deploy Functions, test session takeover and checkpoint, THEN change `player_saves` to deny browser writes. Older browser-written leaderboard collections are still unverified and MUST NOT be represented as trusted competitive scores.

@@ -20,9 +20,10 @@
     <script src="./theme.js"></script>
     <link rel="stylesheet" href="style.css">
     <!-- Firebase SDK (compat version, no module needed) -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 </head>
 
 <body>
@@ -296,7 +297,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.10.2 – Heroes of the Click
+        v1.11.0 – Heroes of the Click
     </p>
     <br>
 
@@ -395,6 +396,12 @@
                     <div class="player-account-identity">Signed in: <strong id="player-account-identity"></strong>
                         <small id="player-account-uid" class="player-account-uid"></small>
                     </div>
+                    <section class="account-session-panel" aria-label="Device session">
+                        <strong>Active device protection</strong>
+                        <p id="account-session-status" role="status" aria-live="polite">Checking session service...</p>
+                        <button id="account-session-claim" type="button" onclick="sessionGuardTakeover()" hidden>Use This Device (Take Over)</button>
+                        <p class="player-account-hint">Device ownership is enforced only after Firebase Functions and the server-only rules are deployed. Unverified leaderboards remain separate.</p>
+                    </section>
                     <button type="button" id="player-account-logout" onclick="playerAccountSignOut()">Sign Out</button>
                 </div>
                 <button type="button" id="player-cloud-export-recovery" onclick="playerExportCloudRecovery()" hidden>Export Pre-Restore Recovery Save</button>
@@ -528,6 +535,7 @@
     <script src="systems.js"></script>
     <script src="monster-codex.js"></script>
     <script src="player-account.js"></script>
+    <script src="session-guard.js"></script>
     <script src="account-leaderboard.js"></script>
     <script src="telemetry.js"></script>
     <script>

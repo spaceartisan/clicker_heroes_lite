@@ -1,0 +1,35 @@
+"use strict";
+const assert=require("node:assert/strict");
+const crypto=require("node:crypto");
+const core=require("../session-core");
+let passed=0;function ok(x,m){assert.ok(x,m);passed++}
+const a=crypto.randomBytes(32).toString("hex"),b=crypto.randomBytes(32).toString("hex");
+const ha=core.hashToken(a),hb=core.hashToken(b),now=10000;
+ok(ha.length===64&&ha!==hb,"unique token hashes");
+ok(core.safeEqual(ha,ha)&&!core.safeEqual(ha,hb)&&!core.safeEqual(ha,undefined),"constant time comparison");
+assert.throws(()=>core.hashToken("bad"));
+ok(true,"reject malformed tokens");
+const user={auth:{uid:"user",token:{firebase:{sign_in_provider:"google.com"}}}};
+ok(core.checkAccount(user)==="user","signed-in account");
+assert.throws(()=>core.checkAccount({auth:{uid:"guest",token:{firebase:{sign_in_provider:"anonymous"}}}}));
+ok(true,"anonymous identity denied");
+const first=core.claimDecision(null,ha,now,false);
+ok(first.status==="active"&&first.epoch===1,"first lease");
+const existing={tokenHash:ha,epoch:5,leaseUntilMs:now+2000};
+ok(core.ownsSession(existing,ha,now),"current holder");
+ok(core.claimDecision(existing,ha,now,false).epoch===5,"renew same lease");
+ok(core.claimDecision(existing,hb,now,false).status==="occupied","second device blocked");
+ok(core.claimDecision(existing,hb,now,true).epoch===6,"explicit takeover invalidates old epoch");
+ok(core.claimDecision(existing,hb,now+2500,false).status==="active","expired lease recoverable");
+ok(!core.ownsSession(existing,ha,now+2500),"expired credential not accepted");
+ok(core.checkLabel("Office PC")==="Office PC"&&core.checkLabel("<script>")==="Device","safe device labels");
+const save={schemaVersion:2,seasonId:"dynasty-ii",gold:500,playerLevel:9,maxLevel:12,currentLevel:11,bestSeasonStage:12};
+ok(core.validateSave(save),"valid Season II checkpoint");
+ok(!core.validateSave({...save,gold:Infinity})&&!core.validateSave({...save,seasonId:"old"}),"nonfinite and wrong season rejected");
+ok(!core.validateSave({...save,currentLevel:99})&&!core.validateSave({...save,bestSeasonStage:1}),
+  "Impossible current stage and peak below progress rejected");
+ok(!core.validateSave({...save,playerName:"x".repeat(650000)}),"giant save rejected");
+ok(core.validateRevision(0)&&!core.validateRevision(-1)&&!core.validateRevision(1.5),"bounded revisions");
+ok(core.scoreSignal({maxLevel:1},{...save,maxLevel:3000000,bestSeasonStage:3000000},1000)==="large_stage_jump","anomaly flagged for human review");
+ok(core.scoreSignal({...save},{...save,maxLevel:16,bestSeasonStage:16},50000)===null,"normal progression unflagged");
+console.log("Server session-core checks: "+passed+" passed.");

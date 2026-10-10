@@ -528,7 +528,8 @@ document.addEventListener("visibilitychange", () => {
         saveGame();
     } else {
         if (hiddenAt !== null) {
-            awardOfflineGold((Date.now() - hiddenAt) / 1000);
+            if(!(typeof sessionGuardBlocksGameplay==="function"&&sessionGuardBlocksGameplay()))
+                awardOfflineGold((Date.now() - hiddenAt) / 1000);
             hiddenAt = null;
             updateUI();
             saveGame();

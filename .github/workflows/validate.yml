@@ -15,7 +15,7 @@ jobs:
           node-version: '22'
       - name: Check JavaScript syntax
         run: |
-          for file in config.js season.js research.js progression.js frontier.js combat-content.js hero.js kingdom.js enemy.js database.js ui.js game.js army.js sw.js player-account.js account-leaderboard.js; do
+          for file in config.js season.js research.js progression.js frontier.js combat-content.js hero.js kingdom.js enemy.js database.js ui.js game.js army.js sw.js player-account.js session-guard.js account-leaderboard.js functions/index.js functions/session-core.js; do
             node --check "$file"
           done
       - name: Regression tests
@@ -23,3 +23,5 @@ jobs:
           node tests/smoke-test.cjs
           node tests/player-account-test.cjs
           node tests/account-leaderboard-test.cjs
+          node functions/tests/session-core.test.cjs
+          node tests/session-guard-test.cjs

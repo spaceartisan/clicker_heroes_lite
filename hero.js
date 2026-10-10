@@ -6,6 +6,7 @@ function marketEffect(i) {
 }
 
 function attack(isRageAttack = false) {
+    if (typeof sessionGuardBlocksGameplay==="function"&&sessionGuardBlocksGameplay())return;
     const now = Date.now();
     // console.log("Attack clicked at", now - lastClickTime, "ms since last click");
     if (deathCooldown || (now - lastClickTime < 60 && !isRageAttack)) return;
@@ -162,6 +163,7 @@ function getCombatTickIntervalMs() {
 }
 
 function startSquadAttack() {
+    if (typeof sessionGuardBlocksGameplay==="function"&&sessionGuardBlocksGameplay())return;
     if (autoCombatTimer !== null || hiredMercenaries.length === 0 || document.hidden) return;
     lastAutoCombatTick = performance.now();
     lastCombatHudTick = lastAutoCombatTick;

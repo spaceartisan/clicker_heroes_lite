@@ -2057,3 +2057,12 @@ button:has(> .ui-icon) { display: inline-flex; }
 .player-account-uid{display:block;margin-top:3px;color:var(--ink-muted);font-size:11px}
 .player-cloud-discovery-status{margin-top:6px!important}
 @media(max-width:560px){.cloud-sync-notice-actions{width:100%}.cloud-sync-notice-actions button{flex:1}}
+
+/* v1.11.0: competitive session ownership and handoff visibility. */
+.account-session-panel{padding:11px;border:1px solid var(--panel-line);
+ border-radius:8px;background:var(--panel-inset);margin:9px 0;display:flex;flex-direction:column;gap:7px}
+.account-session-panel strong{color:var(--ink-heading);font-size:13px}
+.account-session-panel p{margin:0;line-height:1.5}
+.account-session-panel button{width:100%;min-height:44px}
+.account-session-panel [hidden]{display:none!important}
+.account-session-panel .session-warning{color:#ee8b80}

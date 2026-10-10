@@ -176,3 +176,9 @@ The enemy encounter row is now a three-track CSS grid with fixed-width Previous/
 
 - Fixed a mobile/cloud-restore race: the outgoing page's `pagehide`, `visibilitychange`, or autosave callback could overwrite the restored PC save with stale in-memory phone progress just before reload. Saves are now guarded while a validated cloud restore navigates; after reload the guard resets with the new page.
 - The pre-restore local recovery copy remains available, Google account/cloud permissions are unchanged, and a failed restore releases the temporary guard. Cross-device restore now has a regression covering the actual page-exit autosave event.
+
+### v1.11.0 — Session protection foundation (requires Firebase deployment)
+
+- Added a second-generation Firebase Functions backend with server-owned 120-second account session leases, explicit multi-device takeover, token-hash validation, atomic revision-guarded cloud checkpoints, lease renewal/expiry and limited suspicious progression signals. The local client uses the backend when available and pauses cloud writes if it loses ownership.
+- Connected Accounts still accept **unverified client-reported scores**; no claim of cheat-proof leaderboards. Until Firebase Functions are deployed **and** owner direct writes to `player_saves` are closed in Firestore Rules, server-side anti-bypass protection is **not active**. Guest/local gameplay remains available without the backend.
+- Firebase compat client SDK upgraded to 10.14.1 for v2 callable support, including PWA caching of Functions SDK. See [secure-session deployment](docs/SECURE_SESSIONS.md) before trying the feature on live accounts.
