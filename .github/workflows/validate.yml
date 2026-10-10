@@ -1,7 +1,7 @@
 name: Validate Heroes of the Click
 on:
   push:
-    branches: [main, feature/kingdom-combat-depth]
+    branches: [main, feature/royal-research-balance]
   pull_request:
     branches: [main]
 
@@ -15,7 +15,7 @@ jobs:
           node-version: '22'
       - name: Check JavaScript syntax
         run: |
-          for file in config.js combat-content.js hero.js kingdom.js enemy.js database.js ui.js game.js sw.js; do
+          for file in config.js research.js combat-content.js hero.js kingdom.js enemy.js database.js ui.js game.js army.js sw.js; do
             node --check "$file"
           done
       - name: Regression tests
