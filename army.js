@@ -214,22 +214,28 @@ function armyRecruitFive() {
     renderArmyView();
 }
 
-function getArmySquadDps(group) {
+function getArmySquadDps(group,neutral=false) {
     if (!group.indices.length || isSquadOnCampaign(group.id)) return 0;
-    const members = group.indices.map(index => hiredMercenaries[index]);
-    const build = getSquadBuild(group.id);
-    const role = findSquadRole(build.role);
-    const kit = findEquipmentKit(build.kit);
-    const target = enemyType || getEnemyType(currentLevel);
-    const raw = members.reduce((total, merc) => total + merc.level * Math.pow(2, merc.gearLevel), 0);
-    const speed = (members[0].attackSpeedLevel || 0) + 1;
-    const teamwork = 1 + 0.1 * (members.length - 1);
-    let roleMult = role.power;
-    let kitMult = kit.power;
-    if (role.favored && role.favored === target.trait) roleMult *= role.counter;
-    if (kit.favored && kit.favored === target.trait) kitMult *= kit.counter;
-    return raw * speed / 2 * teamwork * roleMult * kitMult *
-        mktUp(2) * mktUp(3) * (rallyActive ? 2 : 1) * target.resistance;
+    const members=group.indices.map(index=>hiredMercenaries[index]);
+    const build=getSquadBuild(group.id),role=findSquadRole(build.role);
+    const kit=findEquipmentKit(build.kit);
+    const target=neutral?{id:"",trait:"",resistance:1,champion:false}:
+        (enemyType||getEnemyType(currentLevel));
+    const raw=members.reduce((sum,merc)=>sum+merc.level*safePowerOfTwo(merc.gearLevel),0);
+    const speed=Math.max(0,members[0].attackSpeedLevel||0);
+    const teamwork=1+0.1*(members.length-1);
+    let roleBonus=role.power,kitBonus=kit.power;
+    if(role.favored&&role.favored===target.trait)roleBonus*=role.counter;
+    if(kit.favored&&kit.favored===target.trait)kitBonus*=kit.counter;
+    let research=1+getResearchBonus("squadDamage");
+    if(target.trait==="armored"||target.trait==="spectral")
+        research*=1+getResearchBonus("counterDamage");
+    if(target.id==="dragon")research*=1+getResearchBonus("bossDamage");
+    if(target.champion)research*=1+getResearchBonus("veteranDamage");
+    return Math.min(1e290,raw*(speed+1)/2*teamwork*roleBonus*kitBonus*
+        mktUp(2)*mktUp(3)*(rallyActive?2:1)*mktUp(7)*research*
+        target.resistance*dynastyDamageMultiplier()*
+        (1+getRelicBonus("squad")+(target.id==="dragon"?getRelicBonus("boss"):0)));
 }
 
 function createArmyButton(text, click, className = "") {
@@ -273,8 +279,11 @@ function buildArmyCard(group) {
     title.append(strong, secondary);
     const dps = document.createElement("div");
     dps.className = "army-dps";
-    dps.textContent = formatDigits(getArmySquadDps(group), 1, 0).trim() + " DPS";
-    if (deployed) dps.textContent = "ON CAMPAIGN";
+    const opponent=enemyType||getEnemyType(currentLevel);
+    const baseline=formatDigits(getArmySquadDps(group,true),1,0).trim();
+    const effective=formatDigits(getArmySquadDps(group),1,0).trim();
+    dps.textContent=deployed?"ON CAMPAIGN · 0 combat DPS":
+        "Neutral "+baseline+" DPS · Vs "+opponent.name+" "+effective+" DPS";
     head.append(checkbox, title, dps);
     outer.appendChild(head);
     outer.classList.toggle("army-card-selected", checkbox.checked);
@@ -390,9 +399,13 @@ function renderArmyView() {
 
     const count = document.getElementById("army-selected-count");
     count.textContent = armySelectedSquads.size + " selected";
+    const opponent=enemyType||getEnemyType(currentLevel);
+    const neutral=squads.reduce((sum,group)=>sum+getArmySquadDps(group,true),0);
     document.getElementById("army-stats").textContent =
-        squads.length + " squads · " + hiredMercenaries.length + " mercenaries · " +
-        formatDigits(getAutoDamage(), 1, 0).trim() + " total DPS";
+        squads.length+" squads · "+hiredMercenaries.length+" mercenaries · "+
+        formatDigits(neutral,1,0).trim()+" neutral DPS · "+
+        formatDigits(getAutoDamage(),1,0).trim()+" effective DPS vs "+
+        opponent.name+" ("+opponent.trait+")";
     document.getElementById("army-page-status").textContent =
         "Page " + (armyPage + 1) + " of " + pageCount;
     document.getElementById("army-prev").disabled = armyPage === 0;

@@ -86,7 +86,10 @@ function handleEnemyDefeat() {
     runGoldEarned=Math.min(1e300,runGoldEarned+reward);
     showGoldEarned(reward);
     recordBossVictory(defeatedStage,firstClear);
-    if (currentLevel === maxLevel) maxLevel++;
+    if (currentLevel === maxLevel) {
+        maxLevel++;
+        balanceStageCleared(defeatedStage);
+    }
     bestSeasonStage=Math.max(bestSeasonStage,maxLevel);
     if (autoAdvance) currentLevel++;
     deathCooldown = true;

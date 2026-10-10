@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 
-const paths = ["theme.js", "config.js", "season.js", "research.js", "progression.js", "frontier.js", "combat-content.js", "hero.js", "kingdom.js", "enemy.js", "database.js", "ui.js", "game.js", "army.js", "systems.js"];
+const paths = ["theme.js", "config.js", "season.js", "research.js", "progression.js", "frontier.js", "combat-content.js", "hero.js", "kingdom.js", "enemy.js", "database.js", "ui.js", "game.js", "army.js", "systems.js", "telemetry.js"];
 const source = paths.map(file => fs.readFileSync(path.join(__dirname, "..", file), "utf8")).join("\n");
 const nodes = new Map(), intervals = new Map(), listeners = {}, storage = new Map();
 let nextInterval = 0, unsubscribed = 0, mockNow = 1000;
@@ -141,7 +141,7 @@ const visualAssetChecks = (() => {
  ok(css.includes(':root[data-theme="stone"]')&&css.includes("--panel-fill"),
     "Stone mode uses semantic design tokens");
  ok(css.includes("background-attachment: scroll"),"Background avoids fixed-position mobile repaint");
- ok(sw.includes("heroes-of-click-v1.3.0")&&sw.includes('"./theme.js"'),
+ ok(sw.includes("heroes-of-click-v1.4.0")&&sw.includes('"./theme.js"'),
     "Theme controller is precached in PWA");
  for(const name of glyphNames){
     const file="icons/ui-"+name+".svg";
@@ -233,7 +233,7 @@ const layoutChecks = (() => {
  const source=fs.readFileSync(path.join(__dirname,"..","index.html"),"utf8");
  const css=fs.readFileSync(path.join(__dirname,"..","style.css"),"utf8");
  const sw=fs.readFileSync(path.join(__dirname,"..","sw.js"),"utf8");
- assert(source.includes('v1.3.0') && sw.includes('heroes-of-click-v1.3.0'),"Markup and PWA cache versions match");
+ assert(source.includes('v1.4.0') && sw.includes('heroes-of-click-v1.4.0'),"Markup and PWA cache versions match");
  for(const section of ["hero","kingdom","army"]) {
     assert(source.includes('id="view-tab-'+section+'"'),"Accessible tab exists for "+section);
  }
@@ -270,7 +270,7 @@ layoutChecks.forEach(label=>console.log("PASS "+label));
 console.log("Responsive layout tests: "+layoutChecks.length+" passed.");
 
 ctx.fs=fs;ctx.path=path;ctx.__dirname=__dirname;
-const enemyCardChecks = vm.runInContext("(() => {\n const verified=[],check=(value,label)=>{if(!value)throw Error(\"Enemy card: \"+label);verified.push(label)};\n const html=fs.readFileSync(path.join(__dirname,\"..\",\"index.html\"),\"utf8\");\n const css=fs.readFileSync(path.join(__dirname,\"..\",\"style.css\"),\"utf8\");\n const game=fs.readFileSync(path.join(__dirname,\"..\",\"game.js\"),\"utf8\");\n const enemy=fs.readFileSync(path.join(__dirname,\"..\",\"enemy.js\"),\"utf8\");\n const sw=fs.readFileSync(path.join(__dirname,\"..\",\"sw.js\"),\"utf8\");\n check(html.includes('id=\"enemy-name\"') && html.includes('id=\"enemy-trait\"'),\n   \"Name and trait labels are authored in the card\");\n check(html.indexOf('id=\"enemy-level\"')<html.indexOf('id=\"enemy-name\"') &&\n   html.indexOf('id=\"enemy-name\"')<html.indexOf('id=\"enemy-trait\"'),\n   \"Stage, name and trait follow a consistent visual hierarchy\");\n check(game.includes('document.getElementById(\"enemy-name\")'),\n   \"Enemy name reuses authored HTML instead of appending a runtime label\");\n check(!game.includes('document.getElementById(\"enemy-box\").appendChild(enemyNameText)'),\n   \"Old runtime name insertion removed\");\n check(css.includes(\"grid-template-columns: var(--enemy-nav-size) minmax(0, 1fr) var(--enemy-nav-size)\"),\n   \"Navigation uses two stable side columns with a constrained card\");\n check(css.includes(\"max-width: 464px\")&&css.includes(\"width: 100%\"),\n   \"Encounter row is bounded and responsive\");\n check(css.includes(\"#enemy-name\")&&css.includes(\"overflow-wrap: anywhere\"),\n   \"Long enemy names wrap without forcing row growth\");\n check(css.includes(\"margin-top: calc(var(--enemy-card-padding) + 51px)\"),\n   \"Navigation arrows are anchored at the sprite position\");\n check(css.includes(\"--enemy-nav-size: 42px\")&&css.includes(\"gap: 6px\"),\n   \"Phone layout retains fixed button slots\");\n check(sw.includes(\"heroes-of-click-v1.3.0\")&&html.includes(\"v1.3.0\"),\n   \"Installed PWA and visible version update together\");\n check(enemy.includes(\"enemyNameText.textContent = type.name\"),\n   \"Enemy spawning still updates the name\");\n const oldStage=currentLevel, oldEnemy=enemyType;\n try {\n   currentLevel=1;drawRandomEnemy();\n   const first=enemyNameText.textContent;\n   check(first.includes(getEnemyType(1).name),\"First enemy shows correct name\");\n   currentLevel=105;drawRandomEnemy();\n   check(enemyNameText.textContent.includes(\"Veteran\")&&enemyLevelText.textContent.includes(\"VETERAN\"),\n     \"Veteran text updates without extra DOM insertion\");\n   currentLevel=110;drawRandomEnemy();\n   check(enemyLevelText.textContent.includes(\"BOSS\"),\n     \"Boss stage label remains visible\");\n } finally {\n   currentLevel=oldStage;enemyType=oldEnemy;\n }\n return verified;\n})()",ctx,{timeout:2800});
+const enemyCardChecks = vm.runInContext("(() => {\n const verified=[],check=(value,label)=>{if(!value)throw Error(\"Enemy card: \"+label);verified.push(label)};\n const html=fs.readFileSync(path.join(__dirname,\"..\",\"index.html\"),\"utf8\");\n const css=fs.readFileSync(path.join(__dirname,\"..\",\"style.css\"),\"utf8\");\n const game=fs.readFileSync(path.join(__dirname,\"..\",\"game.js\"),\"utf8\");\n const enemy=fs.readFileSync(path.join(__dirname,\"..\",\"enemy.js\"),\"utf8\");\n const sw=fs.readFileSync(path.join(__dirname,\"..\",\"sw.js\"),\"utf8\");\n check(html.includes('id=\"enemy-name\"') && html.includes('id=\"enemy-trait\"'),\n   \"Name and trait labels are authored in the card\");\n check(html.indexOf('id=\"enemy-level\"')<html.indexOf('id=\"enemy-name\"') &&\n   html.indexOf('id=\"enemy-name\"')<html.indexOf('id=\"enemy-trait\"'),\n   \"Stage, name and trait follow a consistent visual hierarchy\");\n check(game.includes('document.getElementById(\"enemy-name\")'),\n   \"Enemy name reuses authored HTML instead of appending a runtime label\");\n check(!game.includes('document.getElementById(\"enemy-box\").appendChild(enemyNameText)'),\n   \"Old runtime name insertion removed\");\n check(css.includes(\"grid-template-columns: var(--enemy-nav-size) minmax(0, 1fr) var(--enemy-nav-size)\"),\n   \"Navigation uses two stable side columns with a constrained card\");\n check(css.includes(\"max-width: 464px\")&&css.includes(\"width: 100%\"),\n   \"Encounter row is bounded and responsive\");\n check(css.includes(\"#enemy-name\")&&css.includes(\"overflow-wrap: anywhere\"),\n   \"Long enemy names wrap without forcing row growth\");\n check(css.includes(\"margin-top: calc(var(--enemy-card-padding) + 51px)\"),\n   \"Navigation arrows are anchored at the sprite position\");\n check(css.includes(\"--enemy-nav-size: 42px\")&&css.includes(\"gap: 6px\"),\n   \"Phone layout retains fixed button slots\");\n check(sw.includes(\"heroes-of-click-v1.4.0\")&&html.includes(\"v1.4.0\"),\n   \"Installed PWA and visible version update together\");\n check(enemy.includes(\"enemyNameText.textContent = type.name\"),\n   \"Enemy spawning still updates the name\");\n const oldStage=currentLevel, oldEnemy=enemyType;\n try {\n   currentLevel=1;drawRandomEnemy();\n   const first=enemyNameText.textContent;\n   check(first.includes(getEnemyType(1).name),\"First enemy shows correct name\");\n   currentLevel=105;drawRandomEnemy();\n   check(enemyNameText.textContent.includes(\"Veteran\")&&enemyLevelText.textContent.includes(\"VETERAN\"),\n     \"Veteran text updates without extra DOM insertion\");\n   currentLevel=110;drawRandomEnemy();\n   check(enemyLevelText.textContent.includes(\"BOSS\"),\n     \"Boss stage label remains visible\");\n } finally {\n   currentLevel=oldStage;enemyType=oldEnemy;\n }\n return verified;\n})()",ctx,{timeout:2800});
 delete ctx.fs;delete ctx.path;delete ctx.__dirname;
 enemyCardChecks.forEach(label=>console.log("PASS "+label));
 console.log("Enemy card layout tests: "+enemyCardChecks.length+" passed.");
@@ -405,6 +405,92 @@ const campaignRelicChecks=vm.runInContext(`(()=>{
 })()`,ctx,{timeout:5000});
 campaignRelicChecks.forEach(label=>console.log("PASS "+label));
 console.log("Campaign and relic tests: "+campaignRelicChecks.length+" passed.");
+
+
+const balanceReportingChecks=vm.runInContext(`(()=>{
+ const results=[],ok=(v,n)=>{if(!v)throw Error("Balancing: "+n);results.push(n)};
+ const priorConsent=localStorage.getItem(BALANCE_CONSENT_KEY);
+ const priorRun=balanceRun,priorQueue=balancePending,priorLast=balanceLastWrite;
+ const priorLevel=currentLevel,priorMax=maxLevel,priorEnemy=enemyType;
+ const mercenaries=hiredMercenaries.slice(),builds=JSON.parse(JSON.stringify(squadBuilds));
+ const oldCampaigns=activeCampaigns;
+ try{
+  ok(!balanceEnabled(),"Game analytics is opt-in, not automatically enabled");
+  ok(balanceBucket(11)==="20"&&balanceBucket(100)==="100","Boss buckets are deterministic");
+  ok(balanceClamp(-1)===0&&balanceClamp(Infinity)===0,"Non-finite statistics sanitized");
+  localStorage.setItem(BALANCE_CONSENT_KEY,"yes");
+  balanceRun={schemaVersion:1,runId:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+   seasonId:GAME_SEASON_ID,build:"1.4.0",dynasty:0,startedAt:Date.now(),
+   highestStage:0,currentStage:9,activeSeconds:0,ended:false,endedStage:0,
+   bosses:{},campaigns:{started:0,claimed:0,won:0,lost:0},
+   relics:{found:0,equipped:0}};
+  balancePending=[];balanceLastWrite=Date.now();
+  balanceStageCleared(9);balanceBossAttempt(10,1.5);
+  balanceBossResult(10,false,30);balanceBossAttempt(10,2);
+  balanceBossResult(10,true,12.5);
+  const boss=balanceRun.bosses.b10;
+  ok(boss.attempts===2&&boss.timeouts===1&&boss.wins===1,"Attempts and outcomes aggregate by boss band");
+  ok(boss.winSeconds===12.5&&boss.powerSum===3.5,"Kill time and opening DPS ratio captured");
+  balanceCampaignStarted();balanceCampaignClaimed(true);balanceRelicFound();
+  balanceRelicEquipped();
+  ok(balanceRun.campaigns.claimed===1&&balanceRun.relics.equipped===1,
+     "Campaign and relic activities counted without identities");
+  const payload=balancePayload(balanceRun,"anonymous-firebase-uid");
+  ok(payload.ownerUid==="anonymous-firebase-uid"&&
+    !Object.keys(payload).some(k=>["playerName","email","message","save","clientId"].includes(k)),
+    "Firestore payload excludes names, chat and player saves");
+  ok(payload.bosses.b10.attempts===2&&payload.seasonId===GAME_SEASON_ID,
+     "Payload retains versioned season-bounded aggregates");
+  balanceConsentChanged(false);
+  ok(!balanceEnabled()&&balanceRun===null&&
+    localStorage.getItem(BALANCE_RUN_KEY)===null,"Opting out drops local pending data");
+  hiredMercenaries.splice(0,hiredMercenaries.length,
+    {squad:1,level:25,gearLevel:3,attackSpeedLevel:2},
+    {squad:1,level:30,gearLevel:3,attackSpeedLevel:2});
+  squadBuilds={};activeCampaigns=[];currentLevel=1;maxLevel=10;enemyType=getEnemyType(1);
+  const group=getArmySquads()[0];
+  const neutral=getArmySquadDps(group,true),slime=getArmySquadDps(group);
+  ok(neutral>0&&slime>0,"Army neutral and effective DPS are both available");
+  ok(Math.abs(getAutoDamage()-slime)<Math.max(0.000001,slime*1e-10),
+     "Army effective DPS matches actual mercenary combat");
+  enemyType=getEnemyType(4);
+  ok(getArmySquadDps(group)<slime,"Resistance changes displayed effective DPS");
+  ok(getArmySquadDps(group,true)===neutral,"Neutral DPS is enemy-independent");
+  hiredMercenaries[0].level+=2;
+  ok(getArmySquadDps(group,true)>neutral,"Squad leveling increases neutral DPS");
+  activeCampaigns=[{kind:"patrol",squadId:1,id:12,endsAt:Date.now()+40000}];
+  ok(getArmySquadDps(group)===0&&getAutoDamage()===0,"Campaign absence affects both displays");
+  return results;
+ }finally{
+  if(priorConsent===null)localStorage.removeItem(BALANCE_CONSENT_KEY);
+  else localStorage.setItem(BALANCE_CONSENT_KEY,priorConsent);
+  balanceRun=priorRun;balancePending=priorQueue;balanceLastWrite=priorLast;
+  currentLevel=priorLevel;maxLevel=priorMax;enemyType=priorEnemy;
+  hiredMercenaries.splice(0,hiredMercenaries.length,...mercenaries);
+  squadBuilds=builds;activeCampaigns=oldCampaigns;
+ }
+})()`,ctx,{timeout:5000});
+balanceReportingChecks.forEach(label=>console.log("PASS "+label));
+console.log("Balance telemetry and Army DPS tests: "+balanceReportingChecks.length+" passed.");
+
+const adminDashboardChecks=(()=>{
+ const assertions=[],ok=(v,n)=>{if(!v)throw Error("Admin dashboard: "+n);assertions.push(n)};
+ const html=fs.readFileSync(path.join(__dirname,"../admin/balance.html"),"utf8");
+ const js=fs.readFileSync(path.join(__dirname,"../admin/balance.js"),"utf8");
+ const docs=fs.readFileSync(path.join(__dirname,"../docs/BALANCE_ANALYTICS.md"),"utf8");
+ ok(html.includes('id="boss-results"')&&html.includes('id="run-stages"'),"Boss and run diagnostics authored");
+ ok(html.includes('id="season-current"')&&html.includes('id="season-legacy"'),
+     "Both leaderboard seasons can be analyzed");
+ ok(js.includes("claims.balanceAdmin")&&js.includes("getIdTokenResult(true)"),
+     "Admin custom claim checked before live reads");
+ ok(js.includes('limit(2000)')&&js.includes('sanitize')===false,
+     "Live reads capped and sanitize through clean()");
+ ok(docs.includes("request.auth.token.balanceAdmin")&&docs.includes("safeShape()"),
+     "Server enforcement and deployment documented");
+ return assertions;
+})();
+adminDashboardChecks.forEach(label=>console.log("PASS "+label));
+console.log("Admin dashboard static tests: "+adminDashboardChecks.length+" passed.");
 
 const seasonStabilityChecks = vm.runInContext("(async () => {\n  const passed=[],ok=(condition,label)=>{if(!condition)throw Error(\"Sync: \"+label);passed.push(label)};\n  await flushPromiseCallbacks();\n  const originalCollection=db.collection;\n  const savedName=playerName, savedConfirmed=nameConfirm;\n  const savedBest=bestSeasonStage, savedMax=maxLevel;\n  const savedSubmitted=lastSubmittedScore;\n  const previous=document.getElementById(\"leaderboard-sync-status\").textContent;\n  try {\n    let resolveWrite=null,writeCount=0,latestWritten=null;\n    db.collection=collectionName=>{\n      ok(collectionName===GAME_SCORE_COLLECTION,\"All uploads target Season II\");\n      return { doc:name=>({\n        set:payload=>{\n          writeCount++;latestWritten=payload;\n          return new Promise(resolve=>{resolveWrite=resolve});\n        },\n        get:()=>Promise.resolve({exists:false})\n      }) };\n    };\n    nameConfirm=true;playerName=\"SyncTester\";lastSubmittedScore=1;\n    bestSeasonStage=111;maxLevel=111;\n    scoreUploadPending=false;lastScoreUploadAttempt=-Infinity;scoreUploadRetryAt=0;\n    let save=inspectSeasonSave(localStorage.getItem(\"clickerHeroSave\"))||{};\n    save.schemaVersion=GAME_SCHEMA_VERSION;save.seasonId=GAME_SEASON_ID;\n    save.playerName=playerName;save.lastSubmittedScore=1;\n    localStorage.setItem(\"clickerHeroSave\",JSON.stringify(save));\n    ok(submitScore(),\"Unsynced progress schedules upload\");\n    ok(writeCount===1&&latestWritten.score===111,\"First upload captures exact stage\");\n    bestSeasonStage=222;maxLevel=222;\n    ok(!submitScore()&&writeCount===1,\"Concurrent saves do not duplicate writes\");\n    ok(scoreUploadPending,\"Pending flag prevents duplicate requests\");\n    resolveWrite();\n    await flushPromiseCallbacks();\n    ok(!scoreUploadPending&&lastSubmittedScore===111,\"Ack does not mark newer stages synchronized\");\n    const persisted=inspectSeasonSave(localStorage.getItem(\"clickerHeroSave\"));\n    ok(persisted.lastSubmittedScore===111,\"Confirmed stage is cached without another network write\");\n    ok(!submitScore()&&writeCount===1,\"Follow-up writes are rate-limited\");\n    lastScoreUploadAttempt=-Infinity;\n    ok(submitScore()&&writeCount===2&&latestWritten.score===222,\"New progress eventually uploads\");\n    resolveWrite();\n    await flushPromiseCallbacks();\n    ok(lastSubmittedScore===222,\"Second acknowledgement advances score\");\n    // Permission-denied registration leaves the name field usable.\n    db.collection=()=>({doc:()=>({\n      get:()=>Promise.reject({code:\"permission-denied\"}),\n      set:()=>Promise.reject({code:\"permission-denied\"})\n    })});\n    nameConfirm=false;nameRegistrationPending=false;\n    nameConfirmButton.disabled=false;\n    nameInput.value=\"FreshName\";\n    confirmName();\n    ok(nameRegistrationPending&&nameConfirmButton.disabled,\"Registration blocks duplicate clicks while waiting\");\n    for(let i=0;i<10;i++)await Promise.resolve();\n    ok(!nameRegistrationPending&&!nameConfirm&&nameConfirmButton.disabled===false,\n       \"Denied registration is recoverable, not a false confirmation\");\n    ok(document.getElementById(\"leaderboard-sync-status\").textContent.includes(\"Firebase\"),\n       \"Permission failure has actionable feedback\");\n    // Exact College prefix costs and repeated queries should be O(1) after initial fill.\n    const rank=3500;\n    academyDisciplines.warfare=rank;academyDisciplines.commerce=rank;\n    const expectedCost=Array.from({length:rank},(_,i)=>3+Math.floor(Math.pow(i+1,1.4)))\n      .reduce((sum,value)=>sum+value,0);\n    ok(getAcademyTotalSpent(rank)===expectedCost,\"College prefix cost equals exact rank-by-rank sum\");\n    const memoSize=academyInsightCostPrefix.length;\n    for(let i=0;i<20;i++)getResearchInsightSpent();\n    ok(academyInsightCostPrefix.length===memoSize,\"Repeated research queries reuse cached costs\");\n    academyDisciplines.warfare=10000;\n    ok(!upgradeAcademyDiscipline(\"warfare\"),\"College cap enforced before purchase\");\n    return passed;\n  } finally {\n    db.collection=originalCollection;\n    playerName=savedName;nameConfirm=savedConfirmed;\n    maxLevel=savedMax;bestSeasonStage=savedBest;lastSubmittedScore=savedSubmitted;\n    academyDisciplines={warfare:0,commerce:0,governance:0};\n    scoreUploadPending=false;nameRegistrationPending=false;\n    lastScoreUploadAttempt=-Infinity;scoreUploadRetryAt=0;\n    document.getElementById(\"leaderboard-sync-status\").textContent=previous;\n  }\n})()", ctx, {timeout:5000});
 seasonStabilityChecks.then(labels=>{

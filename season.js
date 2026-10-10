@@ -116,6 +116,7 @@ function foundNewDynasty(){
   // Keep a recoverable rollback in case the player closes the app during rebirth.
   const previous=localStorage.getItem("clickerHeroSave");
   if(previous)localStorage.setItem("clickerHeroSave_before_rebirth",previous);
+  balanceDynastyEnded(maxLevel-1);
   bestSeasonStage=Math.max(bestSeasonStage,maxLevel);
   highestCastleEver=Math.max(highestCastleEver,structures.castle.level);
   renown+=reward;dynastyCount++;

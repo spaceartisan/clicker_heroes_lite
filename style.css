@@ -1888,3 +1888,13 @@ button:has(> .ui-icon) { display: inline-flex; }
     .relic-slot span{flex:1}
     .relic-slot button{flex:0 0 auto;max-width:125px}
 }
+
+/* Balance consent and reliable, target-specific Army DPS labels. */
+.army-dps-explainer{margin:6px 0 12px;font:12px/1.5 Arial,sans-serif;color:var(--ink-muted);text-align:left}
+#army-view .army-dps{max-width:min(100%,245px);overflow-wrap:anywhere;text-align:right;font:12px/1.4 Arial,sans-serif}
+.balance-consent{padding:12px;margin:12px 0;border-radius:8px;background:var(--panel-inset);border:1px solid var(--panel-line);text-align:left}
+.balance-consent label{display:flex;gap:10px;align-items:flex-start}
+.balance-consent input{width:20px;height:20px;flex-shrink:0;accent-color:var(--accent)}
+.balance-consent span{display:grid;gap:5px}
+.balance-consent strong{color:var(--ink-heading)}
+.balance-consent small,#balance-telemetry-status{font:12px/1.5 Arial,sans-serif;color:var(--ink-muted);margin:4px 0}

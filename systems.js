@@ -52,6 +52,9 @@ function resetBossClockForSpawn() {
         bossClockPausedMs = BOSS_CHALLENGE_MS;
         if (!document.hidden) bossClockDeadline = Date.now() + BOSS_CHALLENGE_MS;
         bossAttemptsThisRun++;
+        const estimatedPower=getAutoDamage()+getPlayerClickDamage();
+        balanceBossAttempt(currentLevel,Math.min(1000000,
+            estimatedPower*30/Math.max(1,getEnemyHealth())));
     }
     renderBossChallenge();
 }
@@ -77,6 +80,8 @@ function tickBossChallenge() {
 }
 function failBossChallenge() {
     if (!bossClockStage || bossClockStage !== currentLevel || deathCooldown) return false;
+    balanceBossResult(bossClockStage,false,
+        (BOSS_CHALLENGE_MS-bossRemainingMs())/1000);
     bossRetryStage = bossClockStage;
     bossClockStage = 0;
     bossClockDeadline = 0;
@@ -128,6 +133,7 @@ function renderBossChallenge() {
 }
 function recordBossVictory(stage, firstClear) {
     if (bossClockStage === stage) {
+        balanceBossResult(stage,true,(BOSS_CHALLENGE_MS-bossRemainingMs())/1000);
         bossClockStage = 0;
         bossClockDeadline = 0;
         bossClockPausedMs = 0;
@@ -155,6 +161,7 @@ function grantRelic(id) {
     if (!relicDefinition(id)) return false;
     if ((relicInventory[id]||0) >= 99) relicFragments = Math.min(9999,relicFragments + 2);
     else relicInventory[id] = (relicInventory[id] || 0) + 1;
+    balanceRelicFound();
     renderRelicVault();
     return true;
 }
@@ -164,6 +171,7 @@ function equipRelic(id, slotIndex) {
     if (id !== null && (!relicDefinition(id) || !relicInventory[id])) return false;
     if (id && relicSlots.some((equipped,index) => index !== slot && equipped === id)) return false;
     relicSlots[slot] = id;
+    if(id)balanceRelicEquipped();
     renderRelicVault();
     updateUI();
     saveGame();
@@ -281,6 +289,7 @@ function startSquadCampaign(campaignId, squadId) {
         startedAt:Date.now(),endsAt:Date.now()+mission.minutes*60000,
         success,reward
     });
+    balanceCampaignStarted();
     saveGame();
     updateUI();
     renderArmyView();
@@ -296,6 +305,7 @@ function claimSquadCampaign(serial) {
     runGoldEarned=Math.min(1e300,runGoldEarned+reward.gold);
     relicFragments=Math.min(9999,relicFragments+reward.fragments);
     if (reward.relic) grantRelic(reward.relic);
+    balanceCampaignClaimed(mission.success);
     saveGame();
     updateUI();
     renderRelicVault();

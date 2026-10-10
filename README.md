@@ -107,3 +107,10 @@ The enemy encounter row is now a three-track CSS grid with fixed-width Previous/
 - **Relic Vault** in Kingdom: three equipment slots, five bounded relic bonuses (hero, squad, boss, enemy gold, campaign success), permanent inventory across Dynasties, salvage duplicate copies for fragments, and craft a random relic from 8 fragments. Guaranteed milestone boss trophies and rare expedition drops feed the vault. Relic milestone claims persist across rebirths; live campaigns are abandoned when founding a Dynasty.
 - Existing Season II saves load missing fields with safe defaults. No new Firebase collections or writes. Rewards are finite and separated from Academy Insight and Renown.
 - New static and gameplay regression checks cover the boss gate, expedition resource conservation, offline claim behavior, relic persistence and duplicate protection.
+
+### v1.4.0 — opt-in balance telemetry and clearer Army DPS
+
+- Anonymous **per-Dynasty balance summaries** (optional, disabled by default) capture foreground time, highest cleared stage, boss attempts, clear times and failures, 30-second damage-to-HP ratios, campaign outcomes, and relic activity. Firebase writes are coalesced instead of per click. Client consent is stored separately from the game save.
+- New admin-only **Balance Observatory**, available at `admin/balance.html` when hosted. Compares Season I/II leaderboard distributions, last observed run stages and rebirths, boss performance, and expedition/relic totals; supports a local sanitized JSON import/export.
+- Army now distinguishes **neutral DPS** from **effective DPS against the current target** and includes research, Dynasty, market and relic multipliers used in combat. Differences across enemies and deployed squads are explained directly on the Army tab.
+- Deployment requirement: configure Firebase anonymous authentication and server-enforced admin read permissions as described in [docs/BALANCE_ANALYTICS.md](docs/BALANCE_ANALYTICS.md). Firebase settings and live data are **not** modified by publishing this repository.

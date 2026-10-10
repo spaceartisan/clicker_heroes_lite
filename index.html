@@ -22,6 +22,7 @@
     <!-- Firebase SDK (compat version, no module needed) -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
 </head>
 
 <body>
@@ -175,6 +176,7 @@
                 <div>
                     <h2><span class="ui-icon ui-icon-army" aria-hidden="true"></span> Army Command</h2>
                     <p id="army-stats">Your mercenaries, all in one place.</p>
+                    <p class="army-dps-explainer">Neutral DPS shows damage before enemy resistances and counters. Effective DPS is against the current Hero-tab enemy, so it can go down when the enemy changes—even if you upgraded. Squads on campaigns deal no combat DPS.</p>
                 </div>
                 <button type="button" id="army-recruit">Recruit up to 5</button>
             </header>
@@ -261,7 +263,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.3.0 – Heroes of the Click
+        v1.4.0 – Heroes of the Click
     </p>
     <br>
 
@@ -363,6 +365,14 @@
                         <small>Fewer HUD redraws. Attack rate and damage stay unchanged.</small></span>
                     </label>
                 </div>
+                <div class="balance-consent">
+                    <label for="balance-telemetry-optin">
+                        <input id="balance-telemetry-optin" type="checkbox">
+                        <span><strong>Share anonymous balance statistics</strong>
+                        <small>Optional and off by default. Sends aggregated stage progress, boss times and failures, expedition and relic counts, and foreground gameplay time. No player names, chat, or save contents. Requires Firebase anonymous sign-in.</small></span>
+                    </label>
+                    <p id="balance-telemetry-status" role="status" aria-live="polite">Off by default.</p>
+                </div>
                 <button type="button" class="modal-close" onclick="closeOptions()">Close</button>
             </div>
         </div>
@@ -427,6 +437,7 @@
     <script src="game.js"></script>
     <script src="army.js"></script>
     <script src="systems.js"></script>
+    <script src="telemetry.js"></script>
     <script>
         if ("serviceWorker" in navigator) {
             window.addEventListener("load", () => {

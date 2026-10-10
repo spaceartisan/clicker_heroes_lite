@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Heroes of the Click | Balance Observatory</title>
+  <link rel="stylesheet" href="./balance.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<main>
+<header><p class="eyebrow">HEROES OF THE CLICK · GAME OPERATIONS</p>
+<h1>Balance Observatory</h1>
+<p>Track progression walls, boss attempts, expeditions and relics without collecting player names.</p></header>
+<section class="panel">
+ <h2>Admin access & data source</h2>
+ <p class="hint">Live queries require a Firebase account with a server-issued <code>balanceAdmin</code> claim and corresponding Firestore rules. Local JSON imports work without authentication.</p>
+ <form id="login">
+  <label>Email<input name="email" type="email" required autocomplete="username"></label>
+  <label>Password<input name="password" type="password" required autocomplete="current-password"></label>
+  <button type="submit">Sign in</button>
+ </form>
+ <div class="actions">
+  <button id="load-live" type="button" disabled>Load from Firebase</button>
+  <button id="logout" type="button" disabled>Sign out</button>
+  <label class="file-control">Import analysis JSON<input id="import-data" type="file" accept=".json,application/json"></label>
+  <button id="export-data" type="button" disabled>Export sanitized JSON</button>
+ </div>
+ <p id="status" role="status" aria-live="polite">Waiting for a data source.</p>
+</section>
+<section class="panel"><h2>Summary</h2><div id="overview" class="metrics"></div>
+ <p class="hint">Leaderboard distributions cover stored rankings (capped at the 2,000 highest scores in each season). New run data represents consenting players only; records are runs, not necessarily distinct players.</p>
+</section>
+<section class="panel"><h2>Progression</h2>
+ <div class="twocol">
+  <section><h3>Season II leaderboard</h3><div id="season-current"></div></section>
+  <section><h3>Season I (Legacy) leaderboard</h3><div id="season-legacy"></div></section>
+ </div>
+ <div class="twocol">
+  <section><h3>Latest observed run stages</h3><div id="run-stages"></div></section>
+  <section><h3>Dynasty rebirth stages</h3><div id="rebirth-stages"></div></section>
+ </div>
+</section>
+<section class="panel"><h2>Timed boss diagnostics</h2>
+ <p class="hint">First-time boss attempts, successful completion times and 30-second timeouts. "Power ratio" approximates damage possible over 30 seconds divided by boss HP at engagement.</p>
+ <div class="scroll-x"><table>
+  <thead><tr><th>Stage band</th><th>Attempts</th><th>Wins</th><th>Timeouts</th><th>Timeout %</th><th>Mean win time</th><th>Mean power ratio</th></tr></thead>
+  <tbody id="boss-results"></tbody>
+ </table></div>
+</section>
+<section class="panel"><h2>Expeditions & relics</h2><div id="feature-summary" class="metrics"></div></section>
+<footer>Run summaries v1 · No messages or names · No live balance changes are made from this page.</footer>
+</main>
+<script src="../config.js"></script>
+<script src="./balance.js"></script>
+</body>
+</html>

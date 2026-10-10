@@ -21,7 +21,7 @@ function getDefaultBatterySaver() {
         window.matchMedia("(pointer: coarse)").matches);
 }
 let batterySaverEnabled = getDefaultBatterySaver();
-// Lightweight per-Dynasty diagnostics: no telemetry, network calls, or timers.
+// Per-Dynasty diagnostics are local; optional telemetry is separate.
 let runEnemyDefeats = 0;
 let runCombatSeconds = 0;
 let runGoldEarned = 0;

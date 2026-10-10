@@ -1,0 +1,25 @@
+:root{color-scheme:dark;font-family:system-ui,Arial,sans-serif;background:#171c23;color:#f2e9dc}
+*{box-sizing:border-box}body{margin:0;padding:18px}main{max-width:1120px;margin:auto}
+header{padding:12px 0 6px}h1{font-size:clamp(28px,5vw,42px);margin:8px 0 12px}
+h2{font-size:20px;margin:0 0 14px}h3{font-size:15px;color:#e3c18c}
+p{line-height:1.5}.eyebrow{color:#d4af7a;letter-spacing:.12em;font-size:11px}
+.panel{background:#252b32;border:1px solid #58616b;border-radius:11px;padding:18px;margin:18px 0}
+.hint,footer{font-size:13px;color:#bbc0c6}
+form,.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:13px 0}
+label{display:grid;gap:5px;font-size:13px}input{background:#131a23;color:white;border:1px solid #7a858f;border-radius:6px;padding:10px;min-height:44px}
+button,.file-control{background:#60472b;color:#fff;border:1px solid #b19a70;border-radius:7px;min-height:44px;padding:10px 14px;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}.file-control input{max-width:220px;padding:2px;min-height:unset;border:0}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.metric{background:#19212a;border:1px solid #465360;border-radius:8px;padding:12px}
+.metric strong{display:block;color:#e3c18c;font-size:25px;overflow-wrap:anywhere}
+.metric span{display:block;font-size:12px;color:#c1c8cb;margin-top:3px}
+.twocol{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,350px),1fr));gap:20px}
+.hist-row{display:grid;grid-template-columns:90px minmax(0,1fr) 36px;align-items:center;gap:6px;margin:8px 0;font-size:12px}
+.bar-back{height:14px;background:#111821;border-radius:5px;overflow:hidden}
+.bar-fill{height:100%;background:#c2a071;border-radius:4px}
+.hist-count{text-align:right;color:#e6dcd3}
+.scroll-x{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:10px;border-bottom:1px solid #465360;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}th{color:#e3c18c}
+footer{text-align:center;padding:24px}code{overflow-wrap:anywhere}
+@media(max-width:550px){body{padding:9px}.panel{padding:12px}.hist-row{grid-template-columns:77px minmax(0,1fr) 33px}}
