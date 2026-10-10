@@ -27,6 +27,7 @@ const document = {
     hidden: false, body: element("body"),
     getElementById(id) { if (!nodes.has(id)) nodes.set(id, element()); return nodes.get(id); },
     createElement: element,
+    querySelector() { return element(); },
     createTextNode: text => ({ textContent: text }),
     createDocumentFragment: () => element("fragment"),
     addEventListener(name, callback) { listeners[name] = callback; }
