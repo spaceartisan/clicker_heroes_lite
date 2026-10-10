@@ -588,3 +588,37 @@ input, textarea { font-size: 16px; user-select: text; -webkit-user-select: text;
     .upgrade-row > div { flex-wrap: wrap; gap: 7px; }
     #save-load-controls, #export-import-controls { max-width: 100%; }
 }
+
+/* v0.2: comfortable squad selectors and enemy trait summaries across devices. */
+#enemy-trait {
+    max-width: 240px; margin: 6px auto 0;
+    color: #ddd0ac; font-family: Arial, sans-serif;
+    font-size: 11px; line-height: 1.35;
+}
+#squad-summary, .map-caption {
+    font: 12px/1.5 Arial, sans-serif; color: #cbbd9e;
+    padding: 0 8px;
+}
+.loadout-heading { margin: 16px 4px 4px; color: #f0cc86; }
+.loadout-hint { font: 12px/1.4 Arial, sans-serif; color: #c9c3b7; }
+.loadout-row {
+    display: grid; grid-template-columns: minmax(70px,1fr) minmax(115px,2fr) auto;
+    align-items: center; gap: 8px; margin: 7px 0;
+    padding: 9px; border: 1px solid #836448;
+    border-left: 4px solid #b6a173; border-radius: 6px; background: #3d2d21;
+}
+.loadout-row label { text-align: left; font-weight: bold; }
+.loadout-row select {
+    width: 100%; min-width: 0; padding: 10px 7px; border-radius: 5px;
+    font: 14px Arial, sans-serif; background: #241d1e; color: #f8ebce;
+    border: 1px solid #a38d68; touch-action: manipulation;
+}
+.loadout-row .loadout-hint { grid-column: 1 / -1; text-align: left; margin-top: -2px; }
+.loadout-action { padding: 9px 12px; min-height: 40px; }
+@media (max-width: 390px) {
+    .loadout-row { grid-template-columns: 1fr minmax(130px, 2fr); }
+    .loadout-action { grid-column: 2; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
