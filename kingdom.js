@@ -715,7 +715,9 @@ function MarketUpgradeUI(menu, upgradeButtons, container) {
     });
 }
 
+let activeKingdomMenu = null;
 function showMenu(name) {
+    activeKingdomMenu = name;
     const menu = document.getElementById("upgrade-menu");
     menu.style.display = "flex";
     const upgradeName = document.getElementById("upgrade-name");
@@ -796,6 +798,7 @@ function showMenu(name) {
 }
 
 function closeMenu(name) {
+    activeKingdomMenu = null;
     const menu = document.getElementById("upgrade-menu");
     const closeButton = document.getElementById("close-upgrade-menu");
 
