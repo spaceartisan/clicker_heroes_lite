@@ -1955,3 +1955,39 @@ button:has(> .ui-icon) { display: inline-flex; }
 .bestiary-track span{display:block;background:var(--accent);height:100%;border-radius:100px}
 .bestiary-locked{opacity:.78}
 @media(max-width:640px){.bestiary-grid{grid-template-columns:1fr}}
+
+/* v1.7 — Monster Field Guide; compact cards and stable responsive layout. */
+.monster-bestiary{margin-top:12px}
+.monster-bestiary>p{margin:8px 0 10px;line-height:1.5}
+.monster-filter{
+    display:flex;align-items:center;justify-content:flex-end;gap:8px;
+    margin:8px 0 12px;color:var(--ink-muted);font:12px/1.5 Arial,sans-serif
+}
+.monster-filter select{max-width:220px;min-height:40px}
+.monster-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.monster-card{
+    display:flex;flex-direction:column;gap:7px;min-width:0;
+    padding:11px;border:1px solid var(--panel-line);border-radius:8px;
+    background:var(--panel-raised);box-sizing:border-box
+}
+.monster-card-heading{display:flex;align-items:center;gap:9px;min-width:0}
+.monster-card-heading>div:last-child{min-width:0}
+.monster-card-heading strong{
+    display:block;color:var(--ink-heading);font:700 14px/1.4 Georgia,serif;
+    overflow-wrap:anywhere
+}
+.monster-card-heading small{display:block;color:var(--ink-muted);font:12px/1.4 Arial,sans-serif}
+.monster-portrait{
+    display:block;flex:0 0 64px;width:64px;height:64px;
+    border:1px solid var(--panel-line);border-radius:5px;
+    background:#111626;image-rendering:pixelated
+}
+.monster-portrait-unknown{
+    display:grid;place-items:center;color:var(--ink-muted);
+    font:700 28px Georgia,serif
+}
+.monster-card p{margin:0;color:var(--ink-muted);font:12px/1.5 Arial,sans-serif}
+.monster-card .monster-record{font-weight:600}
+.monster-card .monster-trophy{margin-top:auto;color:var(--accent)}
+.monster-card-locked{opacity:.78}
+@media(max-width:640px){.monster-grid{grid-template-columns:1fr}}

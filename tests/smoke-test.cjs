@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 
-const paths = ["theme.js", "config.js", "season.js", "research.js", "progression.js", "frontier.js", "combat-content.js", "hero.js", "kingdom.js", "enemy.js", "database.js", "ui.js", "game.js", "army.js", "systems.js", "telemetry.js"];
+const paths = ["theme.js", "config.js", "season.js", "research.js", "progression.js", "frontier.js", "combat-content.js", "hero.js", "kingdom.js", "enemy.js", "database.js", "ui.js", "game.js", "army.js", "systems.js", "monster-codex.js", "telemetry.js"];
 const source = paths.map(file => fs.readFileSync(path.join(__dirname, "..", file), "utf8")).join("\n");
 const nodes = new Map(), intervals = new Map(), listeners = {}, storage = new Map();
 let nextInterval = 0, unsubscribed = 0, mockNow = 1000;
@@ -141,7 +141,7 @@ const visualAssetChecks = (() => {
  ok(css.includes(':root[data-theme="stone"]')&&css.includes("--panel-fill"),
     "Stone mode uses semantic design tokens");
  ok(css.includes("background-attachment: scroll"),"Background avoids fixed-position mobile repaint");
- ok(sw.includes("heroes-of-click-v1.6.0")&&sw.includes('"./theme.js"'),
+ ok(sw.includes("heroes-of-click-v1.7.0")&&sw.includes('"./theme.js"'),
     "Theme controller is precached in PWA");
  for(const name of glyphNames){
     const file="icons/ui-"+name+".svg";
@@ -233,7 +233,7 @@ const layoutChecks = (() => {
  const source=fs.readFileSync(path.join(__dirname,"..","index.html"),"utf8");
  const css=fs.readFileSync(path.join(__dirname,"..","style.css"),"utf8");
  const sw=fs.readFileSync(path.join(__dirname,"..","sw.js"),"utf8");
- assert(source.includes('v1.6.0') && sw.includes('heroes-of-click-v1.6.0'),"Markup and PWA cache versions match");
+ assert(source.includes('v1.7.0') && sw.includes('heroes-of-click-v1.7.0'),"Markup and PWA cache versions match");
  for(const section of ["hero","kingdom","army"]) {
     assert(source.includes('id="view-tab-'+section+'"'),"Accessible tab exists for "+section);
  }
@@ -270,7 +270,7 @@ layoutChecks.forEach(label=>console.log("PASS "+label));
 console.log("Responsive layout tests: "+layoutChecks.length+" passed.");
 
 ctx.fs=fs;ctx.path=path;ctx.__dirname=__dirname;
-const enemyCardChecks = vm.runInContext("(() => {\n const verified=[],check=(value,label)=>{if(!value)throw Error(\"Enemy card: \"+label);verified.push(label)};\n const html=fs.readFileSync(path.join(__dirname,\"..\",\"index.html\"),\"utf8\");\n const css=fs.readFileSync(path.join(__dirname,\"..\",\"style.css\"),\"utf8\");\n const game=fs.readFileSync(path.join(__dirname,\"..\",\"game.js\"),\"utf8\");\n const enemy=fs.readFileSync(path.join(__dirname,\"..\",\"enemy.js\"),\"utf8\");\n const sw=fs.readFileSync(path.join(__dirname,\"..\",\"sw.js\"),\"utf8\");\n check(html.includes('id=\"enemy-name\"') && html.includes('id=\"enemy-trait\"'),\n   \"Name and trait labels are authored in the card\");\n check(html.indexOf('id=\"enemy-level\"')<html.indexOf('id=\"enemy-name\"') &&\n   html.indexOf('id=\"enemy-name\"')<html.indexOf('id=\"enemy-trait\"'),\n   \"Stage, name and trait follow a consistent visual hierarchy\");\n check(game.includes('document.getElementById(\"enemy-name\")'),\n   \"Enemy name reuses authored HTML instead of appending a runtime label\");\n check(!game.includes('document.getElementById(\"enemy-box\").appendChild(enemyNameText)'),\n   \"Old runtime name insertion removed\");\n check(css.includes(\"grid-template-columns: var(--enemy-nav-size) minmax(0, 1fr) var(--enemy-nav-size)\"),\n   \"Navigation uses two stable side columns with a constrained card\");\n check(css.includes(\"max-width: 464px\")&&css.includes(\"width: 100%\"),\n   \"Encounter row is bounded and responsive\");\n check(css.includes(\"#enemy-name\")&&css.includes(\"overflow-wrap: anywhere\"),\n   \"Long enemy names wrap without forcing row growth\");\n check(css.includes(\"margin-top: calc(var(--enemy-card-padding) + 51px)\"),\n   \"Navigation arrows are anchored at the sprite position\");\n check(css.includes(\"--enemy-nav-size: 42px\")&&css.includes(\"gap: 6px\"),\n   \"Phone layout retains fixed button slots\");\n check(sw.includes(\"heroes-of-click-v1.6.0\")&&html.includes(\"v1.6.0\"),\n   \"Installed PWA and visible version update together\");\n check(enemy.includes(\"enemyNameText.textContent = type.name\"),\n   \"Enemy spawning still updates the name\");\n const oldStage=currentLevel, oldEnemy=enemyType;\n try {\n   currentLevel=1;drawRandomEnemy();\n   const first=enemyNameText.textContent;\n   check(first.includes(getEnemyType(1).name),\"First enemy shows correct name\");\n   currentLevel=105;drawRandomEnemy();\n   check(enemyNameText.textContent.includes(\"Veteran\")&&enemyLevelText.textContent.includes(\"VETERAN\"),\n     \"Veteran text updates without extra DOM insertion\");\n   currentLevel=110;drawRandomEnemy();\n   check(enemyLevelText.textContent.includes(\"BOSS\"),\n     \"Boss stage label remains visible\");\n } finally {\n   currentLevel=oldStage;enemyType=oldEnemy;\n }\n return verified;\n})()",ctx,{timeout:2800});
+const enemyCardChecks = vm.runInContext("(() => {\n const verified=[],check=(value,label)=>{if(!value)throw Error(\"Enemy card: \"+label);verified.push(label)};\n const html=fs.readFileSync(path.join(__dirname,\"..\",\"index.html\"),\"utf8\");\n const css=fs.readFileSync(path.join(__dirname,\"..\",\"style.css\"),\"utf8\");\n const game=fs.readFileSync(path.join(__dirname,\"..\",\"game.js\"),\"utf8\");\n const enemy=fs.readFileSync(path.join(__dirname,\"..\",\"enemy.js\"),\"utf8\");\n const sw=fs.readFileSync(path.join(__dirname,\"..\",\"sw.js\"),\"utf8\");\n check(html.includes('id=\"enemy-name\"') && html.includes('id=\"enemy-trait\"'),\n   \"Name and trait labels are authored in the card\");\n check(html.indexOf('id=\"enemy-level\"')<html.indexOf('id=\"enemy-name\"') &&\n   html.indexOf('id=\"enemy-name\"')<html.indexOf('id=\"enemy-trait\"'),\n   \"Stage, name and trait follow a consistent visual hierarchy\");\n check(game.includes('document.getElementById(\"enemy-name\")'),\n   \"Enemy name reuses authored HTML instead of appending a runtime label\");\n check(!game.includes('document.getElementById(\"enemy-box\").appendChild(enemyNameText)'),\n   \"Old runtime name insertion removed\");\n check(css.includes(\"grid-template-columns: var(--enemy-nav-size) minmax(0, 1fr) var(--enemy-nav-size)\"),\n   \"Navigation uses two stable side columns with a constrained card\");\n check(css.includes(\"max-width: 464px\")&&css.includes(\"width: 100%\"),\n   \"Encounter row is bounded and responsive\");\n check(css.includes(\"#enemy-name\")&&css.includes(\"overflow-wrap: anywhere\"),\n   \"Long enemy names wrap without forcing row growth\");\n check(css.includes(\"margin-top: calc(var(--enemy-card-padding) + 51px)\"),\n   \"Navigation arrows are anchored at the sprite position\");\n check(css.includes(\"--enemy-nav-size: 42px\")&&css.includes(\"gap: 6px\"),\n   \"Phone layout retains fixed button slots\");\n check(sw.includes(\"heroes-of-click-v1.7.0\")&&html.includes(\"v1.7.0\"),\n   \"Installed PWA and visible version update together\");\n check(enemy.includes(\"enemyNameText.textContent = type.name\"),\n   \"Enemy spawning still updates the name\");\n const oldStage=currentLevel, oldEnemy=enemyType;\n try {\n   currentLevel=1;drawRandomEnemy();\n   const first=enemyNameText.textContent;\n   check(first.includes(getEnemyType(1).name),\"First enemy shows correct name\");\n   currentLevel=105;drawRandomEnemy();\n   check(enemyNameText.textContent.includes(\"Veteran\")&&enemyLevelText.textContent.includes(\"VETERAN\"),\n     \"Veteran text updates without extra DOM insertion\");\n   currentLevel=110;drawRandomEnemy();\n   check(enemyLevelText.textContent.includes(\"BOSS\"),\n     \"Boss stage label remains visible\");\n } finally {\n   currentLevel=oldStage;enemyType=oldEnemy;\n }\n return verified;\n})()",ctx,{timeout:2800});
 delete ctx.fs;delete ctx.path;delete ctx.__dirname;
 enemyCardChecks.forEach(label=>console.log("PASS "+label));
 console.log("Enemy card layout tests: "+enemyCardChecks.length+" passed.");
@@ -814,6 +814,138 @@ const bestiaryMarkupChecks=(()=>{
 })();
 bestiaryMarkupChecks.forEach(label=>console.log("PASS "+label));
 console.log("Bestiary markup tests: "+bestiaryMarkupChecks.length+" passed.");
+
+
+const monsterGuideChecks=vm.runInContext(`(()=>{
+ const labels=[],ok=(value,label)=>{if(!value)throw Error("Monster field guide: "+label);labels.push(label)};
+ const before={
+  records:JSON.parse(JSON.stringify(monsterCodex)),gold,relicFragments,
+  currentLevel,maxLevel,bestSeasonStage,enemyType,
+  inventory:JSON.parse(JSON.stringify(relicInventory)),
+  save:localStorage.getItem("clickerHeroSave")
+ };
+ try{
+  ok(MONSTER_ENCOUNTERS.length===12 &&
+     new Set(MONSTER_ENCOUNTERS.map(type=>type.id)).size===12,
+     "Twelve unique monster species");
+  ok(MONSTER_ENCOUNTERS.every(type=>type.sprite.length===16 &&
+     type.sprite.every(row=>row.length===16 && /^[.0-4]+$/.test(row))),
+     "All twelve silhouettes are valid hand-authored 16x16 pixel sprites");
+  ok(MONSTER_ENCOUNTERS.every(type=>type.hp>0&&type.hp<=1.95 &&
+     type.gold>=1&&type.gold<=1.8 && type.resistance>0),
+     "Regular enemies have bounded pacing and loot parameters");
+  const original=Array.from({length:9},(_,i)=>ENEMY_TYPES[i%5].id).join(",");
+  ok(Array.from({length:9},(_,i)=>getEnemyType(i+1).id).join(",")===original,
+     "Familiar first nine enemies and early-game balance unchanged");
+  ok(isBossEnemy(getEnemyType(10))&&isBossEnemy(getEnemyType(20)) &&
+     !isBossEnemy(getEnemyType(11)),"Boss cadence unchanged");
+  ok(Array.from({length:7},(_,i)=>getEnemyType(i+11).id).join(",")===
+     "duskwisp,leech,kobold,mantis,stalker,scarab,hulker",
+     "Seven new creatures debut at stages 11 to 17");
+  ok(monsterFirstStage(MONSTER_ENCOUNTERS[5])===11&&
+     monsterFirstStage(MONSTER_ENCOUNTERS[11])===17,
+     "Species entry milestones match the combat rotation");
+  const set=new Set();
+  for(let stage=1;stage<=100;stage++)
+     if(stage%10)set.add(getEnemyType(stage).id);
+  ok(set.size===12,"All twelve species recur in ordinary progression");
+  ok(!isBossEnemy(getEnemyType(20000000-1))&&
+     Number.isFinite(getEnemyHealth()),"High-stage enemy selection stays finite");
+  monsterCodex={};relicFragments=0;maxLevel=1;bestSeasonStage=1;currentLevel=1;
+  enemyType=getEnemyType(1);
+  ok(!isMonsterKnown(MONSTER_ENCOUNTERS[5]) &&
+     !isMonsterKnown(MONSTER_ENCOUNTERS[2]),
+     "New save does not prematurely reveal monsters");
+  ok(recordMonsterSeen(11,getEnemyType(11)) &&
+     isMonsterKnown(MONSTER_ENCOUNTERS[5]),"Merely seeing a monster reveals its entry");
+  ok(!recordMonsterSeen(11,getEnemyType(11))&&relicFragments===0,
+     "Repeated sightings never award loot");
+  ok(recordMonsterDefeat(11,getEnemyType(11)) && relicFragments===1,
+     "First recorded defeat grants exactly one relic fragment");
+  const first=getMonsterCodexEntry("duskwisp");
+  ok(first.defeats===1&&first.firstDefeatStage===11&&first.highestStage===11 &&
+     first.trophyClaimed,"First defeat stores exact stage and single trophy claim");
+  ok(!recordMonsterDefeat(11,getEnemyType(11))&&
+     !recordMonsterDefeat(999999,MONSTER_ENCOUNTERS[5])&&
+     first.defeats===3&&first.highestStage===999999&&relicFragments===1,
+     "Replays and higher stages update counts but never duplicate a reward");
+  ok(!recordMonsterDefeat(20,getEnemyType(20))&&relicFragments===1,
+     "Boss kills never create ordinary-monster trophies");
+  for(const monster of MONSTER_ENCOUNTERS)recordMonsterDefeat(
+    monsterFirstStage(monster),monster);
+  ok(relicFragments===12 &&
+     MONSTER_ENCOUNTERS.every(type=>getMonsterCodexEntry(type.id).trophyClaimed),
+     "Only twelve lifetime specimen rewards exist");
+  const captured=JSON.parse(JSON.stringify(monsterCodex));
+  saveGame();
+  const exported=JSON.parse(localStorage.getItem("clickerHeroSave"));
+  ok(exported.monsterCodex.duskwisp.defeats===4 &&
+     exported.monsterCodex.scarab.trophyClaimed,
+     "Monster records persist in existing Season II save");
+  loadMonsterCodexState({monsterCodex:captured});
+  ok(getMonsterCodexEntry("duskwisp").highestStage===999999 &&
+     getMonsterCodexEntry("leech").trophyClaimed,
+     "All twelve records restore after saving");
+  resetCampaignsForDynasty();
+  ok(getMonsterCodexEntry("duskwisp").trophyClaimed,
+     "Dynasty resets do not erase permanent specimen claims");
+  loadMonsterCodexState({monsterCodex:{
+    duskwisp:{seen:true,defeats:Infinity,highestStage:-4,
+      firstDefeatStage:1e15,trophyClaimed:true},
+    unknownCreature:{seen:true,defeats:1e8,trophyClaimed:true}
+  }});
+  ok(getMonsterCodexEntry("duskwisp").defeats===0 &&
+     getMonsterCodexEntry("duskwisp").highestStage===0 &&
+     getMonsterCodexEntry("duskwisp").firstDefeatStage===1e12 &&
+     Object.keys(monsterCodex).length===12,
+     "Malformed imports are clamped and unknown IDs discarded");
+  maxLevel=11;bestSeasonStage=11;currentLevel=1;
+  loadMonsterCodexState({});
+  ok(MONSTER_ENCOUNTERS.slice(0,5).every(isMonsterKnown)&&
+     MONSTER_ENCOUNTERS.slice(5).every(type=>!isMonsterKnown(type)) &&
+     MONSTER_ENCOUNTERS.every(type=>getMonsterCodexEntry(type.id).defeats===0),
+     "Older saves reveal classic species without inventing new discoveries or kills");
+  const selector=document.getElementById("monster-bestiary-filter");
+  selector.value="unknown";
+  renderMonsterBestiary();
+  const cards=document.getElementById("monster-bestiary-grid").childNodes[0].childNodes;
+  ok(cards.length===7&&
+     document.getElementById("monster-bestiary-progress").textContent.includes("5/12"),
+     "Unknown filter displays seven locked silhouettes on migrated saves");
+  selector.value="all";renderMonsterBestiary();
+  ok(document.getElementById("monster-bestiary-grid").childNodes[0].childNodes.length===12,
+     "All-species filter displays all twelve cards");
+  return labels;
+ }finally{
+  monsterCodex=before.records;gold=before.gold;relicFragments=before.relicFragments;
+  currentLevel=before.currentLevel;maxLevel=before.maxLevel;
+  bestSeasonStage=before.bestSeasonStage;enemyType=before.enemyType;
+  relicInventory=before.inventory;
+  if(before.save!==null)localStorage.setItem("clickerHeroSave",before.save);
+  else localStorage.removeItem("clickerHeroSave");
+  const selector=document.getElementById("monster-bestiary-filter");
+  selector.value="all";renderMonsterBestiary();
+ }
+})()`,ctx,{timeout:6000});
+monsterGuideChecks.forEach(label=>console.log("PASS "+label));
+console.log("Monster Field Guide tests: "+monsterGuideChecks.length+" passed.");
+
+const monsterGuideUiChecks=(()=>{
+ const results=[],ok=(condition,name)=>{if(!condition)throw Error("Monster UI: "+name);results.push(name)};
+ const html=fs.readFileSync(path.join(__dirname,"../index.html"),"utf8");
+ const css=fs.readFileSync(path.join(__dirname,"../style.css"),"utf8");
+ const worker=fs.readFileSync(path.join(__dirname,"../sw.js"),"utf8");
+ ok(html.includes('id="monster-bestiary-grid"')&&
+    html.includes('id="monster-bestiary-filter"')&&
+    html.includes('id="boss-bestiary-grid"'),"Separate monster and boss collection views");
+ ok(css.includes(".monster-grid")&&
+    css.includes("@media(max-width:640px)"),"Cards adapt to narrow screens");
+ ok(html.includes('<script src="monster-codex.js"></script>')&&
+    worker.includes('"./monster-codex.js"'),"PWA caches offline Field Guide logic");
+ return results;
+})();
+monsterGuideUiChecks.forEach(label=>console.log("PASS "+label));
+console.log("Monster Field Guide UI tests: "+monsterGuideUiChecks.length+" passed.");
 
 const seasonStabilityChecks = vm.runInContext("(async () => {\n  const passed=[],ok=(condition,label)=>{if(!condition)throw Error(\"Sync: \"+label);passed.push(label)};\n  await flushPromiseCallbacks();\n  const originalCollection=db.collection;\n  const savedName=playerName, savedConfirmed=nameConfirm;\n  const savedBest=bestSeasonStage, savedMax=maxLevel;\n  const savedSubmitted=lastSubmittedScore;\n  const previous=document.getElementById(\"leaderboard-sync-status\").textContent;\n  try {\n    let resolveWrite=null,writeCount=0,latestWritten=null;\n    db.collection=collectionName=>{\n      ok(collectionName===GAME_SCORE_COLLECTION,\"All uploads target Season II\");\n      return { doc:name=>({\n        set:payload=>{\n          writeCount++;latestWritten=payload;\n          return new Promise(resolve=>{resolveWrite=resolve});\n        },\n        get:()=>Promise.resolve({exists:false})\n      }) };\n    };\n    nameConfirm=true;playerName=\"SyncTester\";lastSubmittedScore=1;\n    bestSeasonStage=111;maxLevel=111;\n    scoreUploadPending=false;lastScoreUploadAttempt=-Infinity;scoreUploadRetryAt=0;\n    let save=inspectSeasonSave(localStorage.getItem(\"clickerHeroSave\"))||{};\n    save.schemaVersion=GAME_SCHEMA_VERSION;save.seasonId=GAME_SEASON_ID;\n    save.playerName=playerName;save.lastSubmittedScore=1;\n    localStorage.setItem(\"clickerHeroSave\",JSON.stringify(save));\n    ok(submitScore(),\"Unsynced progress schedules upload\");\n    ok(writeCount===1&&latestWritten.score===111,\"First upload captures exact stage\");\n    bestSeasonStage=222;maxLevel=222;\n    ok(!submitScore()&&writeCount===1,\"Concurrent saves do not duplicate writes\");\n    ok(scoreUploadPending,\"Pending flag prevents duplicate requests\");\n    resolveWrite();\n    await flushPromiseCallbacks();\n    ok(!scoreUploadPending&&lastSubmittedScore===111,\"Ack does not mark newer stages synchronized\");\n    const persisted=inspectSeasonSave(localStorage.getItem(\"clickerHeroSave\"));\n    ok(persisted.lastSubmittedScore===111,\"Confirmed stage is cached without another network write\");\n    ok(!submitScore()&&writeCount===1,\"Follow-up writes are rate-limited\");\n    lastScoreUploadAttempt=-Infinity;\n    ok(submitScore()&&writeCount===2&&latestWritten.score===222,\"New progress eventually uploads\");\n    resolveWrite();\n    await flushPromiseCallbacks();\n    ok(lastSubmittedScore===222,\"Second acknowledgement advances score\");\n    // Permission-denied registration leaves the name field usable.\n    db.collection=()=>({doc:()=>({\n      get:()=>Promise.reject({code:\"permission-denied\"}),\n      set:()=>Promise.reject({code:\"permission-denied\"})\n    })});\n    nameConfirm=false;nameRegistrationPending=false;\n    nameConfirmButton.disabled=false;\n    nameInput.value=\"FreshName\";\n    confirmName();\n    ok(nameRegistrationPending&&nameConfirmButton.disabled,\"Registration blocks duplicate clicks while waiting\");\n    for(let i=0;i<10;i++)await Promise.resolve();\n    ok(!nameRegistrationPending&&!nameConfirm&&nameConfirmButton.disabled===false,\n       \"Denied registration is recoverable, not a false confirmation\");\n    ok(document.getElementById(\"leaderboard-sync-status\").textContent.includes(\"Firebase\"),\n       \"Permission failure has actionable feedback\");\n    // Exact College prefix costs and repeated queries should be O(1) after initial fill.\n    const rank=3500;\n    academyDisciplines.warfare=rank;academyDisciplines.commerce=rank;\n    const expectedCost=Array.from({length:rank},(_,i)=>3+Math.floor(Math.pow(i+1,1.4)))\n      .reduce((sum,value)=>sum+value,0);\n    ok(getAcademyTotalSpent(rank)===expectedCost,\"College prefix cost equals exact rank-by-rank sum\");\n    const memoSize=academyInsightCostPrefix.length;\n    for(let i=0;i<20;i++)getResearchInsightSpent();\n    ok(academyInsightCostPrefix.length===memoSize,\"Repeated research queries reuse cached costs\");\n    academyDisciplines.warfare=10000;\n    ok(!upgradeAcademyDiscipline(\"warfare\"),\"College cap enforced before purchase\");\n    return passed;\n  } finally {\n    db.collection=originalCollection;\n    playerName=savedName;nameConfirm=savedConfirmed;\n    maxLevel=savedMax;bestSeasonStage=savedBest;lastSubmittedScore=savedSubmitted;\n    academyDisciplines={warfare:0,commerce:0,governance:0};\n    scoreUploadPending=false;nameRegistrationPending=false;\n    lastScoreUploadAttempt=-Infinity;scoreUploadRetryAt=0;\n    document.getElementById(\"leaderboard-sync-status\").textContent=previous;\n  }\n})()", ctx, {timeout:5000});
 seasonStabilityChecks.then(labels=>{

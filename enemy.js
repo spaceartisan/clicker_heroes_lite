@@ -55,6 +55,7 @@ function drawRandomEnemy() {
     const hint = document.getElementById("enemy-trait");
     if (hint) hint.textContent = type.summary;
     enemyHealth = getEnemyHealth();
+    if(!isBossEnemy(type))recordMonsterSeen(currentLevel,type);
     enemyLevelText.textContent = "Stage " + currentLevel +
         (isBossEnemy(type) ? " · BOSS" : type.champion ? " · VETERAN" : "");
     updateFrontierUI(currentLevel);
@@ -86,13 +87,15 @@ function handleEnemyDefeat() {
     runGoldEarned=Math.min(1e300,runGoldEarned+reward);
     showGoldEarned(reward);
     recordBossVictory(defeatedStage,firstClear);
+    const recordedSpecimen=!isBossEnemy(type) &&
+        recordMonsterDefeat(defeatedStage,type);
     if (currentLevel === maxLevel) {
         maxLevel++;
         balanceStageCleared(defeatedStage);
     }
     bestSeasonStage=Math.max(bestSeasonStage,maxLevel);
     if (autoAdvance) currentLevel++;
-    if(isBossEnemy(type))saveGame();
+    if(isBossEnemy(type)||recordedSpecimen)saveGame();
     deathCooldown = true;
     setTimeout(() => {
         drawRandomEnemy();

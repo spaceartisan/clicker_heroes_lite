@@ -314,7 +314,7 @@ function saveGame() {
         runCombatSeconds,
         runGoldEarned,
         activeCampaigns,campaignSerial,relicInventory,relicSlots,relicFragments,relicBossClaims,
-        bossCodex,bossRetryStage
+        bossCodex,monsterCodex,bossRetryStage
     };
     localStorage.setItem("clickerHeroSave", JSON.stringify(saveData));
 }
@@ -394,6 +394,7 @@ function loadGame() {
         runCombatSeconds = Math.max(0, Number(data.runCombatSeconds) || 0);
         runGoldEarned = Math.max(0, Math.min(1e300, Number(data.runGoldEarned) || 0));
         loadCampaignRelicState(data);
+        loadMonsterCodexState(data);
         applyBatterySaver(data.batterySaverEnabled ?? getDefaultBatterySaver(), false);
         autoNextToggle.checked = autoAdvance;
         scientificCheckbox.checked = scientificNotation;

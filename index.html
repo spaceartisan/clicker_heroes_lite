@@ -107,6 +107,19 @@
 
         <div id="kingdom-view" style="display:none;">
             <section id="dynasty-panel" class="dynasty-panel" aria-label="Dynasty legacy"></section>
+            <details id="monster-bestiary" class="system-panel monster-bestiary" aria-label="Monster field guide">
+                <summary class="bestiary-heading"><span class="ui-icon ui-icon-battle" aria-hidden="true"></span> Monster Field Guide <small id="monster-bestiary-progress">0/12 seen</small></summary>
+                <p id="monster-bestiary-summary">Discover and record the creatures roaming your kingdom.</p>
+                <label class="monster-filter">Show
+                    <select id="monster-bestiary-filter">
+                        <option value="all">All species</option>
+                        <option value="known">Encountered</option>
+                        <option value="recorded">Recorded specimens</option>
+                        <option value="unknown">Undiscovered</option>
+                    </select>
+                </label>
+                <div id="monster-bestiary-grid" class="monster-grid"></div>
+            </details>
             <details id="boss-bestiary" class="system-panel boss-bestiary" aria-label="Boss bestiary">
                 <summary class="bestiary-heading"><span class="ui-icon ui-icon-battle" aria-hidden="true"></span> Boss Bestiary <small id="boss-bestiary-progress">0/4 known</small></summary>
                 <p id="boss-bestiary-summary">Record encounters and earn mastery against each boss.</p>
@@ -276,7 +289,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.6.0 – Heroes of the Click
+        v1.7.0 – Heroes of the Click
     </p>
     <br>
 
@@ -450,6 +463,7 @@
     <script src="game.js"></script>
     <script src="army.js"></script>
     <script src="systems.js"></script>
+    <script src="monster-codex.js"></script>
     <script src="telemetry.js"></script>
     <script>
         if ("serviceWorker" in navigator) {

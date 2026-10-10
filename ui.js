@@ -140,6 +140,7 @@ function switchView(view) {
         updateStructureUI();
         drawKingdom();
         if(typeof renderDynastyPanel==="function")renderDynastyPanel();
+        if(typeof renderMonsterBestiary==="function")renderMonsterBestiary();
     } else if (typeof renderArmyView === "function") {
         renderArmyView();
     }

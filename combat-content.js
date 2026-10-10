@@ -146,6 +146,31 @@ function bossAtStage(stage) {
     return BOSS_ENCOUNTERS[(Math.floor(level/10)-1)%BOSS_ENCOUNTERS.length]||BOSS_ENCOUNTERS[0];
 }
 
+
+const MONSTER_ENCOUNTERS = Object.freeze([
+    ...ENEMY_TYPES.slice(0,5),
+    {"id":"duskwisp","name":"Dusk Wisp","trait":"spectral","summary":"Flickers through steel; Mystics and Runic Weapons disperse it","hp":1.22,"gold":1.4,"resistance":0.54,"regen":0,"dodge":0,"palette":["#16132b","#353056","#7163a0","#bca9ec","#8bdfea"],"sprite":["................","................","......1111......",".....122221.....","....12233221....","...1223333221...","...1234444321...","..122344443221..","..123344443321..","...1223333221...","..11222332211...","..12222222221...","...1122..2211...","....11....11....",".....1....1.....","................"]},
+    {"id":"leech","name":"Bog Leech","trait":"regenerating","summary":"Siphons life from the mire; Ember Blades cauterize its wounds","hp":0.96,"gold":1.12,"resistance":0.97,"regen":0.03,"dodge":0,"palette":["#12211f","#255447","#4f9072","#93c8a0","#e8e3ad"],"sprite":["................","................","................",".....111111.....","...1122222211...","..122222222221..",".12222333322221.","1222333333332221","1222334444332221","1222233333322221",".12222222222221.","..122233322221..","...1122222211...",".....111111.....","................","................"]},
+    {"id":"kobold","name":"Copper Kobold","trait":"treasure","summary":"Guards copper caches; Raiders increase its bounty","hp":1.08,"gold":1.75,"resistance":1,"regen":0,"dodge":0,"palette":["#23190f","#6a3f25","#ad753e","#e6b875","#f3e79a"],"sprite":["................","...11......11...","...121....121...","....12211221....","....12222221....","...1223333221...","..122334433221..","..123332233321..","...1222222221...","....11222211....","...1122222211...","..112223322211..","..1221.22.1221..","..121..11..121..","..111......111..","................"]},
+    {"id":"mantis","name":"Fang Mantis","trait":"evasive","summary":"Quick lunges dodge hero taps; Rangers track its movements","hp":1.02,"gold":1.35,"resistance":0.88,"regen":0,"dodge":0.15,"palette":["#131b13","#31552c","#5c9147","#a1c974","#e2eaa9"],"sprite":["................","..1..........1..","...1........1...","...12......21...","....12....21....",".....122221.....","....12233221....","...1223333221...","..122344443221..",".11223333332211.","11.122333221.11.","....12222221....","...1122..2211...","..1121....1211..",".111........111.","................"]},
+    {"id":"stalker","name":"Wind Stalker","trait":"evasive","summary":"Vaults between ridges; Rangers counter its footwork","hp":1.14,"gold":1.48,"resistance":0.9,"regen":0,"dodge":0.22,"palette":["#1a1d2a","#333b59","#586f93","#91b3d1","#e4e9cb"],"sprite":["................","...11......11...","...121....121...","...122111221....","..12222222221...",".11222333322211.","1222334334332221","1222333333332221",".11222233332211.","..112222222211..","...122222221....","..112211122211..",".11221....12211.","1121........1211","111..........111","................"]},
+    {"id":"scarab","name":"Granite Scarab","trait":"armored","summary":"A walking stone shell; Vanguards and Piercing Arms crack it","hp":1.95,"gold":1.6,"resistance":0.7,"regen":0,"dodge":0,"palette":["#171d21","#38454d","#677c83","#abb9b5","#e5b279"],"sprite":["................","......1111......","....11222211....","..112222222211..",".11222333322211.","1222333333332221","1223334444333221","1233344444433321","1233344444433321","1223333333333221","1222333333332221",".11222222222211.","..112211112211..",".11221....12211.","11111......11111","................"]},
+    {"id":"hulker","name":"Spore Hulker","trait":"regenerating","summary":"Fungal plates regrow rapidly; Ember Blades burn the spores","hp":1.28,"gold":1.45,"resistance":0.94,"regen":0.04,"dodge":0,"palette":["#182119","#374e32","#6c8b4d","#b4bd79","#f3ddae"],"sprite":["................","......1111......","...1112222111...","..122233332221..",".12223344433221.","1222334444433221","1222334444433221","1222333333333221",".12223333333221.","..122222222221..","..112222222211..","...122222221....","..11221..12211..",".11221....12211.","11111......11111","................"]}
+]);
+// Keep familiar stage 1–9 enemies; introduce the new seven at 11–17.
+// After that, cycle deterministically through all 12, skipping boss stages.
+function monsterAtStage(stage){
+    const level=Math.max(1,Math.floor(Number(stage)||1));
+    if(level<=9)return ENEMY_TYPES[(level-1)%5];
+    const since=level-11;
+    const ordinal=since-Math.floor(Math.max(0,since)/10);
+    return MONSTER_ENCOUNTERS[(5+ordinal)%MONSTER_ENCOUNTERS.length];
+}
+function monsterFirstStage(type){
+    const index=MONSTER_ENCOUNTERS.findIndex(monster=>monster.id===type.id);
+    return index<5?index+1:index+6;
+}
+
 function findSquadRole(id) {
     return SQUAD_ROLES.find(role => role.id === id) || SQUAD_ROLES[0];
 }
@@ -167,7 +192,7 @@ function getSquadBuild(squadId) {
 }
 function getEnemyType(level = currentLevel) {
     const lvl = Math.max(1, Math.floor(Number(level) || 1));
-    const base = lvl % 10 === 0 ? bossAtStage(lvl) : ENEMY_TYPES[(lvl - 1) % 5];
+    const base = lvl % 10 === 0 ? bossAtStage(lvl) : monsterAtStage(lvl);
     return enhanceFrontierEnemy(base,lvl);
 }
 function squadUpgradeKitCost(squadId, kitId) {
