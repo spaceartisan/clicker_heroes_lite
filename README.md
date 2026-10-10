@@ -23,6 +23,27 @@ Click/tap enemies to attack. Advance through enemy levels, unlock abilities, and
 
 Autosaving runs about once per minute while the game is in the foreground. The game also saves when the page is hidden or closed. The game pauses combat when backgrounded and awards bounded offline earnings upon return; this prevents extremely fast mercenary intervals from consuming power in the background.
 
+## Kingdom and combat (v0.2.0)
+
+The kingdom and combat now influence each other. **Each squad has an independently selectable role and a forgeable equipment kit**, on top of its existing mercenary levels, equipment tiers and attack speeds.
+
+| Building | Unlock | Gameplay effect |
+| --- | --- | --- |
+| Barracks | Vanguard (default), Rangers at level 2, Mystics at 4, Raiders at 6 | Rangers counter evasive foes; Mystics counter spectral ones; Raiders sacrifice DPS for extra gold; Vanguards excel against armor. |
+| Blacksmith | Forged Steel at level 1, Piercing Arms at 2, Ember Blades at 4, Runic Weapons at 6 | Steel adds general damage; piercing counters armor; ember burns regenerators and stops their healing; runic counters spectral defenses. |
+| Castle | Higher building tiers and additional world details | The castle develops towers, a ward, housing, banners, and more as it levels. |
+| Tavern / Market | Recruiting and economic upgrades | Higher buildings become visibly developed on the map and strengthen the corresponding progression systems. |
+
+Open **Kingdom → Barracks** to assign a combat role to a squad. Open **Kingdom → Blacksmith** to forge a kit. A kit is purchased once for each squad; switching between owned kits is free. These controls are per squad, not per mercenary, to keep the UI usable with large armies.
+
+Monsters now have hand-authored pixel silhouettes and six distinct combat profiles: **Mire Slime** (regeneration), **Sky Harpy** (evasion), **Iron Golem** (armor), **Moon Wraith** (spectral resistance), **Goblin Marauder** (bonus bounty), and **Ash Dragon** (a powerful armored boss every ten stages). The current enemy's trait and weakness appear below its sprite. Mercenary DPS reflects its active target's resistance and the squads' loadouts.
+
+### Save compatibility and performance
+
+Your older local saves are supported. Missing squad role/kit data initializes to a standard Vanguard squad, and previously earned upgrades, hired mercenaries, gold and kingdom building levels are retained. New saves include the new `squadBuilds` object; do not remove that field when manually editing saves.
+
+The kingdom and enemy art are static Canvas rendering, performed on stage changes or menu actions rather than a continuous 60 FPS animation loop. The single 250 ms combat tick and pause-on-background behavior remain in place for battery/heat control. Performance still needs verification on representative physical Android and iOS devices.
+
 ## Developer checks
 
 No dependencies, bundler, or build step are required; the site is static.
@@ -31,7 +52,7 @@ No dependencies, bundler, or build step are required; the site is static.
 node tests/smoke-test.cjs
 ```
 
-The test script verifies upgrade caps, mercenary DPS scaling, background throttling, offline gold limits, save compatibility, Firestore listener cleanup, and safe text rendering.
+The test script verifies upgrade caps, enemy archetypes, squad roles and gear, kingdom rendering, mercenary DPS scaling, background throttling, offline gold limits, legacy saves, Firestore listener cleanup, and safe text rendering.
 
 ## Community security
 
