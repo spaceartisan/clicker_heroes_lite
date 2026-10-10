@@ -1,57 +1,63 @@
 let deathCooldown = false;
 
 function getEnemyHealth() {
-    return Math.floor(5 * Math.pow(currentLevel, 1.5));// + Math.floor(currentLevel / 1000) / 10));
-    // return Math.floor(baseEnemyHealth + currentLevel * 5);
+    const type = enemyType || getEnemyType(currentLevel);
+    return Math.max(5, Math.floor(5 * Math.pow(currentLevel, 1.5) * type.hp));
 }
 
+// Every archetype has a specific, hand-authored pixel silhouette.
+// Render once per spawn, never once per frame (important on mobile).
 function drawRandomEnemy() {
-    const gridSize = 10;
-    const cellSize = enemyCanvas.width / gridSize;
-    const themeIndex = Math.floor((currentLevel - 1) / 5) % levelThemes.length;
-    const theme = levelThemes[themeIndex];
-    const palette = theme.palette;
-    const pixels = [];
+    enemyType = getEnemyType(currentLevel);
+    const type = enemyType;
+    const width = enemyCanvas.width;
+    const height = enemyCanvas.height;
+    const pixels = type.sprite;
+    const cell = Math.min(width, height) / 18;
+    const offX = (width - 16 * cell) * 0.5;
+    const offY = (height - 16 * cell) * 0.5;
 
-    ctx.clearRect(0, 0, enemyCanvas.width, enemyCanvas.height);
+    ctx.clearRect(0, 0, width, height);
+    ctx.imageSmoothingEnabled = false;
+    // Restrained backdrop, grounding shadow, and an archetype-specific silhouette.
+    ctx.fillStyle = "#0f131e";
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = "#252538";
+    ctx.fillRect(width * 0.12, height * 0.82, width * 0.76, height * 0.07);
+    ctx.fillStyle = type.palette[1];
+    ctx.fillRect(width * 0.2, height * 0.89, width * 0.6, height * 0.03);
 
-    for (let y = 0; y < gridSize; y++) {
-        const row = [];
-        for (let x = 0; x < gridSize / 2; x++) {
-            row[x] = Math.random() < 0.5 ? palette[Math.floor(Math.random() * palette.length)] : null;
+    for (let row = 0; row < 16; row++) {
+        const pattern = (pixels[row] || "").padEnd(16, ".").slice(0, 16);
+        for (let col = 0; col < 16; col++) {
+            const pixel = pattern[col];
+            if (pixel === ".") continue;
+            const paletteIdx = Number(pixel);
+            ctx.fillStyle = type.palette[paletteIdx] || type.palette[2];
+            ctx.fillRect(Math.floor(offX + col * cell), Math.floor(offY + row * cell),
+                Math.ceil(cell), Math.ceil(cell));
         }
-        pixels.push(row.concat([...row].reverse()));
     }
-
-    for (let y = 0; y < gridSize; y++) {
-        for (let x = 0; x < gridSize; x++) {
-            const color = pixels[y][x];
-            if (color) {
-                ctx.fillStyle = color;
-                ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-            }
-        }
-    }
-
-    const name = enemyNames[(currentLevel - 1) % enemyNames.length];
-    enemyNameText.textContent = `${name} of the ${theme.name}`;
+    enemyNameText.textContent = type.name + " — " + type.trait;
+    const hint = document.getElementById("enemy-trait");
+    if (hint) hint.textContent = type.summary;
     enemyHealth = getEnemyHealth();
-    enemyLevelText.textContent = `Level: ${currentLevel}`;
+    enemyLevelText.textContent = "Stage " + currentLevel + (type.id === "dragon" ? " · BOSS" : "");
 }
 
-// === Enemy Logic ===
+// Rewards reflect enemy type, merchant upgrades, and specialized raider squads.
 function handleEnemyDefeat() {
     if (deathCooldown) return;
     enemyHealth = 0;
     enemiesDefeated++;
-    const goldGain = Math.floor(2 * Math.pow(currentLevel, 1.4));
-    let goldMult = mktUp(0);
-    if (goldRushActive) {
-        goldMult *= 2;
-    }
-    gold += Math.ceil(goldGain * goldMult);
-    showGoldEarned(goldGain * goldMult);
-    if (currentLevel == maxLevel) maxLevel++;
+    const type = enemyType || getEnemyType(currentLevel);
+    const goldGain = Math.floor(2 * Math.pow(currentLevel, 1.4) * type.gold);
+    let goldMult = mktUp(0) * getSquadGoldMultiplier();
+    if (goldRushActive) goldMult *= 2;
+    const reward = Math.ceil(goldGain * goldMult);
+    gold += reward;
+    showGoldEarned(reward);
+    if (currentLevel === maxLevel) maxLevel++;
     if (autoAdvance) currentLevel++;
     deathCooldown = true;
     setTimeout(() => {
@@ -59,5 +65,5 @@ function handleEnemyDefeat() {
         updateStructureUI();
         updateUI();
         deathCooldown = false;
-    },250); // Cooldown to prevent multiple defeats in quick succession
+    }, 250);
 }
