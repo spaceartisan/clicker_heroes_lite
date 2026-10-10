@@ -93,3 +93,9 @@ The enemy encounter row is now a three-track CSS grid with fixed-width Previous/
 - Changing the selection ends the previous Firestore subscription and ignores stale snapshots; closing the popup cleans up its listener. Empty rankings and Firestore permission issues have clear messages.
 - Added selector regression checks and bumped visible version and offline shell cache to v1.2.2. Corrected an existing test harness to await an event-loop turn for asynchronous synchronization callbacks.
 - Firestore must allow client **read** access to the legacy `scores` collection to display historic rankings. This frontend change cannot modify server rules.
+
+### v1.2.3 — dated message history
+
+- The community message board now shows the **full local posting date and time** for each Firestore message, including historical messages. A compact message header places the author's name beside a semantic timestamp; message content has its own line for readability on phones.
+- Timestamps are displayed in the viewer's locale and timezone, with an ISO timestamp on the HTML `time` element. Messages remain ordered newest first, and author/message fields are inserted as text, not interpreted as HTML.
+- Added message-date, old-record, listener-cleanup, and untrusted-text regression checks. Bumped the visible version and offline cache to v1.2.3; no database schema, server write, or player save changes.

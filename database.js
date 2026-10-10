@@ -266,11 +266,27 @@ function showMessage() {
                     if (!data.timestamp || typeof data.timestamp.toDate !== "function") return;
                     const name = typeof data.name === "string" ? data.name : "Unnamed Hero";
                     const msg = typeof data.msg === "string" ? data.msg : "No message";
-                    const time = data.timestamp.toDate().toLocaleTimeString();
-                    const line = document.createElement("p");
+                    const postedDate = data.timestamp.toDate();
+                    if (!(postedDate instanceof Date) || !Number.isFinite(postedDate.getTime())) return;
+
+                    const line = document.createElement("article");
+                    line.className = "message-log-entry";
+                    const header = document.createElement("div");
+                    header.className = "message-log-header";
                     const author = document.createElement("strong");
                     author.textContent = name;
-                    line.append(author, document.createTextNode(` @ ${time}: ${msg}`));
+                    const posted = document.createElement("time");
+                    posted.className = "message-log-date";
+                    posted.dateTime = postedDate.toISOString();
+                    posted.textContent = postedDate.toLocaleString(undefined, {
+                        year: "numeric", month: "short", day: "numeric",
+                        hour: "numeric", minute: "2-digit"
+                    });
+                    const messageText = document.createElement("p");
+                    messageText.className = "message-log-text";
+                    messageText.textContent = msg;
+                    header.append(author, posted);
+                    line.append(header, messageText);
                     fragment.appendChild(line);
                     count++;
                 });

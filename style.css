@@ -1811,3 +1811,32 @@ button:has(> .ui-icon) { display: inline-flex; }
 @media (max-width: 380px) {
     .leaderboard-season-control { grid-template-columns: minmax(0, 1fr); gap: 5px; }
 }
+
+/* Message history: the full posting date remains visible, even for old entries. */
+#message-scroll .message-log-entry {
+    padding: 10px 5px;
+    border-bottom: 1px solid var(--panel-line);
+    min-width: 0;
+}
+#message-scroll .message-log-entry:last-child { border-bottom: 0; }
+#message-scroll .message-log-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 3px 10px;
+}
+#message-scroll .message-log-header strong { color: var(--ink-heading); }
+#message-scroll .message-log-date {
+    color: var(--ink-muted);
+    font: 12px/1.5 Arial, sans-serif;
+    white-space: normal;
+}
+#message-scroll .message-log-text {
+    margin: 5px 0 0;
+    color: var(--ink);
+    font: 14px/1.45 Arial, sans-serif;
+    overflow-wrap: anywhere;
+    user-select: text;
+    -webkit-user-select: text;
+}
