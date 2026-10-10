@@ -334,6 +334,7 @@ function loadGame() {
         updateUI();
         startSquadAttack();
         saveGame();
+        if (typeof resetArmySelection === "function") resetArmySelection();
     }
 }
 
