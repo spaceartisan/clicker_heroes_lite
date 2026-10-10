@@ -17,7 +17,10 @@ const RESEARCH_NODES = [
     { id:"royal_mint", branch:"commerce", name:"Royal Mint", cost:3, stage:70, castle:4, requires:["guild_charters"], description:"+12% gold from enemies", bonus:"enemyGold", value:0.12 },
     { id:"royal_survey", branch:"governance", name:"Royal Survey", cost:1, stage:10, castle:1, requires:[], description:"8% cheaper Castle upgrades", bonus:"castleDiscount", value:0.08 },
     { id:"scribes_college", branch:"governance", name:"Scribes' College", cost:2, stage:30, castle:2, requires:["royal_survey"], description:"+10% offline gold income", bonus:"offlineGold", value:0.10 },
-    { id:"royal_academy", branch:"governance", name:"Royal Academy", cost:3, stage:60, castle:4, requires:["scribes_college"], description:"+15% hero click damage", bonus:"heroDamage", value:0.15 }
+    { id:"royal_academy", branch:"governance", name:"Royal Academy", cost:3, stage:60, castle:4, requires:["scribes_college"], description:"+15% hero click damage", bonus:"heroDamage", value:0.15 },
+    { id:"veteran_drills", branch:"warfare", name:"Veteran Drills", cost:3, stage:120, castle:5, requires:["beast_lore"], description:"+18% squad damage against Veterans", bonus:"veteranDamage", value:0.18 },
+    { id:"frontier_charters", branch:"commerce", name:"Frontier Charters", cost:3, stage:140, castle:5, requires:["royal_mint"], description:"+12% gold from Frontier encounters", bonus:"frontierGold", value:0.12 },
+    { id:"frontier_council", branch:"governance", name:"Frontier Council", cost:3, stage:160, castle:6, requires:["royal_academy"], description:"+18% hero click damage in Frontier", bonus:"frontierHeroDamage", value:0.18 }
 ];
 let researchState = {};
 

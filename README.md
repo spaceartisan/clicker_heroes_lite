@@ -86,6 +86,16 @@ Offline gold now simulates 10%-efficiency encounters against ordinary enemies, b
 
 **Projection:** clearing stages 21–100 once generates about 75,000g of base monster rewards. The 110,000g of Treasury milestones spreads additional capital across the midgame instead of increasing repeatable farming drops. Bounties stop at stage 100 until the next progression design pass.
 
+## Frontier Chapters (v0.5.0)
+
+**Stages 101–200** introduce five terrain campaigns: Ashen Marches (101–120, stronger regenerators), Iron Frontier (121–140, armor), Wisp Fen (141–160, spectral), Storm Pass (161–180, evasion), and Dragon Crown (181–200, stronger armored dragons). Squad roles and forging kits remain relevant counters. Stages divisible by five but not ten spawn Veteran enemies with 1.45× health and 1.6× gold (in addition to regional modifiers). Normal bosses still appear every ten stages and keep their existing identities. Distinct border colors, Veteran markers, Hero and Kingdom labels, and three map outposts are drawn only when needed, without any continuous animation or timers.
+
+The **Royal Treasury** expands to stage 120 (45,000g), 140 (65,000g), 160 (90,000g), 180 (115,000g), and 200 (145,000g): **460,000g** in new one-time bounties, **570,000g** across all ten milestones. Older saves receive any eligible unclaimed rewards retroactively, and completed milestones remain in the same `claimedTreasury` save field.
+
+The Royal Academy adds three permanent branches: **Veteran Drills** (stage 120, +18% damage against Veterans), **Frontier Charters** (stage 140, +12% Frontier gold), and **Frontier Council** (stage 160, +18% Frontier hero click damage), costing three existing Insight each. Prerequisites, Castle gates, and all original research are preserved; no new currency is introduced. The planned Faith system remains separate and optional.
+
+This pass stops at stage 200. Regional modifiers are modest and focused on individual traits; normal gold multipliers are 1.12–1.16. Early-stage profiles, the capped offline patrol, mobile-friendly render timing, old saves, and the 250ms combat interval are unchanged.
+
 ## Developer checks
 
 No dependencies, bundler, or build step are required; the site is static.

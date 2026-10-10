@@ -20,8 +20,14 @@ function drawRandomEnemy() {
     ctx.clearRect(0, 0, width, height);
     ctx.imageSmoothingEnabled = false;
     // Restrained backdrop, grounding shadow, and an archetype-specific silhouette.
-    ctx.fillStyle = "#0f131e";
-    ctx.fillRect(0, 0, width, height);
+    const reg = type.frontier ? getFrontierRegion(currentLevel) : null;
+    ctx.fillStyle = reg ? "#171821" : "#0f131e";
+    ctx.fillRect(0,0,width,height);
+    if(reg) {
+        ctx.fillStyle=reg.color;
+        ctx.fillRect(0,0,width,4);
+        ctx.fillRect(0,height-4,width,4);
+    }
     ctx.fillStyle = "#252538";
     ctx.fillRect(width * 0.12, height * 0.82, width * 0.76, height * 0.07);
     ctx.fillStyle = type.palette[1];
@@ -38,11 +44,18 @@ function drawRandomEnemy() {
                 Math.ceil(cell), Math.ceil(cell));
         }
     }
+    if(type.champion) {
+        ctx.fillStyle="#efd58e";
+        for(const [x,y] of [[7,7],[width-14,7],[7,height-14],[width-14,height-14]])
+            ctx.fillRect(x,y,7,7);
+    }
     enemyNameText.textContent = type.name + " — " + type.trait;
     const hint = document.getElementById("enemy-trait");
     if (hint) hint.textContent = type.summary;
     enemyHealth = getEnemyHealth();
-    enemyLevelText.textContent = "Stage " + currentLevel + (type.id === "dragon" ? " · BOSS" : "");
+    enemyLevelText.textContent = "Stage " + currentLevel +
+        (type.id === "dragon" ? " · BOSS" : type.champion ? " · VETERAN" : "");
+    updateFrontierUI(currentLevel);
 }
 
 // Rewards reflect enemy type, merchant upgrades, and specialized raider squads.
@@ -55,7 +68,8 @@ function handleEnemyDefeat() {
     const marketBounty = type.id === "dragon" ? mktUp(5) : mktUp(6);
     const royalSteward = 1 + 0.03 * Math.max(0, passiveAbilities[2].level - 1);
     let goldMult = mktUp(0) * marketBounty * getSquadGoldMultiplier() *
-        royalSteward * (1 + getResearchBonus("enemyGold"));
+        royalSteward * (1 + getResearchBonus("enemyGold")) *
+        (type.frontier ? 1 + getResearchBonus("frontierGold") : 1);
     if (goldRushActive) goldMult *= 2;
     const reward = Math.ceil(goldGain * goldMult);
     gold += reward;

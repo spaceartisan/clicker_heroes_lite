@@ -33,7 +33,8 @@ function getPlayerClickDamage() {
     const castleBonus = 1 + Math.min(0.60, 0.015 * Math.max(0, structures.castle.level - 1));
     const decreeBonus = 1 + 0.04 * Math.max(0, passiveAbilities[1].level - 1);
     return playerLevel * (2 ** playerGearLevel) *
-        castleBonus * decreeBonus * (1 + getResearchBonus("heroDamage"));
+        castleBonus * decreeBonus * (1 + getResearchBonus("heroDamage")) *
+        (currentLevel>=101&&currentLevel<=200 ? 1+getResearchBonus("frontierHeroDamage"):1);
 }
 
 // // Squad DPS is evaluated against the active enemy's defense profile.
@@ -70,6 +71,7 @@ function getAutoDamage() {
         researchedBonus *= 1 + getResearchBonus("counterDamage");
     }
     if (target.id === "dragon") researchedBonus *= 1 + getResearchBonus("bossDamage");
+    if (target.champion) researchedBonus *= 1 + getResearchBonus("veteranDamage");
     return dps * attackMultiplier * mktUp(7) * researchedBonus * target.resistance;
 }
 

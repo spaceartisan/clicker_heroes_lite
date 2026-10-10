@@ -186,6 +186,21 @@ function drawKingdom() {
         }
     }
 
+    // Frontier outposts visibly develop as the player's cleared stages advance.
+    if(maxLevel>100) {
+        roof(15.5,3.8,1.8,1.3,"#85624e","#dcad7e");
+        tile(16.22,4.9,.45,.36,"#463c32");
+        banner(16.83,3.0,"#b67d50");
+    }
+    if(maxLevel>140) {
+        roof(2.45,5.7,1.55,1.3,"#566475","#9cabac");
+        tile(2.7,6.85,.3,.35,"#ddd1a4");
+        banner(3.75,4.95,"#8d76c2");
+    }
+    if(maxLevel>180) {
+        roof(15.35,5.95,1.75,1.4,"#9d614b","#f2b15b");
+        banner(16.95,5.4,"#d99a61");
+    }
     // All sites remain legible before construction; each upgraded building
     // acquires recognizable decorations representing its gameplay purpose.
     for (const [id,x,y] of built) {

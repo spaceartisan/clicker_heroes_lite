@@ -47,6 +47,7 @@
                     </div>
                     <p id="enemy-level">Stage 1</p>
                     <p id="enemy-trait" aria-live="off">Every enemy has a weakness.</p>
+                    <p id="frontier-hero" class="frontier-hero" hidden></p>
                 </div>
 
 
@@ -106,6 +107,7 @@
                 <button id="treasury-claim" type="button" onclick="claimRoyalTreasury()" disabled>No unclaimed bounties</button>
             </section>
 
+            <p id="frontier-kingdom" class="frontier-kingdom" hidden></p>
             <div id="kingdom-box">
                 <canvas id="kingdom-canvas" width="400" height="400"></canvas>
             </div>
@@ -223,7 +225,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v0.4.1 – Heroes of the Click
+        v0.5.0 – Heroes of the Click
     </p>
     <br>
 
@@ -343,6 +345,7 @@
     <script src="config.js"></script>
     <script src="research.js"></script>
     <script src="progression.js"></script>
+    <script src="frontier.js"></script>
     <script src="combat-content.js"></script>
     <script src="hero.js"></script>
     <script src="kingdom.js"></script>

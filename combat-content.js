@@ -113,8 +113,8 @@ function getSquadBuild(squadId) {
 }
 function getEnemyType(level = currentLevel) {
     const lvl = Math.max(1, Math.floor(Number(level) || 1));
-    if (lvl % 10 === 0) return ENEMY_TYPES[5];
-    return ENEMY_TYPES[(lvl - 1) % 5];
+    const base = lvl % 10 === 0 ? ENEMY_TYPES[5] : ENEMY_TYPES[(lvl - 1) % 5];
+    return enhanceFrontierEnemy(base,lvl);
 }
 function squadUpgradeKitCost(squadId, kitId) {
     const kit = findEquipmentKit(kitId);

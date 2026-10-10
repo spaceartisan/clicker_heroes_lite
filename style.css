@@ -776,3 +776,14 @@ input, textarea { font-size: 16px; user-select: text; -webkit-user-select: text;
  .treasury-title strong{font-size:16px}
  #treasury-claim{width:100%}
 }
+
+/* Frontier labels: static stage-driven UI, no animations. */
+.frontier-hero,.frontier-kingdom {
+    background:#30281f; color:#f0debe; font:12px/1.5 Arial,sans-serif;
+    border:1px solid #ae8566; border-left:4px solid #ca9b6c;
+    border-radius:6px; padding:8px 10px; overflow-wrap:anywhere;
+}
+.frontier-hero { max-width:260px; margin:7px auto 4px; }
+.frontier-kingdom {max-width:640px;margin:10px auto 14px;}
+.frontier-hero[hidden],.frontier-kingdom[hidden]{display:none!important;}
+@media(max-width:400px){.frontier-hero{max-width:220px;font-size:11px;padding:6px}}

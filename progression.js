@@ -1,7 +1,11 @@
 // One-time stage rewards are separate from Royal Academy Insight and future Faith.
-const ROYAL_TREASURY_STAGES = Object.freeze([20,40,60,80,100]);
+const ROYAL_TREASURY_STAGES = Object.freeze([20,40,60,80,100,120,140,160,180,200]);
+const FRONTIER_TREASURY = Object.freeze({120:45000,140:65000,160:90000,180:115000,200:145000});
 let claimedTreasury = [];
-function getTreasuryReward(stage) { return ROYAL_TREASURY_STAGES.includes(stage) ? 5*stage*stage : 0; }
+function getTreasuryReward(stage) {
+    if (!ROYAL_TREASURY_STAGES.includes(stage)) return 0;
+    return stage>100 ? FRONTIER_TREASURY[stage] : 5*stage*stage;
+}
 function getTreasuryAvailableStages() {
     const cleared = Math.max(0,Math.floor(maxLevel)-1);
     return ROYAL_TREASURY_STAGES.filter(stage=>stage<=cleared&&!claimedTreasury.includes(stage));
@@ -26,14 +30,14 @@ function updateTreasuryUI() {
     const next=ROYAL_TREASURY_STAGES.find(stage=>stage>cleared);
     const prev=ROYAL_TREASURY_STAGES.filter(stage=>stage<=cleared).at(-1)||0;
     const amount=next?Math.max(0,Math.min(1,(cleared-prev)/(next-prev))):1;
-    const chapter=Math.min(5,Math.floor(cleared/20)+1);
+    const chapter=Math.min(10,Math.floor(cleared/20)+1);
     document.getElementById("treasury-chapter").textContent =
-        "CHAPTER "+["I","II","III","IV","V"][chapter-1];
+        "CHAPTER "+["I","II","III","IV","V","VI","VII","VIII","IX","X"][chapter-1];
     document.getElementById("treasury-progress-fill").style.width = Math.round(amount*100)+"%";
     document.getElementById("treasury-status").textContent = next
         ? "Highest cleared: "+cleared+" · Next: Stage "+next+" ("+
            formatDigits(getTreasuryReward(next),0,0).trim()+" gold)"
-        : "Highest cleared: "+cleared+" · All five chapter bounties unlocked";
+        : "Highest cleared: "+cleared+" · All ten chapter bounties unlocked";
     const button=document.getElementById("treasury-claim");
     button.disabled=!ready;
     button.textContent=ready?"Claim "+formatDigits(ready,0,0).trim()+" gold":"No unclaimed bounties";
