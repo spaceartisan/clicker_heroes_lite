@@ -36,10 +36,18 @@ function getArmyTargets(squadIds, kind) {
     const allowed = new Set(squadIds.map(Number));
     const groups = getArmySquads().filter(squad => allowed.has(squad.id));
     if (kind === "level") {
-        return groups.flatMap(group => group.indices.map(index => ({
-            indices: [index],
-            tier: hiredMercenaries[index].level
-        })));
+        // Interleave first mercenary of every squad, then second, etc.
+        // An insufficient budget is therefore spread across squads fairly.
+        const targets = [];
+        const maximumMembers = Math.max(0, ...groups.map(group => group.indices.length));
+        for (let slot = 0; slot < maximumMembers; slot++) {
+            for (const group of groups) {
+                const index = group.indices[slot];
+                if (index === undefined) continue;
+                targets.push({ indices: [index], tier: hiredMercenaries[index].level });
+            }
+        }
+        return targets;
     }
     if (kind === "gear" || kind === "speed") {
         const field = kind === "gear" ? "gearLevel" : "attackSpeedLevel";
@@ -93,7 +101,9 @@ function planArmyUpgrade(squadIds, kind, amount, budget = gold) {
 
 function applyArmyUpgradePlan(plan) {
     if (!plan || !plan.operations.length || !Number.isFinite(plan.spent) ||
-        plan.spent > gold || plan.spent < 0) return false;
+        plan.spent > gold || plan.spent < 0 ||
+        plan.operations.some(operation => !["level", "gear", "speed"].includes(operation.kind) ||
+            operation.indices.some(index => !hiredMercenaries[index]))) return false;
     for (const operation of plan.operations) {
         for (const index of operation.indices) {
             const merc = hiredMercenaries[index];
