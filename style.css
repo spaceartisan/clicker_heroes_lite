@@ -1921,3 +1921,37 @@ button:has(> .ui-icon) { display: inline-flex; }
 .boss-dossier p{margin:4px 0;color:var(--ink-muted)}
 #boss-dossier-state{color:var(--ink-heading)}
 #boss-challenge{max-width:100%}
+
+/* v1.6.0 boss mastery archive stays collapsed until explicitly opened. */
+.boss-bestiary{margin-top:12px}
+.bestiary-heading{
+ display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--ink-heading);
+ font:700 17px/1.45 Georgia,serif;min-height:44px
+}
+.bestiary-heading .ui-icon{color:var(--accent)}
+.bestiary-heading small{margin-left:auto;font:600 12px Arial,sans-serif;color:var(--ink-muted);text-align:right}
+.boss-bestiary>p{margin:8px 0 12px;line-height:1.55}
+.bestiary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.bestiary-card{
+ min-width:0;display:flex;flex-direction:column;gap:7px;padding:12px;
+ border:1px solid var(--panel-line);border-radius:8px;
+ background:var(--panel-raised);box-sizing:border-box
+}
+.bestiary-card-heading{display:flex;align-items:center;gap:10px;min-width:0}
+.bestiary-card-heading>div:last-child{min-width:0}
+.bestiary-card-heading strong{
+ display:block;color:var(--ink-heading);font:700 14px/1.4 Georgia,serif;overflow-wrap:anywhere
+}
+.bestiary-card-heading small{display:block;color:var(--ink-muted);font:12px/1.4 Arial,sans-serif}
+.bestiary-portrait{
+ display:block;flex:0 0 64px;width:64px;height:64px;image-rendering:pixelated;
+ background:#111626;border:1px solid var(--panel-line);border-radius:5px
+}
+.bestiary-unknown{display:grid;place-items:center;font:700 28px Georgia,serif;color:var(--ink-muted)}
+.bestiary-card p{margin:0;color:var(--ink-muted);font:12px/1.5 Arial,sans-serif}
+.bestiary-card .bestiary-mastery{font-weight:700;color:var(--ink-heading)}
+.bestiary-card .bestiary-next{color:var(--accent);margin-top:auto}
+.bestiary-track{width:100%;height:7px;background:var(--panel-inset);border:1px solid var(--panel-line);border-radius:100px;overflow:hidden}
+.bestiary-track span{display:block;background:var(--accent);height:100%;border-radius:100px}
+.bestiary-locked{opacity:.78}
+@media(max-width:640px){.bestiary-grid{grid-template-columns:1fr}}

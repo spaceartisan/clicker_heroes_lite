@@ -39,7 +39,8 @@ function getPlayerClickDamage() {
     return playerLevel * safePowerOfTwo(playerGearLevel) *
         castleBonus * decreeBonus * (1 + getResearchBonus("heroDamage")) *
         (currentLevel>=101&&currentLevel<=200 ? 1+getResearchBonus("frontierHeroDamage"):1) *
-        (1+getRelicBonus("hero")+(isBossEnemy(enemyType)?getRelicBonus("boss"):0));
+        (1+getRelicBonus("hero")+(isBossEnemy(enemyType)?getRelicBonus("boss"):0)) *
+        getBossMasteryMultiplier(enemyType);
 }
 
 // // Squad DPS is evaluated against the active enemy's defense profile.
@@ -81,7 +82,8 @@ function getAutoDamage() {
     if (target.champion) researchedBonus *= 1 + getResearchBonus("veteranDamage");
     return Math.min(1e290,dps * attackMultiplier * mktUp(7) *
         researchedBonus * target.resistance * dynastyDamageMultiplier() *
-        (1+getRelicBonus("squad")+(isBossEnemy(target)?getRelicBonus("boss"):0)));
+        (1+getRelicBonus("squad")+(isBossEnemy(target)?getRelicBonus("boss"):0)) *
+        getBossMasteryMultiplier(target));
 }
 
 function upgradeSkillCost(ability, query = false) {

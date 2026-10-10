@@ -40,6 +40,167 @@ let relicInventory = {};
 let relicSlots = [null,null,null];
 let relicFragments = 0;
 let relicBossClaims = [];
+
+const BOSS_MASTERY_CAP=5;
+const BOSS_MASTERY_BONUS=.03;
+const BOSS_SIGNATURE_RELICS=Object.freeze({dragon:"ember",wyvern:"compass",lich:"ward",hydra:"banner"});
+let bossCodex={};
+function boundedBossStat(value,limit){
+    const number=Number(value);
+    return Number.isFinite(number)?Math.max(0,Math.min(limit,Math.floor(number))):0;
+}
+function getBossCodexEntry(bossId){
+    if(!BOSS_ENCOUNTERS.some(boss=>boss.id===bossId))return null;
+    if(!bossCodex[bossId])bossCodex[bossId]={
+        kills:0,firstClears:0,highestStage:0,highestRewardedStage:0,mastery:0,bestSeconds:0
+    };
+    return bossCodex[bossId];
+}
+function getBossMasteryMultiplier(type){
+    if(!isBossEnemy(type))return 1;
+    const entry=getBossCodexEntry(type.id);
+    return 1+(entry?entry.mastery:0)*BOSS_MASTERY_BONUS;
+}
+function loadBossCodexState(data){
+    bossCodex={};
+    const raw=data&&data.bossCodex&&typeof data.bossCodex==="object"&&
+        !Array.isArray(data.bossCodex)?data.bossCodex:{};
+    for(const boss of BOSS_ENCOUNTERS){
+        const from=raw[boss.id]&&typeof raw[boss.id]==="object"&&
+            !Array.isArray(raw[boss.id])?raw[boss.id]:{};
+        const entry=getBossCodexEntry(boss.id);
+        entry.kills=boundedBossStat(from.kills,1e9);
+        entry.firstClears=boundedBossStat(from.firstClears,1e9);
+        entry.highestStage=boundedBossStat(from.highestStage,1e12);
+        entry.highestRewardedStage=boundedBossStat(from.highestRewardedStage,1e12);
+        entry.mastery=boundedBossStat(from.mastery,BOSS_MASTERY_CAP);
+        const seconds=Number(from.bestSeconds);
+        entry.bestSeconds=Number.isFinite(seconds)&&seconds>0&&seconds<=30?
+            Number(seconds.toFixed(2)):0;
+    }
+    renderBossBestiary();
+}
+function bossAlreadyDiscovered(boss){
+    const firstStage=10+BOSS_ENCOUNTERS.indexOf(boss)*10;
+    const entry=getBossCodexEntry(boss.id);
+    return Math.max(maxLevel,bestSeasonStage)-1>=firstStage||
+        currentLevel>=firstStage||entry.kills>0;
+}
+function renderBossBestiary(){
+    const root=document.getElementById("boss-bestiary-grid");
+    if(!root)return;
+    const frag=document.createDocumentFragment();
+    let known=0,total=0;
+    for(const boss of BOSS_ENCOUNTERS){
+        const entry=getBossCodexEntry(boss.id);
+        const discovered=bossAlreadyDiscovered(boss);
+        if(discovered)known++;
+        total+=entry.mastery;
+        const card=document.createElement("article");
+        card.className="bestiary-card"+(discovered?"":" bestiary-locked");
+        const heading=document.createElement("div");
+        heading.className="bestiary-card-heading";
+        const portrait=document.createElement(discovered?"canvas":"div");
+        portrait.className="bestiary-portrait"+(discovered?"":" bestiary-unknown");
+        if(discovered){
+            portrait.width=64;portrait.height=64;
+            const pen=portrait.getContext("2d");
+            if(pen)for(let y=0;y<16;y++)for(let x=0;x<16;x++){
+                const pixel=boss.sprite[y][x];
+                if(pixel===".")continue;
+                pen.fillStyle=boss.palette[Number(pixel)]||boss.palette[2];
+                pen.fillRect(x*4,y*4,4,4);
+            }
+        }else portrait.textContent="?";
+        portrait.setAttribute("aria-hidden","true");
+        const intro=document.createElement("div");
+        const title=document.createElement("strong");
+        title.textContent=discovered?boss.name:"Unidentified threat";
+        const subtitle=document.createElement("small");
+        subtitle.textContent=discovered?boss.trait+" · "+boss.counter:
+            "First appears at stage "+(10+BOSS_ENCOUNTERS.indexOf(boss)*10);
+        intro.append(title,subtitle);
+        heading.append(portrait,intro);
+        card.appendChild(heading);
+        if(discovered){
+            const tip=document.createElement("p");
+            tip.textContent=boss.summary;
+            card.appendChild(tip);
+        }
+        const progress=document.createElement("p");
+        progress.className="bestiary-mastery";
+        progress.textContent="Mastery "+entry.mastery+"/5 · +"+
+            Math.round((getBossMasteryMultiplier(boss)-1)*100)+"% damage vs this boss";
+        card.appendChild(progress);
+        const track=document.createElement("div");
+        track.className="bestiary-track";
+        track.setAttribute("role","progressbar");
+        track.setAttribute("aria-label",(discovered?boss.name:"Unknown boss")+" mastery");
+        track.setAttribute("aria-valuenow",String(entry.mastery));
+        track.setAttribute("aria-valuemin","0");
+        track.setAttribute("aria-valuemax","5");
+        const fill=document.createElement("span");
+        fill.style.width=entry.mastery*20+"%";
+        track.appendChild(fill);
+        card.appendChild(track);
+        if(discovered){
+            const record=document.createElement("p");
+            record.textContent="Wins recorded: "+entry.kills+
+                " · First clears: "+entry.firstClears+
+                " · Highest recorded stage: "+(entry.highestStage||"—")+
+                " · Fastest trial: "+(entry.bestSeconds?entry.bestSeconds.toFixed(2)+"s":"—");
+            const prize=document.createElement("p");
+            prize.className="bestiary-next";
+            const signature=relicDefinition(BOSS_SIGNATURE_RELICS[boss.id]);
+            prize.textContent=entry.mastery===5?
+                "Complete · Signature relic "+signature.name+" earned at rank 3":
+                "Next new frontier victory: +3% damage and 2 fragments"+
+                (entry.mastery===2?" + "+signature.name+" at rank 3":"")+".";
+            card.append(record,prize);
+        }
+        frag.appendChild(card);
+    }
+    root.replaceChildren(frag);
+    const summary=document.getElementById("boss-bestiary-summary");
+    if(summary)summary.textContent=known+"/4 bosses known · "+total+
+        "/20 mastery ranks. Beat a higher stage for each boss species to earn "+
+        "one rank (+3% damage and 2 fragments), up to five. Rank 3 awards "+
+        "a signature relic. Replaying prior stages never repeats these rewards.";
+    const status=document.getElementById("boss-bestiary-progress");
+    if(status)status.textContent=known+"/4 known · "+total+"/20 mastery";
+}
+function recordBossCodexVictory(stage,firstClear,seconds){
+    if(!Number.isFinite(stage)||stage<10||stage%10!==0)return false;
+    const boss=bossAtStage(stage),entry=getBossCodexEntry(boss.id);
+    if(!entry)return false;
+    entry.kills=Math.min(1e9,entry.kills+1);
+    if(firstClear)entry.firstClears=Math.min(1e9,entry.firstClears+1);
+    entry.highestStage=Math.max(entry.highestStage,stage);
+    if(Number.isFinite(seconds)&&seconds>0&&seconds<=30){
+        const time=Number(seconds.toFixed(2));
+        entry.bestSeconds=entry.bestSeconds?Math.min(entry.bestSeconds,time):time;
+    }
+    let earned=false;
+    if(firstClear&&stage>entry.highestRewardedStage){
+        entry.highestRewardedStage=stage;
+        if(entry.mastery<BOSS_MASTERY_CAP){
+            earned=true;
+            entry.mastery++;
+            relicFragments=Math.min(9999,relicFragments+2);
+            let message=boss.name+" mastery "+entry.mastery+"/5 · +2 fragments.";
+            if(entry.mastery===3){
+                const relic=BOSS_SIGNATURE_RELICS[boss.id];
+                grantRelic(relic);
+                message+=" Signature relic: "+relicDefinition(relic).name+".";
+            }
+            showPopupMessage(message,false,3400);
+        }
+    }
+    renderBossBestiary();
+    renderRelicVault();
+    return earned;
+}
+
 const campaignTimerNodes = new Map();
 
 
@@ -240,6 +401,7 @@ function renderBossChallenge() {
     }
 }
 function recordBossVictory(stage, firstClear) {
+    const seconds=bossClockStage===stage?(BOSS_CHALLENGE_MS-bossRemainingMs())/1000:null;
     if (bossClockStage === stage) {
         balanceBossResult(stage,true,(BOSS_CHALLENGE_MS-bossRemainingMs())/1000);
         bossClockStage = 0;
@@ -248,6 +410,7 @@ function recordBossVictory(stage, firstClear) {
         bossHealLastTick = 0;
     }
     if (bossRetryStage === stage) bossRetryStage = 0;
+    if(stage % 10 === 0)recordBossCodexVictory(stage,firstClear,seconds);
     if (firstClear && stage % 10 === 0) {
         const index = RELIC_BOSS_MILESTONES.indexOf(stage);
         if (index >= 0 && !relicBossClaims.includes(stage)) {
@@ -599,6 +762,7 @@ function loadCampaignRelicState(data) {
     bossRetryStage=Number.isFinite(data.bossRetryStage)&&data.bossRetryStage===maxLevel?
         data.bossRetryStage:0;
     bossClockStage=0;bossClockDeadline=0;bossClockPausedMs=0;bossHealLastTick=0;
+    loadBossCodexState(data);
     renderRelicVault();
 }
 function resetCampaignsForDynasty() {
@@ -607,9 +771,11 @@ function resetCampaignsForDynasty() {
     bossRetryStage=0;bossClockStage=0;bossClockDeadline=0;bossClockPausedMs=0;
     bossHealLastTick=0;
     renderRelicVault();
+    renderBossBestiary();
     renderSquadCampaigns();
 }
 document.addEventListener("DOMContentLoaded",()=>{
+    renderBossBestiary();
     renderRelicVault();
     renderSquadCampaigns();
     renderBossChallenge();

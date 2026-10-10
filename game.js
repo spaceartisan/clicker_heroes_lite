@@ -314,7 +314,7 @@ function saveGame() {
         runCombatSeconds,
         runGoldEarned,
         activeCampaigns,campaignSerial,relicInventory,relicSlots,relicFragments,relicBossClaims,
-        bossRetryStage
+        bossCodex,bossRetryStage
     };
     localStorage.setItem("clickerHeroSave", JSON.stringify(saveData));
 }

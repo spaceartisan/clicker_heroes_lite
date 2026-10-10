@@ -236,7 +236,8 @@ function getArmySquadDps(group,neutral=false) {
         mktUp(2)*mktUp(3)*(rallyActive?2:1)*mktUp(7)*research*
         target.resistance*dynastyDamageMultiplier()*
         getBossSquadDamageFactor(target,build)*
-        (1+getRelicBonus("squad")+(isBossEnemy(target)?getRelicBonus("boss"):0)));
+        (1+getRelicBonus("squad")+(isBossEnemy(target)?getRelicBonus("boss"):0)) *
+        getBossMasteryMultiplier(target));
 }
 
 function createArmyButton(text, click, className = "") {

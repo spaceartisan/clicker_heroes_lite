@@ -92,6 +92,7 @@ function handleEnemyDefeat() {
     }
     bestSeasonStage=Math.max(bestSeasonStage,maxLevel);
     if (autoAdvance) currentLevel++;
+    if(isBossEnemy(type))saveGame();
     deathCooldown = true;
     setTimeout(() => {
         drawRandomEnemy();

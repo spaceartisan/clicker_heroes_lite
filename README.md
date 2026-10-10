@@ -130,3 +130,10 @@ The enemy encounter row is now a three-track CSS grid with fixed-width Previous/
 - **Boss healing is evaluated during the existing 1-second trial clock**, including manual-only play, and pauses in hidden tabs; it never runs twice through the mercenary damage timer. All mechanics are bounded and apply only to a new timed boss (revisited bosses remain farmable).
 - Boss Market bounties, boss research, boss relics, victories and telemetry now recognize **every** boss, not just the Ash Dragon. Army DPS and combat damage use matching armor modifiers, and displayed hero damage includes the same modifiers as actual clicks.
 - No save schema changes, new network calls, or new Firebase permissions required. First boss at stage 10 remains Ash Dragon. Recorded high-stage progression is preserved.
+
+### v1.6.0 — Boss Bestiary and signature rewards
+
+- A collapsed Kingdom **Boss Bestiary** displays encountered boss portraits, weaknesses, recorded wins, highest defeated stage, fastest timed victory, and five permanent mastery ranks. Prior progress reveals encountered species without fabricating kill statistics.
+- Clearing a higher-numbered first-clear stage of that boss species grants one rank (maximum five), permanently adding **+3% damage against the species** and **two relic fragments**. At rank three, the boss guarantees a signature relic: Ash Dragon / Ember Crest, Storm Wyvern / Pathfinder's Compass, Grave Wyrm / Runestone Ward, Cinder Hydra / Banner of Valor.
+- Each species remembers its highest rewarded stage across Dynasty resets; repeating a prior stage cannot farm more ranks, shards or signature relics. Past milestone-boss rewards still work as before.
+- The save adds a bounded bossCodex of four entries. Earlier saves load with empty new records, retaining old progress, achievements and relic inventories. Mastery affects hero clicks, active squad DPS and Army effective DPS (not neutral DPS). Boss victories save immediately.
