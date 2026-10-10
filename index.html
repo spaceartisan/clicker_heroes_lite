@@ -23,13 +23,13 @@
 </head>
 
 <body>
-    <div id="switch-mode">
+    <nav id="switch-mode" aria-label="Game sections">
         <div id="view-switch">
-            <button onclick="switchView('hero')">🏹 Hero</button>
-            <button onclick="switchView('kingdom')">🏰 Kingdom</button>
-            <button onclick="switchView('army')">⚔️ Army</button>
+            <button type="button" id="view-tab-hero" class="is-active" aria-pressed="true" onclick="switchView('hero')">🏹 Hero</button>
+            <button type="button" id="view-tab-kingdom" class="" aria-pressed="false" onclick="switchView('kingdom')">🏰 Kingdom</button>
+            <button type="button" id="view-tab-army" class="" aria-pressed="false" onclick="switchView('army')">⚔️ Army</button>
         </div>
-    </div>
+    </nav>
     <div id="game-container">
         <h1>Heroes of the Click</h1>
 
@@ -115,34 +115,45 @@
             </div>
             <p class="map-caption">Your kingdom grows with your upgrades. Tap the Barracks to assign roles and the Blacksmith to equip squads.</p>
             <h3>Structures</h3>
-            <div class="structure-row">
-                <span>Castle — Lv <span id="castle-lvl">0</span></span>
-                <button onclick="upgradeStructure('castle')"><span id="castle-cost">1000</span></button>
+            <div class="structure-list">
+                <article class="structure-card">
+                <div class="structure-row">
+                    <span>Castle — Lv <span id="castle-lvl">0</span></span>
+                    <button onclick="upgradeStructure('castle')"><span id="castle-cost">1000</span></button>
+                </div>
+                <p>Upgrade your castle to unlock new buildings and increase hero damage.</p>
+                </article>
+                <article class="structure-card">
+                <div class="structure-row">
+                    <span>Tavern — Lv <span id="tavern-lvl">0</span></span>
+                    <button onclick="upgradeStructure('tavern')"><span id="tavern-cost">1000</span></button>
+                </div>
+                <p>Upgrade your tavern to increase the amount of mercenaries hired.</p>
+                </article>
+                <article class="structure-card">
+                <div class="structure-row">
+                    <span>Blacksmith — Lv <span id="blacksmith-lvl">0</span></span>
+                    <button onclick="upgradeStructure('blacksmith')"><span id="blacksmith-cost">1000</span></button>
+                </div>
+                <p>Upgrade your blacksmith to improve mercenary and hero gear level.</p>
+                </article>
+                <article class="structure-card">
+                <div class="structure-row">
+                    <span>Barracks — Lv <span id="barracks-lvl">0</span></span>
+                    <button onclick="upgradeStructure('barracks')"><span id="barracks-cost">1000</span></button>
+                </div>
+                <p>Upgrade your barracks to increase the level of your mercenaries.</p>
+                </article>
+                <article class="structure-card">
+                <div class="structure-row">
+                    <span>Market — Lv <span id="market-lvl">0</span></span>
+                    <button onclick="upgradeStructure('market')"><span id="market-cost">1000</span></button>
+                </div>
+                <p>Upgrade your market to increase the amount of gold earned from each defeated enemy.</p>
+                </article>
             </div>
-            <p>Upgrade your castle to unlock new buildings and increase hero damage.</p>
-            <div class="structure-row">
-                <span>Tavern — Lv <span id="tavern-lvl">0</span></span>
-                <button onclick="upgradeStructure('tavern')"><span id="tavern-cost">1000</span></button>
-            </div>
-            <p>Upgrade your tavern to increase the amount of mercenaries hired.</p>
-            <div class="structure-row">
-                <span>Blacksmith — Lv <span id="blacksmith-lvl">0</span></span>
-                <button onclick="upgradeStructure('blacksmith')"><span id="blacksmith-cost">1000</span></button>
-            </div>
-            <p>Upgrade your blacksmith to improve mercenary and hero gear level.</p>
-            <div class="structure-row">
-                <span>Barracks — Lv <span id="barracks-lvl">0</span></span>
-                <button onclick="upgradeStructure('barracks')"><span id="barracks-cost">1000</span></button>
-            </div>
-            <p>Upgrade your barracks to increase the level of your mercenaries.</p>
-            <div class="structure-row">
-                <span>Market — Lv <span id="market-lvl">0</span></span>
-                <button onclick="upgradeStructure('market')"><span id="market-cost">1000</span></button>
-            </div>
-            <p>Upgrade your market to increase the amount of gold earned from each defeated enemy.</p>
         </div>
 
-        <h3></h3>
         <div id="army-view" style="display:none;">
             <header class="army-header">
                 <div>
@@ -216,9 +227,11 @@
         </div>
     </div>
 
-        <button onclick="showLeaderboard()">🏆 Leaderboard</button>
-        <button onclick="showMessage()">📜 Message</button>
-        <button onclick="showOptions()">⚙️ Game Config</button>
+        <nav class="game-actions" aria-label="Community and game settings">
+            <button type="button" onclick="showLeaderboard()">🏆 Leaderboard</button>
+            <button type="button" onclick="showMessage()">📜 Message</button>
+            <button type="button" onclick="showOptions()">⚙️ Game Config</button>
+        </nav>
 
         <div>
             <span id="autosave-indicator" style="opacity: 0;">💾 Autosaved!</span>
@@ -227,7 +240,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.1.1 – Heroes of the Click
+        v1.1.2 – Heroes of the Click
     </p>
     <br>
 
@@ -254,15 +267,14 @@
                 <!-- Scores will be injected here -->
             </div>
             <p id="leaderboard-sync-status" role="status" aria-live="polite"></p>
-            <div id="name-entry">
+            <div id="name-entry" class="inline-form">
                 <label for="player-name">Name:</label>
                 <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
                 <button id="confirm-button" onclick="confirmName()">Confirm</button>
                 <span id="name-status" style="opacity: 0;"></span>
             </div>
             <button type="button" id="sync-score-button" onclick="submitScore(true)">↻ Sync my score</button>
-            <h3></h3>
-            <button onclick="closeLeaderboard()">Close</button>
+            <button type="button" class="modal-close" onclick="closeLeaderboard()">Close</button>
         </div>
     </div>
 
@@ -272,14 +284,13 @@
             <div id="message-scroll">
                 <!-- Messages will be injected here -->
             </div>
-            <div id="message-entry">
+            <div id="message-entry" class="inline-form">
                 <input type="text" id="message-body" placeholder="Enter your message" maxlength="99"
-                    style="width: 80%;">
+                    >
                 <button id="confirm-button-msg" onclick="sendMessage()">Send</button>
             </div>
             <span id="msg-status" style="opacity: 0;"></span>
-            <h3></h3>
-            <button onclick="closeMessage()">Close</button>
+            <button type="button" class="modal-close" onclick="closeMessage()">Close</button>
         </div>
     </div>
 
@@ -288,7 +299,7 @@
             <h3>⚙️ Game Config</h3>
             <p><b>Instructions:</b> Click the enemy to attack it. Use abilities to gain an advantage. Upgrade your hero and hire mercenaries
                 to progress faster. To join the message board or leaderboard, create a name under the leaderboard.</p>
-            <div id="save-load-controls">
+            <div id="save-load-controls" class="settings-actions">
                 <button onclick="saveGame()">💾 Save Game</button>
                 <button onclick="deleteSave()">🗑️ Delete Save</button>
             </div>
@@ -296,15 +307,17 @@
                 <button onclick="exportGame()">📦 Export Save</button>
                 <button type="button" id="export-legacy-save" onclick="exportLegacySave()">📜 Export Previous-Season Save</button>
                 <button onclick="importGame()">📥 Import Save</button>
-                <p></p>
                 <button onclick="showAchievements()">📜 View Achievements</button>
                 <button onclick="generalMenu('stats')">📊 Game Stats</button>
-                <p></p>
                 <div class="checkbox-group">
-                    <input type="checkbox" id="use-scientific">
-                    <label for="use-scientific">Use Scientific Notation</label>
-                    <input type="checkbox" id="underfill-toggle">
-                    <label for="underfill-toggle">Enable Underfill</label>
+                    <label class="checkbox-option" for="use-scientific">
+                        <input type="checkbox" id="use-scientific">
+                        Use Scientific Notation
+                    </label>
+                    <label class="checkbox-option" for="underfill-toggle">
+                        <input type="checkbox" id="underfill-toggle">
+                        Enable Underfill
+                    </label>
                 </div>
                 <div class="battery-saver-option">
                     <label for="battery-saver-toggle">
@@ -313,8 +326,7 @@
                         <small>Fewer HUD redraws. Attack rate and damage stay unchanged.</small></span>
                     </label>
                 </div>
-                <h3></h3>
-                <button onclick="closeOptions()">Close</button>
+                <button type="button" class="modal-close" onclick="closeOptions()">Close</button>
             </div>
         </div>
     </div>
@@ -334,8 +346,7 @@
             <div id="achievement-list" class="scrollable-list">
                 <!-- Achievements will be populated here -->
             </div>
-            <h3></h3>
-            <button onclick="closeAchievements()">Close</button>
+            <button type="button" class="modal-close" onclick="closeAchievements()">Close</button>
         </div>
     </div>
 
@@ -359,8 +370,7 @@
             </div>
             <div id="general-menu-content">
             </div>
-            <h3></h3>
-            <button onclick="closeGeneralMenu()">Close</button>
+            <button type="button" class="modal-close" onclick="closeGeneralMenu()">Close</button>
         </div>
     </div>
 

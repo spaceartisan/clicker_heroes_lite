@@ -57,3 +57,12 @@ Battery Saver defaults **on for coarse-pointer/touch devices** and **off for des
 The Dynasty panel now displays **this run's enemies defeated, active mercenary combat minutes, and gold earned from enemy kills**. These simple local counters survive saves and are reset with each new Dynasty. They do not count offline patrols as foreground combat and do not create background telemetry.
 
 This is a CPU/DOM workload reduction, **not a claim of verified lower device temperature**. Test on physical iPhones and Android phones, particularly during extended sessions.
+
+### v1.1.2 — UI and CSS consolidation
+
+- Grouped the three main navigation tabs with an active-tab state, and aligned the Leaderboard / Message / Config actions into a responsive button row.
+- Rebuilt the five Kingdom structure controls as consistent upgrade cards, preserving all existing cost IDs and upgrade callbacks. Hero leveling and gear upgrades now form a balanced two-column control group.
+- Standardized minimum touch targets, focus-visible outlines, padding, disabled appearance, and narrow-screen layout for popups, army commands, and forms.
+- Reorganized Game Config's save/import actions into a two-column grid, without changing the save system, Battery Saver, or the export of pre-Season-II files.
+- Removed redundant early hero-ability styling and duplicate achievement scrolling rules. The achievement cards retain their dedicated internal scroll container and visible Close button.
+- No gameplay/economic changes or additional animation loops. The stylesheet retains the existing medieval brown-and-gold identity.

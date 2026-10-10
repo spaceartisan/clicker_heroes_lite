@@ -134,3 +134,44 @@ const pacingChecks = vm.runInContext("(() => {\n    const passed=[],ok=(v,m)=>{i
 pacingChecks.forEach(label=>console.log("PASS "+label));
 console.log("Dynasty pacing tests: "+pacingChecks.length+" passed.");
 
+
+const layoutChecks = (() => {
+ const checked=[],assert=(v,label)=>{if(!v)throw Error("Responsive layout: "+label);checked.push(label)};
+ const source=fs.readFileSync(path.join(__dirname,"..","index.html"),"utf8");
+ const css=fs.readFileSync(path.join(__dirname,"..","style.css"),"utf8");
+ const sw=fs.readFileSync(path.join(__dirname,"..","sw.js"),"utf8");
+ assert(source.includes('v1.1.2') && sw.includes('heroes-of-click-v1.1.2'),"Markup and PWA cache versions match");
+ for(const section of ["hero","kingdom","army"]) {
+    assert(source.includes('id="view-tab-'+section+'"'),"Accessible tab exists for "+section);
+ }
+ assert((source.match(/class="structure-card"/g)||[]).length===5,"All five buildings are structured cards");
+ for(const building of ["castle","tavern","blacksmith","barracks","market"]) {
+    const card=source.match(new RegExp('<article class="structure-card">([\\s\\S]*?id="'+building+'-cost"[\\s\\S]*?)<\\/article>'));
+    assert(!!card,"Old upgrade cost IDs remain inside "+building+" card");
+ }
+ assert((source.match(/class="game-actions"/g)||[]).length===1,"Utility menu actions grouped exactly once");
+ assert((source.match(/class="checkbox-option"/g)||[]).length===2,
+        "Both settings toggles keep their control and label together");
+ assert((source.match(/class="modal-close"/g)||[]).length===5,"Five dialog close actions styled consistently");
+ assert(!source.includes("<h3></h3>"),"Empty heading spacers removed");
+ assert(!source.includes("<p></p>"),"Empty paragraph spacers removed");
+ const ids=[...source.matchAll(/id="([^"]+)"/g)].map(x=>x[1]);
+ assert(new Set(ids).size===ids.length,"No duplicate DOM IDs");
+ const blocks=[".structure-list",".game-actions","#view-switch","#shop",".inline-form",
+    "#save-load-controls","#export-import-controls",".modal-close",":focus-visible"];
+ for(const selector of blocks)assert(css.includes(selector),"Shared style "+selector);
+ assert(css.includes("min-height: var(--ui-touch-target)"),"Shared button touch minimum");
+ assert(css.includes("#achievement-menu #achievement-list"),"Scrollable achievements preserved");
+ assert(css.includes("#upgrade-menu.castle-menu .popup-content"),"Castle modal layout preserved");
+ assert(css.includes(".battery-saver-option"),"Battery Saver layout preserved");
+ assert(!css.includes("/* Hero Ability Bar */"),"Legacy duplicate skill button rules removed");
+ const normalized=css.replace(/\/\*[\s\S]*?\*\//g,"").replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g,'""');
+ let depth=0;for(const ch of normalized){if(ch==="{")depth++;if(ch==="}")depth--;if(depth<0)break}
+ assert(depth===0,"CSS braces are balanced");
+ const ui=fs.readFileSync(path.join(__dirname,"..","ui.js"),"utf8");
+ assert(ui.includes('tabButton.classList.toggle("is-active", selected)'),
+        "Selected view styling updates during navigation");
+ return checked;
+})();
+layoutChecks.forEach(label=>console.log("PASS "+label));
+console.log("Responsive layout tests: "+layoutChecks.length+" passed.");

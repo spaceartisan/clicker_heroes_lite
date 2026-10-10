@@ -125,7 +125,14 @@ function AddMultiplierButtons(menu) {
 function switchView(view) {
     const destination = ["hero", "kingdom", "army"].includes(view) ? view : "hero";
     for (const tab of ["hero", "kingdom", "army"]) {
-        document.getElementById(tab + "-view").style.display = destination === tab ? "block" : "none";
+        const selected = destination === tab;
+        document.getElementById(tab + "-view").style.display = selected ? "block" : "none";
+        const tabButton = document.getElementById("view-tab-" + tab);
+        if (tabButton) {
+            tabButton.classList.toggle("is-active", selected);
+            if (typeof tabButton.setAttribute === "function")
+                tabButton.setAttribute("aria-pressed", selected ? "true" : "false");
+        }
     }
     if (destination === "hero") {
         updatePlayerLevelGearText();
