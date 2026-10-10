@@ -44,7 +44,8 @@
                     <div id="health-bar">
                         <div id="health-fill"></div>
                     </div>
-                    <p id="enemy-level">Level: 1</p>
+                    <p id="enemy-level">Stage 1</p>
+                    <p id="enemy-trait" aria-live="off">Every enemy has a weakness.</p>
                 </div>
 
 
@@ -61,6 +62,7 @@
             <div id="stats">
                 <!-- <p>Gold: <span id="gold">0</span></p> -->
                 <p><span id="damage">Hero Damage: 0, Merc DPS: 0</span></p>
+                <p id="squad-summary">Specialize your squads at the Barracks and forge equipment at the Blacksmith.</p>
             </div>
 
             <div id="ability-bar">
@@ -89,7 +91,7 @@
             <div id="kingdom-box">
                 <canvas id="kingdom-canvas" width="400" height="400"></canvas>
             </div>
-            <p>Click on the buildings to interact with them on the map when they appear.</p>
+            <p class="map-caption">Your kingdom grows with your upgrades. Tap the Barracks to assign roles and the Blacksmith to equip squads.</p>
             <h3>Structures</h3>
             <div class="structure-row">
                 <span>Castle — Lv <span id="castle-lvl">0</span></span>
@@ -130,7 +132,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v0.1.2 – Heroes of the Click
+        v0.2.0 – Heroes of the Click
     </p>
     <br>
 
@@ -248,6 +250,7 @@
     <!-- Firebase SDKs -->
 
     <script src="config.js"></script>
+    <script src="combat-content.js"></script>
     <script src="hero.js"></script>
     <script src="kingdom.js"></script>
     <script src="enemy.js"></script>
