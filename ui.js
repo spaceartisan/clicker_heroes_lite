@@ -189,7 +189,14 @@ function showGoldEarned(amount) {
 function updateUI() {
     // TODO: playerClickDamage should not be calculated here, but rather somewhere else
     playerClickDamage = getPlayerClickDamage();
-    damageText.textContent = `Hero Damage: ${formatDigits(playerClickDamage, 2, 5)}, Merc DPS: ${formatDigits(getAutoDamage(), 2, 5)}`;
+    damageText.textContent = `Hero Damage: ${formatDigits(playerClickDamage * (enemyType ? enemyType.resistance : 1), 2, 5)}, Merc DPS: ${formatDigits(getAutoDamage(), 2, 5)}`;
+    const summary = document.getElementById("squad-summary");
+    if (summary && enemyType) {
+        const squads = Math.ceil(hiredMercenaries.length / 5);
+        summary.textContent = squads
+            ? squads + " squads · Gold bonus ×" + getSquadGoldMultiplier().toFixed(2) + " · " + enemyType.trait + " enemy"
+            : "Specialize squads at the Barracks; equip them at the Blacksmith.";
+    }
     healthFill.style.width = `${Math.max(0, Math.min(100, (enemyHealth / getEnemyHealth()) * 100))}%`;
     document.getElementById("gold-fixed").textContent = formatDigits(gold);
     updatePlayerText();
