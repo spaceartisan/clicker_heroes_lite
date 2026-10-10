@@ -762,6 +762,12 @@ function showMenu(name) {
         emptyMessage.style.display = "block";
     }
 
+    if (["tavern", "barracks", "blacksmith"].includes(name)) {
+        createButton(upgradeButtons, "⚔️ Manage Entire Army", () => {
+            closeMenu(name);
+            switchView("army");
+        });
+    }
     if (name === "tavern") {
         // Hide container2
         container2.style.display = "none";
