@@ -1898,3 +1898,14 @@ button:has(> .ui-icon) { display: inline-flex; }
 .balance-consent span{display:grid;gap:5px}
 .balance-consent strong{color:var(--ink-heading)}
 .balance-consent small,#balance-telemetry-status{font:12px/1.5 Arial,sans-serif;color:var(--ink-muted);margin:4px 0}
+
+/* v1.4.1 — expedition planning and boss preparation. */
+#campaign-claim-ready{min-height:44px;width:100%;margin:4px 0 12px}
+.campaign-preview{font-weight:600!important;color:var(--ink-heading)!important}
+.campaign-deployed{border-color:var(--accent);background:linear-gradient(140deg,var(--panel-inset),var(--panel-fill))}
+.campaign-progress{font-weight:700!important;color:var(--ink-heading)!important}
+.campaign-recall{background:var(--panel-fill);border-color:var(--panel-line)}
+.campaign-actions [hidden],.boss-challenge [hidden]{display:none!important}
+.boss-readiness{font:12px/1.5 Arial,sans-serif;color:var(--ink-muted);margin:6px 0}
+#boss-recall-all{width:100%;min-height:44px;white-space:normal;font-size:12px;background:var(--panel-raised)}
+#boss-retry{margin-top:7px}

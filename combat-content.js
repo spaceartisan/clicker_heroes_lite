@@ -121,7 +121,8 @@ function squadUpgradeKitCost(squadId, kitId) {
     return Math.floor(kit.cost * (1 + (Math.max(1, squadId) - 1) * 0.12) * mktUp(1) * getResearchCostFactor());
 }
 function getSquadGoldMultiplier() {
-    const uniqueSquads = new Set(hiredMercenaries.map(m => m.squad));
+    const uniqueSquads = new Set(hiredMercenaries.map(m => m.squad)
+        .filter(squadId => !isSquadOnCampaign(squadId)));
     let raiders = 0;
     for (const squadId of uniqueSquads) {
         if (getSquadBuild(squadId).role === "raider") raiders++;
@@ -129,7 +130,8 @@ function getSquadGoldMultiplier() {
     return 1 + Math.min(1.2, 0.12 * raiders);
 }
 function squadsSuppressRegeneration() {
-    return hiredMercenaries.some(m => getSquadBuild(m.squad).kit === "ember");
+    return hiredMercenaries.some(m => !isSquadOnCampaign(m.squad) &&
+        getSquadBuild(m.squad).kit === "ember");
 }
 function setSquadRole(squadId, roleId) {
     const role = SQUAD_ROLES.find(entry => entry.id === roleId);

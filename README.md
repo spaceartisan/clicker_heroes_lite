@@ -114,3 +114,11 @@ The enemy encounter row is now a three-track CSS grid with fixed-width Previous/
 - New admin-only **Balance Observatory**, available at `admin/balance.html` when hosted. Compares Season I/II leaderboard distributions, last observed run stages and rebirths, boss performance, and expedition/relic totals; supports a local sanitized JSON import/export.
 - Army now distinguishes **neutral DPS** from **effective DPS against the current target** and includes research, Dynasty, market and relic multipliers used in combat. Differences across enemies and deployed squads are explained directly on the Army tab.
 - Deployment requirement: configure Firebase anonymous authentication and server-enforced admin read permissions as described in [docs/BALANCE_ANALYTICS.md](docs/BALANCE_ANALYTICS.md). Firebase settings and live data are **not** modified by publishing this repository.
+
+### v1.4.1 — expedition tactics and boss preparation
+
+- **Recall deployed squads** for combat before an expedition completes, explicitly forfeiting all rewards. The Hero boss panel includes a squad-only clear-time estimate and a consolidated recall option when squads are away.
+- **Mission previews** show success probabilities, role/kit advantages, and the squad's neutral DPS committed. Readiness scales mildly with levels and gear, capped at 97% success. The outcome is determined at dispatch and survives offline progress and save/load.
+- **Claim all ready** collects completed patrols/campaigns in one action. The one-second clock now updates only status elements, rather than recreating squad selection controls mid-interaction.
+- Deployed Raider squads no longer grant combat gold bonuses, and deployed Ember Blade squads no longer suppress combat regeneration. Active DPS was already removed.
+- Existing Season II saves and previously dispatched campaigns remain compatible. No new Firebase fields or permissions are necessary.

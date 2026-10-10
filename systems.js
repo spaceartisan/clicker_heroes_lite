@@ -39,6 +39,7 @@ let relicInventory = {};
 let relicSlots = [null,null,null];
 let relicFragments = 0;
 let relicBossClaims = [];
+const campaignTimerNodes = new Map();
 
 function isTimedBossStage() {
     return currentLevel > 0 && currentLevel % 10 === 0 && currentLevel === maxLevel;
@@ -114,7 +115,17 @@ function renderBossChallenge() {
     const track = document.getElementById("boss-clock-fill");
     const note = document.getElementById("boss-challenge-note");
     const retry = document.getElementById("boss-retry");
+    const readiness = document.getElementById("boss-readiness");
+    const recall = document.getElementById("boss-recall-all");
+    const away=activeCampaigns.filter(m=>m.endsAt>Date.now()).length;
+    recall.hidden=away===0;
     if (bossClockStage === currentLevel) {
+        const squadDps=getAutoDamage();
+        const estimate=squadDps>0?getEnemyHealth()/squadDps:Infinity;
+        const duration=estimate>9999?"over 9,999s":estimate.toFixed(1)+"s";
+        readiness.textContent="Squad-only clear estimate: "+duration+
+            " · Hero clicks and abilities not included."+
+            (away?" "+away+" squad"+(away===1?" away.":"s away."):"");
         const remaining = bossRemainingMs();
         panel.hidden = false;
         clock.textContent = (remaining / 1000).toFixed(1) + "s";
@@ -126,6 +137,9 @@ function renderBossChallenge() {
         clock.textContent = "Farming";
         track.style.width = "0%";
         note.textContent = "Boss failed at stage " + bossRetryStage + ". Farm gold and upgrade, then retry.";
+        readiness.textContent=away?away+" squad"+(away===1?" is":"s are")+
+            " on expedition. Recall to restore combat DPS.":
+            "Strengthen your mercenaries, equip counter weapons, and retry.";
         retry.hidden = false;
     } else {
         panel.hidden = true;
@@ -257,115 +271,196 @@ function renderRelicVault() {
     craft.textContent = "Craft relic · 8 fragments";
 }
 function isSquadOnCampaign(squadId) {
-    return activeCampaigns.some(mission => mission.squadId === Number(squadId));
+    return activeCampaigns.some(m=>m.squadId===Number(squadId));
 }
 function getCampaignSlots() {
     return structures.barracks.level>=5?2:1;
 }
+// Level and equipment add capped readiness; roles, kits and relics also matter.
+function getCampaignSuccessChance(mission, squadId) {
+    const group=getArmySquads().find(g=>g.id===Number(squadId));
+    if(!mission||!group)return 0;
+    const members=group.indices.map(i=>hiredMercenaries[i]);
+    if(!members.length)return 0;
+    const build=getSquadBuild(group.id);
+    const level=members.reduce((a,m)=>a+Math.max(1,Number(m.level)||1),0)/members.length;
+    const gear=members.reduce((a,m)=>a+Math.max(0,Number(m.gearLevel)||0),0)/members.length;
+    return Math.min(.97,.66+(build.role===mission.favored?.12:0)+
+        (build.kit!=="basic"?.06:0)+
+        Math.min(.08,.018*Math.log2(1+level))+
+        Math.min(.04,.01*Math.log2(1+gear))+getRelicBonus("campaign"));
+}
 function startSquadCampaign(campaignId, squadId) {
-    const mission = CAMPAIGN_DEFINITIONS.find(entry=>entry.id===campaignId);
-    const id=Math.floor(Number(squadId));
-    const squad=getArmySquads().find(group=>group.id===id);
-    if (!mission || !squad || structures.barracks.level<mission.barracks ||
-        isSquadOnCampaign(id) || activeCampaigns.length>=getCampaignSlots()) return false;
-    const members=squad.indices.map(index=>hiredMercenaries[index]);
-    const avgLevel=members.reduce((sum,merc)=>sum+(Number(merc.level)||1),0)/members.length;
-    const build=getSquadBuild(id);
-    const matched=build.role===mission.favored;
-    const geared=build.kit!=="basic";
-    const odds=Math.min(0.97,0.72+(matched?0.12:0)+(geared?0.06:0)+getRelicBonus("campaign"));
-    const success=Math.random()<odds;
+    const mission=CAMPAIGN_DEFINITIONS.find(m=>m.id===campaignId);
+    const squad=getArmySquads().find(g=>g.id===Number(squadId));
+    if(!mission||!squad||structures.barracks.level<mission.barracks||
+       isSquadOnCampaign(squad.id)||activeCampaigns.length>=getCampaignSlots())return false;
+    const members=squad.indices.map(i=>hiredMercenaries[i]);
+    const average=members.reduce((a,m)=>a+(Number(m.level)||1),0)/members.length;
+    const chance=getCampaignSuccessChance(mission,squad.id);
+    const success=Math.random()<chance;
     const stage=Math.min(1e12,Math.max(1,Math.floor(maxLevel)-1));
-    const baseGold=Math.min(1e290,Math.floor(2*Math.pow(stage,1.4)*mission.goldFactor*
-        (1+Math.min(2,Math.log2(1+avgLevel)*0.2))));
-    const reward={
-        gold:Math.max(10,Math.floor(baseGold*(success?1:0.25))),
-        fragments:success?mission.fragments:0,
-        relic:success&&Math.random()<mission.relicChance?
-            RELIC_DEFINITIONS[Math.floor(Math.random()*RELIC_DEFINITIONS.length)].id:null
-    };
+    const bounty=Math.min(1e290,Math.floor(2*Math.pow(stage,1.4)*mission.goldFactor*
+        (1+Math.min(2,Math.log2(1+average)*.2))));
+    const startedAt=Date.now();
     activeCampaigns.push({
-        id:++campaignSerial,kind:mission.id,squadId:id,
-        startedAt:Date.now(),endsAt:Date.now()+mission.minutes*60000,
-        success,reward
+        id:++campaignSerial,kind:mission.id,squadId:squad.id,
+        startedAt,endsAt:startedAt+mission.minutes*60000,success,chance,
+        reward:{
+            gold:Math.max(10,Math.floor(bounty*(success?1:.25))),
+            fragments:success?mission.fragments:0,
+            relic:success&&Math.random()<mission.relicChance?
+                RELIC_DEFINITIONS[Math.floor(Math.random()*RELIC_DEFINITIONS.length)].id:null
+        }
     });
     balanceCampaignStarted();
-    saveGame();
-    updateUI();
-    renderArmyView();
+    saveGame();updateUI();renderArmyView();
     return true;
 }
-function claimSquadCampaign(serial) {
-    const index=activeCampaigns.findIndex(mission=>mission.id===Number(serial));
-    if (index<0 || Date.now()<activeCampaigns[index].endsAt) return false;
-    const mission=activeCampaigns[index];
-    activeCampaigns.splice(index,1);  // Claim once, before granting rewards.
+function awardSquadCampaign(mission) {
     const reward=mission.reward;
     gold=Math.min(1e300,gold+reward.gold);
     runGoldEarned=Math.min(1e300,runGoldEarned+reward.gold);
     relicFragments=Math.min(9999,relicFragments+reward.fragments);
-    if (reward.relic) grantRelic(reward.relic);
+    if(reward.relic)grantRelic(reward.relic);
     balanceCampaignClaimed(mission.success);
-    saveGame();
-    updateUI();
-    renderRelicVault();
-    renderArmyView();
+}
+function refreshCampaignUi() {
+    saveGame();updateUI();renderRelicVault();renderArmyView();
+}
+function claimSquadCampaign(serial) {
+    const index=activeCampaigns.findIndex(m=>m.id===Number(serial));
+    if(index<0||Date.now()<activeCampaigns[index].endsAt)return false;
+    const mission=activeCampaigns.splice(index,1)[0];
+    awardSquadCampaign(mission);
+    refreshCampaignUi();
     showPopupMessage((mission.success?"Campaign succeeded: ":"Campaign returned: ")+
-        formatDigits(reward.gold,1,0).trim()+" gold and "+reward.fragments+" fragments.",false,3300);
+        formatDigits(mission.reward.gold,1,0).trim()+" gold and "+
+        mission.reward.fragments+" fragments.",false,3300);
     return true;
+}
+function claimReadyCampaigns() {
+    const ready=activeCampaigns.filter(m=>Date.now()>=m.endsAt);
+    if(!ready.length)return false;
+    const ids=new Set(ready.map(m=>m.id));
+    activeCampaigns=activeCampaigns.filter(m=>!ids.has(m.id));
+    for(const mission of ready)awardSquadCampaign(mission);
+    refreshCampaignUi();
+    showPopupMessage(ready.length+" completed expedition"+(ready.length===1?"":"s")+
+        " claimed. Squads are available again.",false,3000);
+    return true;
+}
+function recallSquadCampaign(serial) {
+    const index=activeCampaigns.findIndex(m=>m.id===Number(serial));
+    if(index<0||Date.now()>=activeCampaigns[index].endsAt)return false;
+    if(!confirm("Recall Squad "+activeCampaigns[index].squadId+
+        " now? All expedition rewards will be forfeited."))return false;
+    activeCampaigns.splice(index,1);
+    saveGame();updateUI();renderArmyView();renderBossChallenge();
+    showPopupMessage("Squad recalled; expedition loot forfeited.",false,2800);
+    return true;
+}
+function recallAllSquadsForBoss() {
+    const ongoing=activeCampaigns.filter(m=>m.endsAt>Date.now());
+    if(!ongoing.length)return false;
+    if(!confirm("Recall "+ongoing.length+" squad"+(ongoing.length===1?"":"s")+
+        " for the boss? Every unfinished expedition reward will be lost."))return false;
+    const ids=new Set(ongoing.map(m=>m.id));
+    activeCampaigns=activeCampaigns.filter(m=>!ids.has(m.id));
+    saveGame();updateUI();renderArmyView();renderBossChallenge();
+    showPopupMessage("Expedition squads recalled for combat.",false,2800);
+    return true;
+}
+// Update only countdowns, never recreate dropdowns while the player selects a squad.
+function updateCampaignTimers() {
+    const now=Date.now();
+    const ready=activeCampaigns.filter(m=>m.endsAt<=now).length;
+    const summary=document.getElementById("campaign-summary");
+    if(summary)summary.textContent=activeCampaigns.length+"/"+getCampaignSlots()+
+        " in the field · "+ready+" ready to claim. Away squads provide no combat bonuses.";
+    const all=document.getElementById("campaign-claim-ready");
+    if(all){all.disabled=!ready;all.textContent=ready?"Claim "+ready+" ready":"No rewards ready";}
+    for(const mission of activeCampaigns) {
+        const ui=campaignTimerNodes.get(mission.id);
+        if(!ui)continue;
+        const seconds=Math.max(0,Math.ceil((mission.endsAt-now)/1000));
+        ui.status.textContent=seconds?Math.ceil(seconds/60)+" min remaining":"Ready to claim";
+        ui.claim.disabled=seconds>0;
+        ui.claim.textContent=seconds?"In progress":"Claim rewards";
+        ui.recall.hidden=seconds===0;
+    }
 }
 function renderSquadCampaigns() {
     const target=document.getElementById("campaign-list");
-    if (!target) return;
+    if(!target)return;
     const fragment=document.createDocumentFragment();
     const squads=getArmySquads();
-    const readyCount=activeCampaigns.filter(mission=>Date.now()>=mission.endsAt).length;
-    const summary=document.getElementById("campaign-summary");
-    summary.textContent=activeCampaigns.length+"/"+getCampaignSlots()+
-        " active expeditions · "+readyCount+" ready to claim. Deployed squads stop fighting until claimed.";
+    campaignTimerNodes.clear();
     for(const mission of activeCampaigns) {
-        const definition=CAMPAIGN_DEFINITIONS.find(c=>c.id===mission.kind);
+        const type=CAMPAIGN_DEFINITIONS.find(m=>m.id===mission.kind);
         const card=document.createElement("article");
-        card.className="campaign-card";
-        const text=document.createElement("p");
-        const seconds=Math.max(0,Math.ceil((mission.endsAt-Date.now())/1000));
-        text.textContent="Squad "+mission.squadId+" · "+
-            (definition?definition.name:"Expedition")+" · "+
-            (seconds?Math.ceil(seconds/60)+" min left":"Ready to claim");
-        card.appendChild(text);
-        card.appendChild(createSystemButton(seconds?"In progress":"Claim rewards",
-            ()=>claimSquadCampaign(mission.id),seconds>0));
+        card.className="campaign-card campaign-deployed";
+        const title=document.createElement("strong");
+        title.textContent="Squad "+mission.squadId+" · "+(type?type.name:"Expedition");
+        const chance=document.createElement("p");
+        chance.textContent="Success chance at dispatch: "+
+            (Number.isFinite(mission.chance)?Math.round(mission.chance*100)+"%":"not recorded")+
+            " · Loot hidden until claim";
+        const status=document.createElement("p");
+        status.className="campaign-progress";
+        const actions=document.createElement("div");
+        actions.className="campaign-actions";
+        const claim=createSystemButton("In progress",()=>claimSquadCampaign(mission.id),true);
+        const recall=createSystemButton("Recall · forfeit loot",()=>recallSquadCampaign(mission.id),false);
+        recall.className="campaign-recall";
+        actions.append(claim,recall);
+        card.append(title,chance,status,actions);
+        campaignTimerNodes.set(mission.id,{status,claim,recall});
         fragment.appendChild(card);
     }
-    for(const mission of CAMPAIGN_DEFINITIONS) {
+    for(const type of CAMPAIGN_DEFINITIONS) {
         const card=document.createElement("article");
         card.className="campaign-card";
-        const headline=document.createElement("strong");
-        headline.textContent=mission.name+" · "+mission.minutes+" min · "+mission.danger+" risk";
-        const detail=document.createElement("p");
-        detail.textContent=mission.description+" Favored: "+mission.favored+".";
-        card.append(headline,detail);
+        const title=document.createElement("strong");
+        title.textContent=type.name+" · "+type.minutes+" min · "+type.danger+" risk";
+        const info=document.createElement("p");
+        info.textContent=type.description+" Favored: "+findSquadRole(type.favored).name+".";
         const select=document.createElement("select");
-        select.setAttribute("aria-label","Squad for "+mission.name);
-        const available=squads.filter(group=>!isSquadOnCampaign(group.id));
+        select.setAttribute("aria-label","Squad for "+type.name);
+        const available=squads.filter(g=>!isSquadOnCampaign(g.id));
         for(const group of available) {
-            const option=document.createElement("option");
-            option.value=String(group.id);
-            option.textContent="Squad "+group.id;
-            select.appendChild(option);
+            const opt=document.createElement("option");
+            opt.value=String(group.id);opt.textContent="Squad "+group.id;
+            select.appendChild(opt);
         }
-        const controls=document.createElement("div");
-        controls.className="campaign-actions";
-        controls.append(select,createSystemButton(
-            structures.barracks.level<mission.barracks?
-                "Requires Barracks "+mission.barracks:"Dispatch",
-            ()=>startSquadCampaign(mission.id,select.value),
-            structures.barracks.level<mission.barracks||!available.length||
+        const preview=document.createElement("p");
+        preview.className="campaign-preview";
+        function updatePreview(){
+            const group=available.find(g=>g.id===Number(select.value))||available[0];
+            if(!group){preview.textContent="No available squads. Claim or recall one first.";return;}
+            const build=getSquadBuild(group.id);
+            preview.textContent=Math.round(getCampaignSuccessChance(type,group.id)*100)+
+                "% success chance"+(build.role===type.favored?" · Favored role":"")+
+                (build.kit!=="basic"?" · Forged kit":"")+
+                " · "+formatDigits(getArmySquadDps(group,true),1,0).trim()+
+                " neutral DPS committed";
+        }
+        if(available.length)select.value=String(available[0].id);
+        select.addEventListener("change",updatePreview);
+        updatePreview();
+        const actions=document.createElement("div");
+        actions.className="campaign-actions";
+        actions.append(select,createSystemButton(
+            structures.barracks.level<type.barracks?
+                "Requires Barracks "+type.barracks:"Dispatch",
+            ()=>startSquadCampaign(type.id,select.value),
+            structures.barracks.level<type.barracks||!available.length||
                 activeCampaigns.length>=getCampaignSlots()));
-        card.appendChild(controls);
+        card.append(title,info,preview,actions);
         fragment.appendChild(card);
     }
     target.replaceChildren(fragment);
+    updateCampaignTimers();
 }
 function loadCampaignRelicState(data) {
     relicInventory={};
@@ -397,6 +492,7 @@ function loadCampaignRelicState(data) {
         activeCampaigns.push({
             id:Math.floor(Number(item.id)||++campaignSerial),kind:item.kind,squadId:item.squadId,
             startedAt:item.startedAt,endsAt:item.endsAt,success:Boolean(item.success),
+            chance:Number.isFinite(item.chance)?Math.min(.97,Math.max(0,item.chance)):null,
             reward:{
                 gold:Math.min(1e290,Math.max(0,Math.floor(item.reward.gold))),
                 fragments:Math.min(definition.fragments,Math.max(0,Math.floor(Number(item.reward.fragments)||0))),
@@ -426,5 +522,5 @@ setInterval(()=>{
     if (document.hidden) return;
     tickBossChallenge();
     if (document.getElementById("army-view")?.style.display!=="none")
-        renderSquadCampaigns();
+        updateCampaignTimers();
 },1000);
