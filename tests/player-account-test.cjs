@@ -133,17 +133,17 @@ async function run(){
  ok(!await ctx.playerBackupCloudSave()&&remote===null,
     "Anonymous user cannot upload a player save from UI");
  freshUser("email-linked");
- nodes.get("player-account-email").value="new@example.com";
- nodes.get("player-account-password").value="newpassword123";
+ document.getElementById("player-account-email").value="new@example.com";
+ document.getElementById("player-account-password").value="newpassword123";
  currentUser={uid:"anonymous-to-link",isAnonymous:true,
   async linkWithCredential(credential){
    links++;currentUser={uid:"anonymous-to-link",email:credential.email,isAnonymous:false};
    return {user:currentUser};
   }};
  ok(await ctx.playerEmailAccount(true) && links===1 && currentUser.uid==="anonymous-to-link" &&
-    nodes.get("player-account-password").value==="",
+    document.getElementById("player-account-password").value==="",
     "Email registration links existing anonymous identity and clears password");
- nodes.get("player-account-password").value="password123";
+ document.getElementById("player-account-password").value="password123";
  ok(await ctx.playerEmailAccount(false)&&signIns===1&&currentUser.uid==="existing-user",
     "Existing email player signs in without creating a second account");
  ok(await ctx.playerGoogleAccount(false)&&currentUser.uid==="google-user",
