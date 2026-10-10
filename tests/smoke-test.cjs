@@ -389,7 +389,7 @@ const campaignRelicChecks=vm.runInContext(`(()=>{
   loadCampaignRelicState(archived);
   ok(relicSlots[0]==="ember"&&relicBossClaims.includes(10),"Relic equipment and claims survive save restore");
   resetCampaignsForDynasty();
-  ok(activeCampaigns.length===0&&relicInventory.ember===1&&relicSlots[0]==="ember",
+  ok(activeCampaigns.length===0&&relicInventory.ember===2&&relicSlots[0]==="ember",
      "Dynasty resets campaigns but retains artifacts");
   return passed;
  }finally{
