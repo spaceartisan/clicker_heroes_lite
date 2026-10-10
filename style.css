@@ -622,3 +622,66 @@ input, textarea { font-size: 16px; user-select: text; -webkit-user-select: text;
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+
+/* Army Command — responsive, touch-first and only rendered on user actions. */
+#army-view { text-align:left; }
+.army-header { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:14px; }
+.army-header h2 { font-size:22px; margin:0 0 5px; color:#f6d99f; }
+.army-header p { font:13px/1.5 Arial,sans-serif; color:#cfbea6; margin:0; }
+#army-recruit { flex-shrink:0; background:#49623d; min-height:44px; }
+.army-command { padding:14px; margin-top:18px; border:1px solid #8c7354; border-radius:10px;
+    background:linear-gradient(135deg,#3c2b21,#2b241f); }
+.army-toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+.army-toolbar strong { color:#f6d99f; }
+#army-selected-count { margin-right:auto; color:#d5bf9c; font:12px Arial,sans-serif; }
+.army-toolbar button { padding:8px 11px; min-height:40px; }
+.army-bulk-controls { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; }
+.army-bulk-controls label, .army-list-header label { display:grid; gap:6px;
+    font:12px Arial,sans-serif; color:#e5d2b3; }
+#army-view select { display:block; width:100%; min-width:0; font:14px Arial,sans-serif;
+    color:#f7e9d3; background:#211c1a; border:1px solid #a18a67;
+    border-radius:6px; padding:11px 9px; min-height:44px; }
+.army-help { font:12px/1.5 Arial,sans-serif; color:#c7b9a5; margin:10px 0 14px; }
+.army-confirm { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; }
+#army-quote { flex:1; min-width:160px; font:13px/1.5 Arial,sans-serif; color:#f1dcac; }
+#army-upgrade-selected { min-height:44px; background:linear-gradient(#8d612b,#654019); font-weight:bold; }
+.army-list-header { display:flex; justify-content:space-between; align-items:end; gap:12px; margin:18px 0 10px; }
+.army-list-header h3 { margin:0; flex:1; }
+.army-list-header label { width:min(205px,60%); }
+.army-squad-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; }
+.army-card { background:#30271f; border:1px solid #715a44; border-radius:9px;
+    padding:12px; min-width:0; }
+.army-card-selected { border-color:#d5ad63; box-shadow:inset 0 0 0 1px #8e6d38; }
+.army-card-head { display:flex; gap:10px; align-items:center; min-width:0; }
+.army-card-head input { appearance:auto; width:21px; height:21px; flex-shrink:0; accent-color:#d4ad67; }
+.army-card-name { display:flex; flex-direction:column; gap:3px; min-width:0; flex:1; }
+.army-card-name strong { color:#f0d9a7; font-size:16px; }
+.army-card-name small { font:12px Arial,sans-serif; color:#bcb3a4; }
+.army-dps { font:700 13px Arial,sans-serif; color:#d6ad6f; white-space:nowrap; }
+.army-stat-row { margin:10px 0; color:#e0d1bc; font:12px Arial,sans-serif; }
+.army-quick-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+.army-quick-actions button { min-width:0; min-height:42px; padding:7px 3px; font-size:12px; }
+.army-card-details { border-top:1px solid #5d4937; margin-top:12px; padding-top:9px; }
+.army-card-details summary { font:13px Arial,sans-serif; color:#e6c68f; cursor:pointer; min-height:26px; }
+.army-fields { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:10px; }
+.army-field { display:grid; gap:6px; min-width:0; font:12px Arial,sans-serif; color:#d3c5b1; }
+.army-kit-button { grid-column:2; min-height:42px; }
+.army-roster { font:12px/1.55 Arial,sans-serif; color:#c4b6a0; }
+.army-pages { display:flex; justify-content:center; align-items:center; gap:14px; margin:16px 0; }
+.army-pages button { min-height:42px; }
+.army-pages span { font:12px Arial,sans-serif; color:#ceb98e; white-space:nowrap; }
+#army-view button:disabled { opacity:0.52; transform:none; }
+@media (max-width:650px) {
+    .army-squad-grid { grid-template-columns:1fr; }
+    .army-header { align-items:flex-start; }
+    .army-header h2 { font-size:19px; }
+}
+@media (max-width:385px) {
+    .army-command { padding:10px; }
+    .army-bulk-controls { grid-template-columns:1fr; }
+    .army-quick-actions { gap:4px; }
+    .army-quick-actions button { font-size:11px; }
+    .army-dps { font-size:12px; }
+    #view-switch button { padding:8px 8px; font-size:13px; }
+}
