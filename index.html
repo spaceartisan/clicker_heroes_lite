@@ -88,6 +88,10 @@
 
         <div id="kingdom-view" style="display:none;">
             <h2>🏰 Your Kingdom</h2>
+            <div class="research-entry">
+                <button type="button" onclick="openResearchTree()">📚 Royal Academy · Research</button>
+                <span id="kingdom-research-hint">Earn Insight from first-time bosses and Castle milestones.</span>
+            </div>
 
             <div id="kingdom-box">
                 <canvas id="kingdom-canvas" width="400" height="400"></canvas>
@@ -180,6 +184,21 @@
             </nav>
         </div>
 
+    <div id="research-popup" class="popup" role="dialog" aria-modal="true" aria-label="Royal Academy research tree">
+        <div class="popup-content research-popup-content">
+            <header class="research-popup-header">
+                <div>
+                    <h3>📚 Royal Academy</h3>
+                    <p id="research-points">Insight from boss clears and Castle milestones.</p>
+                </div>
+                <button type="button" onclick="closeResearchTree()">Close</button>
+            </header>
+            <p class="research-guidance">Research is permanent. Follow prerequisite paths in Warfare, Commerce, and Governance. Future religion mechanics will use a separate progression system.</p>
+            <div id="research-branches" class="research-branches"></div>
+            <button type="button" onclick="closeResearchTree()">Return to Kingdom</button>
+        </div>
+    </div>
+
         <button onclick="showLeaderboard()">🏆 Leaderboard</button>
         <button onclick="showMessage()">📜 Message</button>
         <button onclick="showOptions()">⚙️ Game Config</button>
@@ -191,7 +210,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v0.3.0 – Heroes of the Click
+        v0.4.0 – Heroes of the Click
     </p>
     <br>
 
@@ -309,6 +328,7 @@
     <!-- Firebase SDKs -->
 
     <script src="config.js"></script>
+    <script src="research.js"></script>
     <script src="combat-content.js"></script>
     <script src="hero.js"></script>
     <script src="kingdom.js"></script>
