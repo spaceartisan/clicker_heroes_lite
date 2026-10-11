@@ -1,4 +1,4 @@
-const CACHE_NAME = "heroes-of-click-v1.14.1";
+const CACHE_NAME = "heroes-of-click-v1.14.2";
 const SHELL = [
     "./",
     "./index.html",
@@ -22,6 +22,7 @@ const SHELL = [
     "./progression.js",
     "./frontier.js",
     "./kingdom.js",
+    "./kingdom-map.js",
     "./ui.js",
     "./manifest.webmanifest",
     "./icons/emblem.svg",
