@@ -1,4 +1,4 @@
-const CACHE_NAME = "heroes-of-click-v1.13.2";
+const CACHE_NAME = "heroes-of-click-v1.13.3";
 const SHELL = [
     "./",
     "./index.html",

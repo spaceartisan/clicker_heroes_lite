@@ -2072,3 +2072,7 @@ button:has(> .ui-icon) { display: inline-flex; }
 
 /* v1.13.0: active-device save-and-switch action */
 #account-session-handoff{font-weight:600}
+
+/* v1.13.3: recovery review with explicit clear safeguard */
+#account-session-clear-recovery:disabled{opacity:.52;cursor:not-allowed}
+#account-session-recovery-hint{white-space:pre-line;overflow-wrap:anywhere}

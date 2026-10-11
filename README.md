@@ -216,3 +216,8 @@ The old paid-functions `functions/` source is archived as a future reference onl
 
 - Before pausing a registered account due to session loss or cloud conflict, preserve a one-time, UID-scoped local safety copy separate from both the live save and the pre-cloud-restore slot. The first interrupted snapshot is kept until deliberately recovered; repeat network errors never overwrite it. **Export Interrupted Progress** downloads it in the existing CHS import format, but never merges it into the cloud automatically.
 - A failed transactional cloud checkpoint now fails closed and pauses further play until the account is reclaimed and its cloud revision checked. No new Firebase rules, collections, Functions or billing are required.
+
+### v1.13.3 — review and manage interrupted progress recovery
+
+- Account panel now compares the **first preserved interrupted-session copy** against the current device save, showing each save's stage, dynasty and timestamp without silently loading either. **Export Interrupted Progress** still downloads the same CHS file.
+- A deliberately confirmed **Clear Exported Recovery Copy** action is disabled until the user triggers a CHS export of the currently stored snapshot. After explicit confirmation it deletes only that account's interrupted-session snapshot and allows a newer future interruption to create a fresh safety copy. A browser-triggered download does not prove a file was actually saved: players must verify it before deleting. No changes to live local saves, cloud records, schema, or Firestore rules.

@@ -74,13 +74,14 @@ function makeDevice(mobile=false){
  let reward=0,stops=0;
  const document={hidden:false,getElementById(id){
   if(!nodes.has(id))nodes.set(id,{hidden:false,inert:false,textContent:"",
-   classList:{toggle(){}},disabled:false});
+   classList:{toggle(){}},disabled:false,style:{},title:""});
   return nodes.get(id);
  },addEventListener(){}};
  const context=vm.createContext({
   document,localStorage:{getItem:k=>local.get(k)||null,setItem:(k,v)=>local.set(k,v),
    removeItem:k=>local.delete(k)},
-  sessionStorage:{getItem:k=>tab.get(k)||null,setItem:(k,v)=>tab.set(k,v)},
+  sessionStorage:{getItem:k=>tab.get(k)||null,setItem:(k,v)=>tab.set(k,v),
+   removeItem:k=>tab.delete(k)},
   Uint8Array,Date,console,navigator:{userAgent:mobile?"iPhone":"Desktop"},
   window:{crypto:{getRandomValues(arr){let n=++seed;for(let i=0;i<arr.length;i++)arr[i]=(i*13+n*37)%256;return arr}},
     __hotcDeferredOfflineSavedAt:null},
@@ -98,6 +99,9 @@ function makeDevice(mobile=false){
    return true;
   },
   accountValidSave:save=>Boolean(save&&save.schemaVersion===2&&save.seasonId==="dynasty-ii"),
+  accountSaveSummary:save=>save?
+    "Highest stage "+Math.max(save.maxLevel,save.bestSeasonStage)+
+    " · Dynasty "+(save.dynastyCount||0):"Invalid save",
   playerSyncFingerprint:save=>{
     if(!save)return null;
     const gameplay={...save};
@@ -165,6 +169,32 @@ async function run(){
  ok(pc.context.sessionGuardPreserveRecovery()&&
     JSON.parse(JSON.parse(pc.storage.get(copyKey)).save).gold===713,
     "Repeated disconnects cannot overwrite the first recovery snapshot");
+ pc.context.sessionGuardRecoveryRefresh();
+ ok(pc.nodes.get("account-session-recovery-hint").textContent.includes("Highest stage 15")&&
+    pc.nodes.get("account-session-recovery-hint").textContent.includes("Current device:")&&
+    pc.nodes.get("account-session-recovery-hint").textContent.includes("different progress"),
+    "Recovery panel compares the first snapshot against the current device");
+ ok(!pc.context.sessionGuardRecoveryClear(uid)&&pc.storage.get(copyKey)!==null &&
+    pc.nodes.get("account-session-clear-recovery").disabled,
+    "Unexported recovery cannot be deleted even through a direct function call");
+ ok(!pc.context.sessionGuardRecoveryClear("another-user")&&pc.storage.get(copyKey)!==null,
+    "Another user ID cannot clear this recovery copy");
+ ok(pc.context.sessionGuardRecoveryMarkExported(uid,recovery)&&
+    pc.context.sessionGuardRecoveryWasExported(uid)&&
+    !pc.nodes.get("account-session-clear-recovery").disabled,
+    "Only export of the current recovery unlocks explicit clear control");
+ const cloudBeforeClear=saves.get("player_saves/"+uid);
+ const localBeforeClear=pc.storage.get("clickerHeroSave");
+ ok(pc.context.sessionGuardRecoveryClear(uid)&&pc.storage.get(copyKey)===undefined &&
+    saves.get("player_saves/"+uid)===cloudBeforeClear&&
+    pc.storage.get("clickerHeroSave")===localBeforeClear,
+    "Clearing exported recovery leaves local gameplay and cloud revision untouched");
+ pc.storage.set("clickerHeroSave",JSON.stringify({...unsyncedPc,gold:1001}));
+ ok(pc.context.sessionGuardPreserveRecovery()&&
+    JSON.parse(JSON.parse(pc.storage.get(copyKey)).save).gold===1001 &&
+    !pc.context.sessionGuardRecoveryWasExported(uid)&&
+    pc.nodes.get("account-session-clear-recovery").disabled,
+    "Next interruption may capture newer progress without inheriting old export permission");
  const owner2=sessions.get("player_sessions/"+uid).deviceId;
  ok(owner2!==owner1,"Phone writes a different device identifier");
  let denied=false;

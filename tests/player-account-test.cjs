@@ -356,9 +356,28 @@ async function run(){
  ok(localStorage.getItem("clickerHeroSave")===beforeRecoveryLocal&&
     remote===beforeRecoveryRemote,
     "Recovery export cannot overwrite current local or cloud progress");
+ let hasExport=false,cleared=false;
+ ctx.sessionGuardRecoveryRead=()=>({ownerUid:currentUser.uid,
+   schemaVersion:1,savedAt:Date.now(),save:JSON.stringify(recoverySave)});
+ ctx.sessionGuardRecoveryMarkExported=()=>{hasExport=true;return true};
+ ctx.sessionGuardRecoveryWasExported=()=>hasExport;
+ ctx.sessionGuardRecoveryClear=()=>{cleared=true;return true};
+ hasExport=false;
+ ok(!ctx.playerClearInterruptedRecovery()&&!cleared,
+    "Clear denied until the current recovery copy has been exported");
+ ok(ctx.playerExportInterruptedRecovery()&&hasExport,
+    "Export action acknowledges the specific recovery for future clear");
+ confirmDecision=false;
+ ok(!ctx.playerClearInterruptedRecovery()&&!cleared,
+    "Declining destructive confirmation preserves recovery");
+ confirmDecision=true;
+ ok(ctx.playerClearInterruptedRecovery()&&cleared&&
+    localStorage.getItem("clickerHeroSave")===beforeRecoveryLocal&&
+    remote===beforeRecoveryRemote,
+    "Explicit confirmed clear preserves local and cloud progress");
  ctx.sessionGuardRecoveryRead=()=>null;
- ok(!ctx.playerExportInterruptedRecovery(),
-    "Invalid or absent account recovery cannot be exported");
+ ok(!ctx.playerExportInterruptedRecovery()&&!ctx.playerClearInterruptedRecovery(),
+    "Invalid or absent account recovery cannot be exported or cleared");
  console.log("Player Account regression: "+passed+" passed.");
 }
 run().catch(error=>{console.error(error);process.exitCode=1});

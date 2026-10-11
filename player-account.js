@@ -628,12 +628,45 @@ function playerExportInterruptedRecovery(){
         element.download="clicker_hero_interrupted_recovery.chs";
         element.click();
         setTimeout(()=>URL.revokeObjectURL(url),100);
-        accountDisplayMessage("Interrupted progress exported. Compare both saves before importing; nothing was uploaded.");
+        if(typeof sessionGuardRecoveryMarkExported==="function")
+            sessionGuardRecoveryMarkExported(user.uid,entry);
+        accountDisplayMessage("Recovery download initiated. Verify the CHS file exists before clearing the copy; nothing was uploaded.");
         return true;
     }catch(error){
         accountDisplayMessage("Could not export recovery file: "+accountErrorMessage(error),true);
         return false;
     }
+}
+function playerClearInterruptedRecovery(){
+    const user=accountAuth()?.currentUser;
+    if(!playerAccountIsRegistered(user)||typeof sessionGuardRecoveryRead!=="function"||
+        typeof sessionGuardRecoveryClear!=="function"||
+        typeof sessionGuardRecoveryWasExported!=="function"){
+        accountDisplayMessage("Sign into the original account to manage its recovery copy.",true);
+        return false;
+    }
+    const entry=sessionGuardRecoveryRead(user.uid);
+    if(!entry){
+        accountDisplayMessage("No valid interrupted-session recovery copy found.",true);
+        return false;
+    }
+    if(!sessionGuardRecoveryWasExported(user.uid)){
+        accountDisplayMessage("Export the recovery CHS file first and verify it downloaded.",true);
+        return false;
+    }
+    if(!confirm("Clear this device's interrupted recovery snapshot?\n\n"+
+        "Recovery: "+accountSaveSummary(inspectSeasonSave(entry.save))+"\n\n"+
+        "Confirm you have verified the downloaded CHS file. This deletion cannot be undone. Your current local save and cloud save will not be changed."))return false;
+    // A signed-out account or a newer recovery copy must never be cleared.
+    if(accountAuth()?.currentUser?.uid!==user.uid){
+        accountDisplayMessage("Account changed. Recovery remains preserved.",true);
+        return false;
+    }
+    const cleared=sessionGuardRecoveryClear(user.uid);
+    accountDisplayMessage(cleared?
+        "Old recovery cleared. Future interruptions can preserve a new safety copy. The live and cloud saves are untouched.":
+        "Recovery was not cleared. Export and verify the current copy first.",!cleared);
+    return cleared;
 }
 function playerExportCloudRecovery() {
     const raw=localStorage.getItem(PLAYER_CLOUD_BACKUP_KEY);

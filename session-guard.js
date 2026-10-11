@@ -1,4 +1,4 @@
-// v1.13.2 — Preserve a separate local recovery copy if the cloud session is interrupted. Coordination, not cheat-proof scoring.
+// v1.13.3 — Recovery review and guarded cleanup after explicit export. Coordination, not cheat-proof scoring.
 // Uses Firebase Auth + Firestore transactions/rules; no Cloud Functions or billing.
 const HANDOFF_COLLECTION="player_sessions";
 const HANDOFF_INSTALL_KEY="hotc_install_id_v1";
@@ -6,6 +6,7 @@ const HANDOFF_TAB_KEY="hotc_tab_id_v1";
 const HANDOFF_ACCOUNT_MARKER="hotc_account_linked_device_v1";
 const HANDOFF_PROTECTED_PREFIX="hotc_handoff_protected_v1_";
 const HANDOFF_RECOVERY_PREFIX="hotc_handoff_recovery_v1_";
+const HANDOFF_EXPORTED_PREFIX="hotc_recovery_exported_v1_";
 const HANDOFF_POLL_MS=180000;
 const HANDOFF_LEASE_MS=480000;
 let sessionGuardPhase="unconfigured"; // active, occupied, review, lost, checking, unconfigured
@@ -100,6 +101,51 @@ function sessionGuardRecoveryRead(uid){
             accountValidSave(inspectSeasonSave(entry.save))?entry:null;
     }catch(_){return null}
 }
+// A one-tab acknowledgement means only that we triggered a download; the
+// user still must verify the file actually exists before clearing the copy.
+function sessionGuardRecoveryExportKey(uid){
+    return HANDOFF_EXPORTED_PREFIX+uid;
+}
+function sessionGuardRecoverySnapshotId(entry){
+    if(!entry||typeof entry.save!=="string")return null;
+    return entry.ownerUid+"|"+entry.savedAt+"|"+entry.save.length+"|"+
+        (typeof playerSyncFingerprint==="function"?
+         playerSyncFingerprint(inspectSeasonSave(entry.save))||"invalid":"unknown");
+}
+function sessionGuardRecoveryWasExported(uid){
+    const entry=sessionGuardRecoveryRead(uid);
+    if(!entry)return false;
+    try{
+        return sessionStorage.getItem(sessionGuardRecoveryExportKey(uid))===
+            sessionGuardRecoverySnapshotId(entry);
+    }catch(_){return false}
+}
+function sessionGuardRecoveryMarkExported(uid,entry){
+    if(!uid||!entry)return false;
+    try{
+        const marker=sessionGuardRecoverySnapshotId(entry);
+        if(!marker)return false;
+        sessionStorage.setItem(sessionGuardRecoveryExportKey(uid),marker);
+        sessionGuardRecoveryRefresh();
+        return true;
+    }catch(_){return false}
+}
+function sessionGuardRecoveryClear(uid){
+    if(!uid||uid!==sessionGuardCurrentUid())return false;
+    const entry=sessionGuardRecoveryRead(uid);
+    if(!entry||!sessionGuardRecoveryWasExported(uid))return false;
+    // Do not remove a different/replaced recovery copy after the
+    // confirmation dialogue or a tab-state change.
+    const current=sessionGuardRecoveryRead(uid);
+    if(sessionGuardRecoverySnapshotId(current)!==sessionGuardRecoverySnapshotId(entry))
+        return false;
+    try{
+        localStorage.removeItem(sessionGuardRecoveryKey(uid));
+        sessionStorage.removeItem(sessionGuardRecoveryExportKey(uid));
+        sessionGuardRecoveryRefresh();
+        return !localStorage.getItem(sessionGuardRecoveryKey(uid));
+    }catch(_){return false}
+}
 function sessionGuardPreserveRecovery(){
     const uid=sessionGuardCurrentUid();
     if(!uid)return false;
@@ -122,14 +168,35 @@ function sessionGuardRecoveryRefresh(){
     const entry=sessionGuardRecoveryRead(uid);
     const exportControl=document.getElementById("account-session-export-recovery");
     if(exportControl)exportControl.hidden=!uid||!entry;
+    const clearControl=document.getElementById("account-session-clear-recovery");
+    const acknowledged=Boolean(entry&&sessionGuardRecoveryWasExported(uid));
+    if(clearControl){
+        clearControl.hidden=!entry;
+        clearControl.disabled=!acknowledged;
+        clearControl.title=acknowledged?
+            "Verify the downloaded CHS file, then clear this snapshot":
+            "Export the recovery copy first";
+    }
     const hint=document.getElementById("account-session-recovery-hint");
     if(hint){
         hint.hidden=!entry;
         if(entry){
             const date=new Date(entry.savedAt);
             const since=Number.isFinite(date.getTime())?date.toLocaleString():"an earlier interruption";
-            hint.textContent="Local safety copy preserved from "+since+
-                ". Export it before replacing this device's progress. It never uploads automatically.";
+            const snapshot=inspectSeasonSave(entry.save);
+            const live=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
+            const savedSummary=typeof accountSaveSummary==="function"?
+                accountSaveSummary(snapshot):"Saved recovery available";
+            const localSummary=typeof accountSaveSummary==="function"?
+                accountSaveSummary(live):"Local progress available";
+            const changed=typeof playerSyncFingerprint==="function"?
+                playerSyncFingerprint(snapshot)!==playerSyncFingerprint(live):true;
+            hint.textContent="Interrupted recovery from "+since+
+                ": "+savedSummary+"\nCurrent device: "+localSummary+
+                (changed?"\nThese saves contain different progress.":"\nProgress matches the current local save.")+
+                (acknowledged?"\nExport initiated. Verify your downloaded CHS file before clearing.":
+                "\nExport the recovery CHS file before you can clear this copy.");
+            hint.style.whiteSpace="pre-line";
         }
     }
 }
