@@ -361,6 +361,10 @@ const campaignRelicChecks=vm.runInContext(`(()=>{
   ok(!startSquadCampaign("ruins",1),"Cannot dispatch occupied squad twice");
   const pending=activeCampaigns[0],oldGold=gold;
   ok(!claimSquadCampaign(pending.id),"Cannot claim unfinished campaign");
+  // An expedition can randomly drop an Ember relic. The later recycling
+  // assertions require exactly two explicitly granted Embers; don't let
+  // random expedition loot intermittently add a third and fail CI.
+  pending.reward.relic=null;
   pending.endsAt=Date.now()-1;
   ok(claimSquadCampaign(pending.id),"Completed offline expedition claimed");
   ok(gold>oldGold&&!isSquadOnCampaign(1),"Gold awarded and squad returned");
