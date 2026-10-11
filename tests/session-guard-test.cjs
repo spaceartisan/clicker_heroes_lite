@@ -84,7 +84,14 @@ function makeDevice(mobile=false){
   db:firebaseDb(),accountAuth:()=>({currentUser:account}),
   accountControlsUpdate(){},playerSyncPause(){},
   playerSyncAnchor(){const value=local.get("test_cloud_anchor");return value?JSON.parse(value):null},
-  playerSyncFingerprint:save=>save?JSON.stringify(save):null,
+  playerSyncFingerprint:save=>{
+    if(!save)return null;
+    const gameplay={...save};
+    delete gameplay.lastSaved;
+    delete gameplay.lastSubmittedScore;
+    delete gameplay.lastSavedDeviceId;
+    return JSON.stringify(gameplay);
+  },
   inspectSeasonSave:raw=>raw?JSON.parse(raw):null,
   accountCloudRef:({uid:id})=>firebaseDb().collection("player_saves").doc(id),
   accountCloudDocument:({uid:id},save,revision)=>({ownerUid:id,schemaVersion:1,
@@ -136,9 +143,11 @@ async function run(){
  // Simulate refreshing the phone immediately after restoring the PC save.
  // The phone owns the session and the revision matches, but the payload
  // originated on the PC, so its old offline interval must NOT pay again.
- phone.storage.set("clickerHeroSave",JSON.stringify(phoneProgress));
+ phone.storage.set("clickerHeroSave",JSON.stringify({
+   ...phoneProgress,lastSaved:Date.now(),lastSavedDeviceId:owner2
+ }));
  phone.storage.set("test_cloud_anchor",JSON.stringify({
-   revision:2,fingerprint:JSON.stringify(phoneProgress)
+   revision:2,fingerprint:phone.context.playerSyncFingerprint(phoneProgress)
  }));
  phone.context.window.__hotcDeferredOfflineSavedAt=Date.now()-3600000;
  phone.context.window.__hotcDeferredOfflineSourceDeviceId=owner1;
@@ -148,6 +157,26 @@ async function run(){
  ok(phone.context.window.__hotcDeferredOfflineSavedAt===null&&
     phone.context.window.__hotcDeferredOfflineSourceDeviceId===null,
     "Imported offline entitlement is discarded after the handoff review");
+ // Unsynced progress on the SAME returning tab is safe if the cloud revision
+ // hasn't changed and the local save identifies this tab as its origin.
+ const unsyncedPhone={...phoneProgress,gold:825,maxLevel:20,currentLevel:20,
+   bestSeasonStage:20,lastSavedDeviceId:owner2};
+ phone.storage.set("clickerHeroSave",JSON.stringify(unsyncedPhone));
+ await phone.context.sessionGuardClaim(false);await settle();
+ ok(phase(phone)==="active"&&
+    JSON.parse(phone.storage.get("clickerHeroSave")).gold===825,
+    "Returning session can continue legitimately earned unsynced local progress");
+ // A newer cloud revision is never considered equivalent, even if locally
+ // authored on the same tab. It must be reviewed before gameplay.
+ const checkpoint=saves.get("player_saves/"+uid);
+ saves.set("player_saves/"+uid,{...checkpoint,revision:3,
+   save:{...phoneProgress,gold:999,maxLevel:21,bestSeasonStage:21,currentLevel:21}});
+ await phone.context.sessionGuardClaim(false);await settle();
+ ok(phase(phone)==="review"&&phone.nodes.get("hero-view").inert,
+    "Newer cloud revision blocks even the original tab until reviewed");
+ saves.set("player_saves/"+uid,checkpoint);
+ await phone.context.sessionGuardClaim(false);await settle();
+ ok(phase(phone)==="active","Original tab resumes after the cloud revision conflict is cleared");
  // A later refresh of the original tab's OWN saved checkpoint can still
  // receive the normal time-away reward exactly once.
  phone.context.window.__hotcDeferredOfflineSavedAt=Date.now()-3600000;

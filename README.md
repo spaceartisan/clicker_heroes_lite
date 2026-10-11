@@ -194,3 +194,8 @@ The old paid-functions `functions/` source is archived as a future reference onl
 ### v1.12.1 — guard against restored-save offline double dipping
 
 - Persist the originating browser tab ID in newly authored local saves, and require a matching origin, matching cloud revision and same-tab lease reacquisition before paying linked-account time-away gold. PC-to-phone restores cannot re-award the PC's offline interval on the phone after the reload. Legacy saves without an origin remain readable and are not awarded unknown-origin offline time. No new Firestore rules or collections are needed for this patch.
+
+### v1.12.2 — handoff resume and cloud comparison regression
+
+- Restoring a PC cloud save to a phone no longer causes a false cloud conflict when the phone updates only the per-tab save-origin marker. The cloud deduplication fingerprint now ignores this metadata (plus timestamps and leaderboard bookkeeping), while remaining sensitive to real gameplay changes.
+- A returning owner tab with a still-current cloud revision may resume its own unsynced locally authored progress instead of being forced into Compare/Restore after every reload. A different device or newer cloud revision still requires explicit review. Offline rewards continue to require the same-tab saved origin; this does not make client-reported progression tamper-proof.

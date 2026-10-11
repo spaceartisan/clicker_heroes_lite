@@ -91,6 +91,15 @@ async function run(){
  ok(!valid({...local,playerName:"X".repeat(700000)}),"Oversized cloud save refused");
  ok(ctx.accountSaveSummary(local).includes("30") &&
     ctx.accountSaveSummary(local).includes("Player One"),"Human-readable progress comparison");
+ // A restored PC save receives phone-local provenance on its next save.
+ // Provenance and timestamps must not force the phone back into Restore.
+ const pcFingerprint=ctx.playerSyncFingerprint({...local,lastSavedDeviceId:"a".repeat(64)});
+ const phoneFingerprint=ctx.playerSyncFingerprint({...local,
+     lastSavedDeviceId:"b".repeat(64),lastSaved:Date.now()});
+ ok(pcFingerprint===phoneFingerprint&&Boolean(pcFingerprint),
+    "Changing only the originating device and save timestamp is not a cloud conflict");
+ ok(ctx.playerSyncFingerprint({...local,gold:local.gold+1})!==pcFingerprint,
+    "Actual gameplay progress still changes the cloud fingerprint");
  ok(ctx.accountCloudDocument(currentUser,local,1).ownerUid==="test-user-123" &&
     ctx.accountCloudDocument(currentUser,local,1).revision===1,
     "Cloud envelope uses owner UID and revision");

@@ -402,12 +402,17 @@ function playerSyncAnchor(uid){
 }
 function playerSyncFingerprint(save){
     if(!accountValidSave(save))return null;
-    // Ignore heartbeat / leaderboard write bookkeeping. 64 bits of
+    // Ignore heartbeat / leaderboard write and per-tab origin bookkeeping.
+    // lastSavedDeviceId is not gameplay progress: after restoring a PC save
+    // the phone authors its own local checkpoint without changing rewards.
+    // A mismatch here would trap the new owner in repeated Restore prompts.
+    // 64 bits of
     // non-cryptographic checksums plus length are only for deduplication;
     // owner-only Firestore rules and revision checks enforce safety.
     const normalized={...save};
     delete normalized.lastSaved;
     delete normalized.lastSubmittedScore;
+    delete normalized.lastSavedDeviceId;
     const str=JSON.stringify(normalized);
     let hash1=2166136261,hash2=2246822519;
     for(let i=0;i<str.length;i++){

@@ -1,4 +1,4 @@
-// v1.12.1 — Spark-compatible device handoff, origin-aware offline earnings. Coordination, not cheat-proof scoring.
+// v1.12.2 — Spark device handoff: restore-safe cloud comparisons and local resume. Coordination, not cheat-proof scoring.
 // Uses Firebase Auth + Firestore transactions/rules; no Cloud Functions or billing.
 const HANDOFF_COLLECTION="player_sessions";
 const HANDOFF_INSTALL_KEY="hotc_install_id_v1";
@@ -142,9 +142,18 @@ async function sessionGuardReview(uid,generation,allowOffline=false){
         if(cloud&&accountCloudRecordValid(cloud,{uid})){
             const anchor=playerSyncAnchor(uid);
             const local=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
-            const same=anchor&&anchor.revision===cloud.revision&&
+            const sameRevision=anchor&&anchor.revision===cloud.revision;
+            const sameProgress=sameRevision&&
                 playerSyncFingerprint(local)===playerSyncFingerprint(cloud.save);
-            if(!same){
+            // The returning owner may have legitimate unsynced local
+            // progress after its last cloud checkpoint. When the server
+            // revision has NOT changed and that save was authored by this
+            // same tab, let it continue instead of locking normal play
+            // behind a Restore/Overwrite prompt on every refresh.
+            // A different device must still compare mismatched progress.
+            const ownUnsyncedProgress=Boolean(allowOffline&&sameRevision&&
+                local&&local.lastSavedDeviceId===sessionGuardDeviceId());
+            if(!sameProgress&&!ownUnsyncedProgress){
                 playerCloudPreview=cloud;
                 accountPreviewCloud(cloud);
                 playerCloudUpdateNotice(cloud);

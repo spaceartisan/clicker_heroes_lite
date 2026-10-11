@@ -127,3 +127,7 @@ This free version **does not** require \`firebase deploy --only functions\`. The
 ### v1.12.1 offline origin correction
 
 The game now stores an optional `lastSavedDeviceId` in newly authored local saves. At startup it captures that origin *before* the first autosave. After restoring a PC cloud save, the phone sees the PC origin and **cannot claim its elapsed period as phone offline earnings**, even when the phone immediately reloads and reacquires its own handoff session. Older saves without an origin remain compatible but do not receive this account-linked offline bonus. This field is for honest-device coordination, **not a tamper-resistant entitlement**; the backend limitation remains.
+
+### v1.12.2 — cross-device restore / local continuation
+
+A restored cloud save contains the previous tab's `lastSavedDeviceId`, which is replaced during the receiving tab's first local save. The cloud progress fingerprint now ignores that metadata, preventing a restore loop after PC-to-phone transfer. The originating ID **is still validated separately** before granting offline gold. If the existing session owner refreshes with locally earned unsynced progress, it can continue when the cloud revision has not changed; a newer revision or a different-device handoff still requires comparison and an explicit decision. This changes no Firestore document schema or security rules.

@@ -34,7 +34,7 @@ function balanceNewRun(nextDynasty=false){
     const id=balanceRandomId();
     if(!id)return null;
     return {schemaVersion:1,runId:id,seasonId:GAME_SEASON_ID,
-        build:"1.12.1",dynasty:balanceClamp(dynastyCount+(nextDynasty?1:0),100000),
+        build:"1.12.2",dynasty:balanceClamp(dynastyCount+(nextDynasty?1:0),100000),
         startedAt:Date.now(),highestStage:balanceClamp(maxLevel-1),
         currentStage:balanceClamp(currentLevel),activeSeconds:0,
         bosses:{},campaigns:{started:0,claimed:0,won:0,lost:0},
@@ -176,7 +176,7 @@ function balancePayload(run,uid){
     }
     const c=run.campaigns||{},r=run.relics||{};
     return {
-        schemaVersion:1,seasonId:GAME_SEASON_ID,build:"1.12.1",
+        schemaVersion:1,seasonId:GAME_SEASON_ID,build:"1.12.2",
         ownerUid:uid,startedAt:balanceClamp(run.startedAt,1e14),
         updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
         dynasty:balanceClamp(run.dynasty,100000),
