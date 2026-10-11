@@ -50,6 +50,9 @@ function accountErrorMessage(error) {
         return "Firebase is unreachable. Your local game remains available.";
     return error && error.message ? String(error.message).slice(0,180) : "An unexpected error occurred.";
 }
+function accountHandoffInProgress(){
+    return typeof sessionGuardPhase!=="undefined"&&sessionGuardPhase==="handoff";
+}
 function accountControlsUpdate() {
     const auth = accountAuth();
     const user = auth ? auth.currentUser : null;
@@ -74,6 +77,7 @@ function accountControlsUpdate() {
     for(const id of ["player-cloud-check","player-cloud-upload","player-cloud-restore"]) {
         const control=document.getElementById(id);
         if(control) control.disabled=!signedIn||playerAccountCloudBusy||playerSyncInFlight||
+            accountHandoffInProgress()||
             (id==="player-cloud-upload"&&typeof sessionGuardWritesBlocked==="function"&&
                 sessionGuardWritesBlocked());
     }
@@ -244,7 +248,7 @@ async function accountReadCloud() {
     return data;
 }
 async function playerCheckCloudSave() {
-    if(playerAccountCloudBusy||playerSyncInFlight)return false;
+    if(accountHandoffInProgress()||playerAccountCloudBusy||playerSyncInFlight)return false;
     playerAccountCloudBusy=true;
     accountControlsUpdate();
     accountCloudMessage("Checking your private cloud save...");
@@ -285,7 +289,7 @@ async function accountCommitSave(user,save,expected,allowReview=false){
 // Every overwrite is explicit. The transaction rejects a remote revision that
 // changed after the player examined it, avoiding races between two devices.
 async function playerBackupCloudSave() {
-    if(playerAccountCloudBusy||playerSyncInFlight)return false;
+    if(accountHandoffInProgress()||playerAccountCloudBusy||playerSyncInFlight)return false;
     if(typeof sessionGuardWritesBlocked==="function"&&sessionGuardWritesBlocked()){
         accountCloudMessage("Cannot upload: another device owns the server session. Take over and compare saves first.",true);
         return false;
@@ -326,7 +330,7 @@ async function playerBackupCloudSave() {
     }
 }
 async function playerRestoreCloudSave() {
-    if(playerAccountCloudBusy||playerSyncInFlight)return false;
+    if(accountHandoffInProgress()||playerAccountCloudBusy||playerSyncInFlight)return false;
     playerAccountCloudBusy=true;
     accountControlsUpdate();
     try {

@@ -1,4 +1,4 @@
-// v1.12.2 — Spark device handoff: restore-safe cloud comparisons and local resume. Coordination, not cheat-proof scoring.
+// v1.13.0 — Spark device handoff with verified save-and-release and waiting-device notification. Coordination, not cheat-proof scoring.
 // Uses Firebase Auth + Firestore transactions/rules; no Cloud Functions or billing.
 const HANDOFF_COLLECTION="player_sessions";
 const HANDOFF_INSTALL_KEY="hotc_install_id_v1";
@@ -44,15 +44,16 @@ function sessionGuardUsesServer(){
         (sessionGuardProtected||localStorage.getItem(HANDOFF_PROTECTED_PREFIX+uid)==="1"));
 }
 function sessionGuardWritesBlocked(){
-    return ["occupied","lost","checking"].includes(sessionGuardPhase)||
+    return ["occupied","available","handoff","released","lost","checking"].includes(sessionGuardPhase)||
         (sessionGuardUsesServer()&&sessionGuardPhase==="unconfigured");
 }
 function sessionGuardCanCheckpoint(allowReview=false){
     return sessionGuardUsesServer()&&
-        (sessionGuardPhase==="active"||(allowReview&&sessionGuardPhase==="review"));
+        (sessionGuardPhase==="active"||
+         (allowReview&&["review","handoff"].includes(sessionGuardPhase)));
 }
 function sessionGuardBlocksGameplay(){
-    return ["occupied","lost","review"].includes(sessionGuardPhase);
+    return ["occupied","available","handoff","released","lost","review"].includes(sessionGuardPhase);
 }
 function sessionGuardDeviceLabel(){
     return (typeof navigator!=="undefined" &&
@@ -86,9 +87,17 @@ function sessionGuardStatus(message,warning=false){
     const claim=document.getElementById("account-session-claim");
     if(claim){
         claim.hidden=!sessionGuardCurrentUid()||
-            !["occupied","lost","unconfigured"].includes(sessionGuardPhase);
+            !["occupied","available","released","lost","unconfigured"].includes(sessionGuardPhase);
         claim.textContent=sessionGuardPhase==="occupied"?
-            "Use This Device (Take Over)":"Try Connecting This Device";
+            "Use This Device (Take Over)":
+            sessionGuardPhase==="available"?"Continue on This Device":
+            sessionGuardPhase==="released"?"Resume on This Device":
+            "Try Connecting This Device";
+    }
+    const handoff=document.getElementById("account-session-handoff");
+    if(handoff){
+        handoff.hidden=sessionGuardPhase!=="active"||!sessionGuardUsesServer();
+        handoff.disabled=sessionGuardBusy;
     }
     const review=document.getElementById("account-session-review");
     if(review)review.hidden=sessionGuardPhase!=="review";
@@ -124,6 +133,19 @@ function sessionGuardWatch(uid,generation){
         if(!snapshot.exists||snapshot.metadata?.fromCache)return;
         const record=snapshot.data();
         if(record.ownerUid!==uid)return;
+        // A waiting device listens for a clean release without taking over
+        // or modifying the cloud save. Claiming remains a user action.
+        if(["occupied","available"].includes(sessionGuardPhase)){
+            if(record.released||!sessionGuardLeaseActive(record)){
+                if(sessionGuardPhase!=="available")
+                    sessionGuardSet("available",
+                        "The previous device is ready. Select Continue on This Device, then review the cloud save.");
+            }else if(sessionGuardPhase==="available"){
+                sessionGuardSet("occupied",
+                    "Another device is active. Use Take Over only after checking its cloud backup.");
+            }
+            return;
+        }
         if(record.deviceId!==sessionGuardDeviceId()&&sessionGuardProtected){
             if(typeof playerSyncPause==="function")playerSyncPause();
             sessionGuardSet("lost","A different device has taken over this account. Your local copy is preserved.");
@@ -205,6 +227,7 @@ async function sessionGuardClaim(takeover=false){
         if(outcome.status==="occupied"){
             sessionGuardSet("occupied","This account is active on "+outcome.deviceLabel+
                 ". Save progress there first, then use Take Over to switch here.");
+            sessionGuardWatch(uid,generation);
             return false;
         }
         sessionGuardProtected=true;
@@ -232,6 +255,8 @@ async function sessionGuardClaim(takeover=false){
 }
 async function sessionGuardTakeover(){
     if(!sessionGuardCurrentUid())return false;
+    // A clean release is observable without stealing the session. A
+    // concurrent claimant still wins transactionally if it arrives first.
     if(sessionGuardPhase!=="occupied")return sessionGuardClaim(false);
     if(!confirm("Take over this account on this device?\n\nFirst back up progress on the other device. You will be asked to review/restore the cloud save here; local saves are not merged."))return false;
     return sessionGuardClaim(true);
@@ -283,6 +308,80 @@ async function sessionGuardCheckpoint(save,expectedRevision,allowReview=false){
     if(sessionGuardPhase==="review")sessionGuardSet("active",
         "You chose this device's save and now own cloud uploads.");
     return revision;
+}
+// Save the latest local progress FIRST. Only release ownership after the
+// revision-guarded cloud checkpoint is confirmed. This uses the existing
+// two Firestore transactions and needs no new rules or paid Functions.
+async function sessionGuardHandoff(){
+    const uid=sessionGuardCurrentUid();
+    if(!uid||sessionGuardPhase!=="active"||!sessionGuardCanCheckpoint()||
+        sessionGuardBusy||typeof playerAccountCloudBusy!=="undefined"&&playerAccountCloudBusy||
+        typeof playerSyncInFlight!=="undefined"&&playerSyncInFlight){
+        sessionGuardStatus("Cannot switch yet. Finish cloud activity and confirm this device owns the session.",true);
+        return false;
+    }
+    if(!confirm("Save your current game to Firebase and release this device?\n\nAnother device can then choose Continue on This Device and restore the latest cloud save. If saving fails, the switch will not complete."))return false;
+    // Capture the last playable state before pausing local combat.
+    if(typeof saveGame==="function")saveGame();
+    const save=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
+    if(typeof accountValidSave!=="function"||!accountValidSave(save)){
+        sessionGuardStatus("Could not switch: local save is invalid. Export your save before trying again.",true);
+        return false;
+    }
+    sessionGuardBusy=true;
+    const generation=sessionGuardGeneration;
+    let checkpointed=false;
+    sessionGuardSet("handoff","Saving a final cloud checkpoint before releasing this device...");
+    try{
+        const user={uid};
+        const existing=await accountCloudRef(user).get({source:"server"});
+        if(generation!==sessionGuardGeneration||uid!==sessionGuardCurrentUid())
+            throw new Error("Account changed during handoff.");
+        const record=existing.exists?existing.data():null;
+        if(record&&!accountCloudRecordValid(record,user))
+            throw new Error("Existing cloud backup is invalid. Compare saves before switching.");
+        const anchor=playerSyncAnchor(uid);
+        if(record&&(!anchor||anchor.revision!==record.revision))
+            throw new Error("Cloud revision differs from this device. Compare/Restore before switching.");
+        if(!record&&anchor)
+            throw new Error("Cloud backup is missing. Review your local save before switching.");
+        const revision=await sessionGuardCheckpoint(save,record?record.revision:0,true);
+        checkpointed=true;
+        playerSyncSetAnchor(uid,revision,save);
+        const sessionRef=sessionGuardRef(uid),id=sessionGuardDeviceId();
+        const released=await db.runTransaction(async tx=>{
+            const current=await tx.get(sessionRef);
+            if(!current.exists||current.data().ownerUid!==uid||
+                current.data().deviceId!==id||current.data().released)return false;
+            tx.update(sessionRef,{released:true,updatedAt:sessionGuardTimestamp()});
+            return true;
+        });
+        if(!released)throw new Error("Device ownership changed during release.");
+        sessionGuardUnwatch();
+        sessionGuardProtected=false;
+        if(typeof playerSyncPause==="function")playerSyncPause();
+        sessionGuardSet("released","Cloud save revision "+revision+
+            " saved successfully. This device is paused. Continue on your other device, or choose Resume here.");
+        return true;
+    }catch(error){
+        const detail=sessionGuardError(error);
+        if(generation!==sessionGuardGeneration||uid!==sessionGuardCurrentUid())return false;
+        if(/cloud revision|existing cloud|cloud backup is missing/i.test(detail)){
+            if(typeof playerSyncPause==="function")playerSyncPause();
+            sessionGuardSet("review","Switch not completed: "+detail+
+                " Review your cloud save first. Local progress is preserved.");
+        }else{
+            // After an uncertain release result, don't reopen uploads
+            // without a fresh ownership claim and server revision check.
+            sessionGuardSet("lost","Switch not confirmed"+(checkpointed?
+                " (cloud checkpoint saved)":"")+". "+
+                detail+" Reconnect to check ownership. Local progress is safe.");
+        }
+        return false;
+    }finally{
+        sessionGuardBusy=false;
+        sessionGuardStatus(sessionGuardLastMessage,["lost","review"].includes(sessionGuardPhase));
+    }
 }
 async function sessionGuardRelease(){
     const uid=sessionGuardCurrentUid();

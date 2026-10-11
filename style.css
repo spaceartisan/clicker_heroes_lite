@@ -2069,3 +2069,6 @@ button:has(> .ui-icon) { display: inline-flex; }
 
 /* v1.12.0 — Spark plan handoff status */
 .account-session-panel p.session-warning{font-weight:600;color:#eaa78e}
+
+/* v1.13.0: active-device save-and-switch action */
+#account-session-handoff{font-weight:600}

@@ -5,7 +5,7 @@ const fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
 const assert=require("node:assert/strict");
 const source=fs.readFileSync(path.join(__dirname,"../session-guard.js"),"utf8");
 const uid="shared-firebase-uid",sessions=new Map(),saves=new Map(),watchers=new Map();
-let permissionDenied=false,serial=3,uploads=0;
+let permissionDenied=false,failNextCloudWrite=false,failNextRelease=false,serial=3,uploads=0;
 let passed=0;const ok=(x,n)=>{assert.ok(x,n);passed++;console.log("PASS "+n)};
 const serverTimestamp=()=>({__server:true});
 const timestamp=()=>({toMillis:()=>Date.now()});
@@ -46,9 +46,13 @@ function firebaseDb(){
     const isSession=key.startsWith("player_sessions/");
     const previous=(isSession?sessions:saves).get(key)||{};
     const normalized={...(action.replace?{}:previous),...action.data};
+    if(isSession&&normalized.released===true&&failNextRelease){
+      failNextRelease=false;throw {code:"unavailable"};
+    }
     for(const [field,value] of Object.entries(normalized))
       if(value&&value.__server)normalized[field]=timestamp();
     if(!isSession){
+      if(failNextCloudWrite){failNextCloudWrite=false;throw {code:"permission-denied"};}
       const current=sessions.get("player_sessions/"+uid);
       if(!current||current.deviceId!==normalized.deviceId||
           current.released)throw {code:"permission-denied"};
@@ -84,6 +88,16 @@ function makeDevice(mobile=false){
   db:firebaseDb(),accountAuth:()=>({currentUser:account}),
   accountControlsUpdate(){},playerSyncPause(){},
   playerSyncAnchor(){const value=local.get("test_cloud_anchor");return value?JSON.parse(value):null},
+  playerSyncSetAnchor(_userId,revision,save){
+   const normalized={...save};
+   delete normalized.lastSaved;delete normalized.lastSubmittedScore;
+   delete normalized.lastSavedDeviceId;
+   local.set("test_cloud_anchor",JSON.stringify({
+     revision,fingerprint:JSON.stringify(normalized)
+   }));
+   return true;
+  },
+  accountValidSave:save=>Boolean(save&&save.schemaVersion===2&&save.seasonId==="dynasty-ii"),
   playerSyncFingerprint:save=>{
     if(!save)return null;
     const gameplay={...save};
@@ -98,7 +112,7 @@ function makeDevice(mobile=false){
     seasonId:"dynasty-ii",revision,updatedAt:serverTimestamp(),save}),
   accountCloudRecordValid:(v,user)=>Boolean(v&&v.ownerUid===user.uid),
   playerCloudUpdateNotice(){},accountPreviewCloud(){},
-  saveGame(){},awardOfflineGold(){reward++},
+  saveGame(){local.set("last_snapshot_call",String(Date.now()))},awardOfflineGold(){reward++},
   stopSquadAttack(){stops++},pauseBossClock(){},
   startSquadAttack(){},resumeBossClock(){},
   confirm:()=>true,setInterval(){}
@@ -190,9 +204,53 @@ async function run(){
  const another=makeDevice();
  another.context.sessionGuardAccountChanged(another.account);await settle();
  ok(phase(another)==="occupied","Different tab also treated as another session");
- phone.context.sessionGuardRelease();await settle();
+ // Failed cloud checkpoint must NOT release the active owner or modify the
+ // accepted cloud revision. It should require ownership verification again.
+ failNextCloudWrite=true;
+ const beforeFailedTransfer=uploads;
+ ok(!await phone.context.sessionGuardHandoff()&&uploads===beforeFailedTransfer&&
+    !sessions.get("player_sessions/"+uid).released&&
+    saves.get("player_saves/"+uid).revision===2,
+    "Rejected handoff checkpoint cannot release ownership or overwrite progress");
+ await phone.context.sessionGuardClaim(false);await settle();
+ ok(phase(phone)==="active","Owner can recover after an interrupted handoff");
+ // The active device has unsynced local progress; saving it for the next
+ // device is a deliberate, revision-guarded checkpoint, not a merge.
+ ok(await phone.context.sessionGuardHandoff()&&
+    saves.get("player_saves/"+uid).revision===3&&
+    saves.get("player_saves/"+uid).save.gold===825&&uploads===3,
+    "Save & Switch uploads latest unsynced gameplay before releasing ownership");
+ await settle();
+ ok(phase(phone)==="released"&&sessions.get("player_sessions/"+uid).released&&
+    phone.nodes.get("hero-view").inert,
+    "Source session is paused only after successful cloud checkpoint");
+ ok(phase(another)==="available"&&
+    another.nodes.get("account-session-claim").textContent==="Continue on This Device",
+    "Waiting device sees a clean handoff without polling or stealing");
+ ok(saves.get("player_saves/"+uid).save.gold===825,
+    "Waiting device does not automatically merge or overwrite the cloud save");
  await another.context.sessionGuardTakeover();await settle();
- ok(phase(another)==="review"&&phase(phone)!=="active","Released lease permits new owner");
+ ok(phase(another)==="review"&&phase(phone)==="released",
+    "Continue reclaims the released session and requires explicit cloud review");
+ // A release can fail after the cloud checkpoint has succeeded. It must
+ // not report a completed handoff or unlock stale gameplay as though safe.
+ const newOwnerId=sessions.get("player_sessions/"+uid).deviceId;
+ const tabletSave={...progress,gold:973,maxLevel:25,currentLevel:25,
+    bestSeasonStage:25,lastSavedDeviceId:newOwnerId};
+ another.storage.set("clickerHeroSave",JSON.stringify(tabletSave));
+ another.context.playerSyncSetAnchor(uid,3,tabletSave);
+ ok(await another.context.sessionGuardCheckpoint(tabletSave,3,true)===4&&
+    phase(another)==="active","Review choice unlocks explicit owner checkpoint");
+ another.context.playerSyncSetAnchor(uid,4,tabletSave);
+ failNextRelease=true;
+ ok(!await another.context.sessionGuardHandoff()&&
+    saves.get("player_saves/"+uid).revision===5&&
+    !sessions.get("player_sessions/"+uid).released,
+    "Failed release retains cloud checkpoint but does not claim a clean handoff");
+ ok(phase(another)==="lost"&&another.nodes.get("hero-view").inert,
+    "Uncertain release pauses gameplay until ownership is reverified");
+ await another.context.sessionGuardClaim(false);await settle();
+ ok(phase(another)==="active","Owner can reclaim after a release failure");
  const noRules=makeDevice();
  permissionDenied=true;noRules.context.sessionGuardAccountChanged(noRules.account);await settle();
  ok(phase(noRules)==="unconfigured","Missing Firestore rules clearly shows inactive protection");
@@ -200,7 +258,7 @@ async function run(){
  permissionDenied=false;
  const pcIdAgain=pc.context.sessionGuardDeviceId();
  ok(pcIdAgain===owner1,"Device ID remains stable through reload within the same tab");
- ok(uploads===2,"Only expected checkpoint writes were accepted");
+ ok(uploads===5,"Only expected checkpoint writes were accepted");
  console.log("Spark handoff tests: "+passed+" passed.");
 }
 run().catch(error=>{console.error(error);process.exitCode=1});

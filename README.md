@@ -199,3 +199,8 @@ The old paid-functions `functions/` source is archived as a future reference onl
 
 - Restoring a PC cloud save to a phone no longer causes a false cloud conflict when the phone updates only the per-tab save-origin marker. The cloud deduplication fingerprint now ignores this metadata (plus timestamps and leaderboard bookkeeping), while remaining sensitive to real gameplay changes.
 - A returning owner tab with a still-current cloud revision may resume its own unsynced locally authored progress instead of being forced into Compare/Restore after every reload. A different device or newer cloud revision still requires explicit review. Offline rewards continue to require the same-tab saved origin; this does not make client-reported progression tamper-proof.
+
+### v1.13.0 — Save & Switch Device (Spark plan)
+
+- Added one-click **Save & Switch Device** for the current Firestore session owner. It pauses combat, validates the local Season II save, checks the cloud revision, checkpoints progress transactionally, and **only after a successful upload** releases the owner session. A denied/stale upload cannot silently release the device or erase local data.
+- Waiting devices now watch the existing owner session and offer **Continue on This Device** after the active device releases, without automatically overwriting local progress. Handoff still requires intentional cloud restore or review, retains pre-restore recovery saves, and does not merge or server-validate scores. No new Firestore rules or paid backend required.

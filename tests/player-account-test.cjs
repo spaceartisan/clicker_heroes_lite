@@ -303,6 +303,24 @@ async function run(){
  delete ctx.sessionGuardUsesServer;
  delete ctx.sessionGuardWritesBlocked;
  delete ctx.sessionGuardCheckpoint;
+ // Handoff takes a final immutable local snapshot; do not permit a
+ // simultaneous restore/check/upload to race with its cloud checkpoint.
+ const beforeHandoffLocal=localStorage.getItem("clickerHeroSave");
+ const beforeHandoffWrites=transactionCount;
+ const beforeHandoffReloads=reloads;
+ ctx.sessionGuardPhase="handoff";
+ ctx.accountControlsUpdate();
+ ok(["player-cloud-check","player-cloud-upload","player-cloud-restore"].every(id=>
+    document.getElementById(id).disabled),
+    "Cloud controls are disabled while Save & Switch is checkpointing");
+ ok(!await ctx.playerCheckCloudSave()&&
+    !await ctx.playerBackupCloudSave()&&
+    !await ctx.playerRestoreCloudSave()&&
+    localStorage.getItem("clickerHeroSave")===beforeHandoffLocal&&
+    transactionCount===beforeHandoffWrites&&reloads===beforeHandoffReloads,
+    "Handoff blocks concurrent manual cloud writes and restore reload");
+ delete ctx.sessionGuardPhase;
+ ctx.accountControlsUpdate();
  console.log("Player Account regression: "+passed+" passed.");
 }
 run().catch(error=>{console.error(error);process.exitCode=1});
