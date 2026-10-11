@@ -1,4 +1,4 @@
-// v1.13.4 — Preserve original startup provenance across account reconnection and cloud conflicts. Coordination, not cheat-proof scoring.
+// v1.13.5 — Verify ownership after delayed cloud reviews and test round-trip handoffs. Coordination, not cheat-proof scoring.
 // Uses Firebase Auth + Firestore transactions/rules; no Cloud Functions or billing.
 const HANDOFF_COLLECTION="player_sessions";
 const HANDOFF_INSTALL_KEY="hotc_install_id_v1";
@@ -314,7 +314,23 @@ async function sessionGuardReview(uid,generation,allowOffline=false){
     if(generation!==sessionGuardGeneration||uid!==sessionGuardCurrentUid())return;
     try{
         const snapshot=await accountCloudRef({uid}).get({source:"server"});
-        if(generation!==sessionGuardGeneration||uid!==sessionGuardCurrentUid())return;
+        if(generation!==sessionGuardGeneration||uid!==sessionGuardCurrentUid()||
+            sessionGuardPhase==="lost")return;
+        // The session claim and cloud-read are separate requests. Ownership
+        // can move between them (including during a slow browser restart).
+        // A fresh *server* read prevents a late cloud response from unlocking
+        // gameplay after another device has taken over.
+        const leaseSnapshot=await sessionGuardRef(uid).get({source:"server"});
+        if(generation!==sessionGuardGeneration||uid!==sessionGuardCurrentUid()||
+            sessionGuardPhase==="lost")return;
+        const lease=leaseSnapshot.exists?leaseSnapshot.data():null;
+        if(!lease||lease.ownerUid!==uid||lease.deviceId!==sessionGuardDeviceId()||
+            lease.released||!sessionGuardLeaseActive(lease)){
+            if(typeof playerSyncPause==="function")playerSyncPause();
+            sessionGuardSet("lost","Device ownership changed while loading the cloud save. "+
+                "Your local progress is preserved. Reconnect and review the latest cloud checkpoint.");
+            return;
+        }
         const cloud=snapshot.exists?snapshot.data():null;
         if(cloud&&accountCloudRecordValid(cloud,{uid})){
             const anchor=playerSyncAnchor(uid);

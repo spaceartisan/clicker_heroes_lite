@@ -226,3 +226,8 @@ The old paid-functions `functions/` source is archived as a future reference onl
 
 - On initial page load, hold the exact original local checkpoint before an early autosave can rewrite its timestamp and tab/device origin. If login/reconnection subsequently reports a cloud revision conflict or session loss, recovery captures the original boot checkpoint when the only intervening changes are save metadata. If real gameplay progress changed, recovery chooses the latest valid local save instead.
 - This snapshot is only used in the existing per-account interrupted-progress recovery slot; it is never auto-uploaded, auto-restored, or eligible for additional offline rewards. Existing Season II saves and the Spark Firestore rules remain compatible.
+
+### v1.13.5 — round-trip session review and stale-read protection
+
+- Recheck the current Firestore lease **after** a cloud save finishes loading and **before** activating gameplay. A PC→phone takeover while the PC's earlier cloud read is still pending now leaves the PC paused, even if its realtime listener did not deliver the takeover.
+- Add simulated PC→phone→PC handoff/restart coverage: only the active owner writes cloud revisions; returning as a new tab requires explicit cloud comparison and cannot earn the other device's offline interval. Save formats and existing Spark rules are unchanged. This remains coordination rather than cheat-proof authority.

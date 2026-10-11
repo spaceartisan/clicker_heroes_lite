@@ -5,7 +5,8 @@ const fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
 const assert=require("node:assert/strict");
 const source=fs.readFileSync(path.join(__dirname,"../session-guard.js"),"utf8");
 const uid="shared-firebase-uid",sessions=new Map(),saves=new Map(),watchers=new Map();
-let permissionDenied=false,failNextCloudWrite=false,failNextRelease=false,serial=3,uploads=0;
+let permissionDenied=false,failNextCloudWrite=false,failNextRelease=false;
+let delayNextSaveRead=false,resolveDelayedSaveRead=null,serial=3,uploads=0;
 let passed=0;const ok=(x,n)=>{assert.ok(x,n);passed++;console.log("PASS "+n)};
 const serverTimestamp=()=>({__server:true});
 const timestamp=()=>({toMillis:()=>Date.now()});
@@ -24,6 +25,10 @@ function firebaseDb(){
     return {
      __key:key,
      async get(){if(permissionDenied)throw {code:"permission-denied"};
+      if(collection==="player_saves"&&delayNextSaveRead){
+       delayNextSaveRead=false;
+       await new Promise(resolve=>{resolveDelayedSaveRead=resolve});
+      }
       return snapshot(collection==="player_sessions"?sessions.get(key):saves.get(key));},
      onSnapshot(fn){const set=watchers.get(key)||new Set();set.add(fn);watchers.set(key,set);
       Promise.resolve().then(()=>fn(snapshot(sessions.get(key))));
@@ -68,8 +73,8 @@ function firebaseDb(){
  };
 }
 let seed=0;
-function makeDevice(mobile=false){
- const nodes=new Map(),storage=new Map(),tab=new Map(),local=new Map();
+function makeDevice(mobile=false,existingLocal=null,existingTab=null){
+ const nodes=new Map(),tab=existingTab||new Map(),local=existingLocal||new Map();
  const account={uid,isAnonymous:false,email:"test@example.com"};
  let reward=0,stops=0;
  const document={hidden:false,getElementById(id){
@@ -365,4 +370,84 @@ async function run(){
  ok(uploads===5,"Only expected checkpoint writes were accepted");
  console.log("Spark handoff tests: "+passed+" passed.");
 }
-run().catch(error=>{console.error(error);process.exitCode=1});
+async function runRoundTrip(){
+ // A new simulated Firebase project; no previous test listeners or saves.
+ sessions.clear();saves.clear();watchers.clear();
+ permissionDenied=false;failNextCloudWrite=false;failNextRelease=false;
+ uploads=0;
+ const pc=makeDevice(),phone=makeDevice(true);
+ pc.context.sessionGuardAccountChanged(pc.account);await settle();
+ ok(phase(pc)==="active","Roundtrip: PC starts as active owner");
+ const pcId=pc.context.sessionGuardDeviceId();
+ const pcSave={...progress,gold:451,maxLevel:30,currentLevel:30,
+   bestSeasonStage:30,lastSavedDeviceId:pcId};
+ pc.storage.set("clickerHeroSave",JSON.stringify(pcSave));
+ ok(await pc.context.sessionGuardCheckpoint(pcSave,0)===1,
+   "Roundtrip: initial PC revision is saved");
+ pc.context.playerSyncSetAnchor(uid,1,pcSave);
+ ok(await pc.context.sessionGuardHandoff()&&
+    saves.get("player_saves/"+uid).revision===2 &&
+    sessions.get("player_sessions/"+uid).released,
+    "Roundtrip: PC final-checkpoints before releasing device");
+ phone.context.sessionGuardAccountChanged(phone.account);await settle();
+ ok(phase(phone)==="review"&&phone.reward===0,
+    "Roundtrip: phone must review PC cloud data; no implicit offline reward");
+ const pcCloud=saves.get("player_saves/"+uid);
+ phone.storage.set("clickerHeroSave",JSON.stringify(pcCloud.save));
+ phone.context.playerSyncSetAnchor(uid,pcCloud.revision,pcCloud.save);
+ await phone.context.sessionGuardClaim(false);await settle();
+ ok(phase(phone)==="active"&&phone.reward===0,
+    "Roundtrip: explicit phone restore can resume without double-dipping");
+ const phoneId=phone.context.sessionGuardDeviceId();
+ const phoneSave={...pcSave,gold:960,maxLevel:44,currentLevel:44,
+   bestSeasonStage:44,lastSavedDeviceId:phoneId};
+ phone.storage.set("clickerHeroSave",JSON.stringify(phoneSave));
+ ok(await phone.context.sessionGuardHandoff()&&
+    saves.get("player_saves/"+uid).revision===3&&
+    saves.get("player_saves/"+uid).save.gold===960,
+    "Roundtrip: phone final-checkpoints its own gameplay at revision 3");
+ // Reopen the same physical PC installation in a NEW tab. Its install
+ // identifier persists but tab ownership and provenance are different.
+ const pcNewTab=makeDevice(false,pc.storage);
+ pcNewTab.context.sessionGuardAccountChanged(pcNewTab.account);await settle();
+ ok(pcNewTab.context.sessionGuardDeviceId()!==pcId&&
+    phase(pcNewTab)==="review"&&
+    pcNewTab.nodes.get("hero-view").inert&&pcNewTab.reward===0,
+    "Roundtrip: reopened PC cannot use stale tab ID or bypass cloud comparison");
+ ok(saves.get("player_saves/"+uid).revision===3&&
+    JSON.parse(pcNewTab.storage.get("clickerHeroSave")).gold===451,
+    "Roundtrip: review neither merges nor overwrites local PC progress");
+ const newCloud=saves.get("player_saves/"+uid);
+ pcNewTab.storage.set("clickerHeroSave",JSON.stringify(newCloud.save));
+ pcNewTab.context.playerSyncSetAnchor(uid,newCloud.revision,newCloud.save);
+ await pcNewTab.context.sessionGuardClaim(false);await settle();
+ ok(phase(pcNewTab)==="active"&&
+    JSON.parse(pcNewTab.storage.get("clickerHeroSave")).gold===960 &&
+    pcNewTab.reward===0&&uploads===3,
+    "Roundtrip: explicit PC restore resumes latest cloud revision without extra writes or offline gold");
+ // Simulate an old PC's cloud request being delayed, its realtime listener
+ // also being unavailable, and the phone taking over before the response.
+ const slowPC=makeDevice();
+ delayNextSaveRead=true;
+ const pendingPC=slowPC.context.sessionGuardClaim(true);
+ await settle();
+ ok(phase(slowPC)==="checking"&&
+    typeof resolveDelayedSaveRead==="function",
+    "Delayed-review: old claimant is paused while cloud request is pending");
+ // Silence all current session listeners to test the final direct server
+ // check rather than relying on a realtime notification.
+ watchers.get("player_sessions/"+uid)?.clear();
+ const returningPhone=makeDevice(true,phone.storage);
+ await returningPhone.context.sessionGuardClaim(true);await settle();
+ ok(phase(returningPhone)==="active"&&
+    saves.get("player_saves/"+uid).revision===3,
+    "Delayed-review: another device can claim while old cloud read hangs");
+ resolveDelayedSaveRead();await pendingPC;await settle();
+ ok(phase(slowPC)==="lost"&&slowPC.nodes.get("hero-view").inert&&
+    !slowPC.context.sessionGuardCanCheckpoint(),
+    "Delayed-review: stale cloud response cannot unlock superseded session");
+ ok(saves.get("player_saves/"+uid).revision===3&&uploads===3,
+    "Delayed-review: no extra cloud writes or duplicate progression");
+ console.log("Cross-device roundtrip tests: 13 passed.");
+}
+run().then(runRoundTrip).catch(error=>{console.error(error);process.exitCode=1});

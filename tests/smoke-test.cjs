@@ -144,7 +144,7 @@ const visualAssetChecks = (() => {
  ok(css.includes(':root[data-theme="stone"]')&&css.includes("--panel-fill"),
     "Stone mode uses semantic design tokens");
  ok(css.includes("background-attachment: scroll"),"Background avoids fixed-position mobile repaint");
- ok(sw.includes("heroes-of-click-v1.13.4")&&sw.includes('"./theme.js"'),
+ ok(sw.includes("heroes-of-click-v1.13.5")&&sw.includes('"./theme.js"'),
     "Theme controller is precached in PWA");
  for(const name of glyphNames){
     const file="icons/ui-"+name+".svg";
@@ -236,7 +236,7 @@ const layoutChecks = (() => {
  const source=fs.readFileSync(path.join(__dirname,"..","index.html"),"utf8");
  const css=fs.readFileSync(path.join(__dirname,"..","style.css"),"utf8");
  const sw=fs.readFileSync(path.join(__dirname,"..","sw.js"),"utf8");
- assert(source.includes('v1.13.4') && sw.includes('heroes-of-click-v1.13.4'),"Markup and PWA cache versions match");
+ assert(source.includes('v1.13.5') && sw.includes('heroes-of-click-v1.13.5'),"Markup and PWA cache versions match");
  for(const section of ["hero","kingdom","army"]) {
     assert(source.includes('id="view-tab-'+section+'"'),"Accessible tab exists for "+section);
  }
@@ -273,7 +273,7 @@ layoutChecks.forEach(label=>console.log("PASS "+label));
 console.log("Responsive layout tests: "+layoutChecks.length+" passed.");
 
 ctx.fs=fs;ctx.path=path;ctx.__dirname=__dirname;
-const enemyCardChecks = vm.runInContext("(() => {\n const verified=[],check=(value,label)=>{if(!value)throw Error(\"Enemy card: \"+label);verified.push(label)};\n const html=fs.readFileSync(path.join(__dirname,\"..\",\"index.html\"),\"utf8\");\n const css=fs.readFileSync(path.join(__dirname,\"..\",\"style.css\"),\"utf8\");\n const game=fs.readFileSync(path.join(__dirname,\"..\",\"game.js\"),\"utf8\");\n const enemy=fs.readFileSync(path.join(__dirname,\"..\",\"enemy.js\"),\"utf8\");\n const sw=fs.readFileSync(path.join(__dirname,\"..\",\"sw.js\"),\"utf8\");\n check(html.includes('id=\"enemy-name\"') && html.includes('id=\"enemy-trait\"'),\n   \"Name and trait labels are authored in the card\");\n check(html.indexOf('id=\"enemy-level\"')<html.indexOf('id=\"enemy-name\"') &&\n   html.indexOf('id=\"enemy-name\"')<html.indexOf('id=\"enemy-trait\"'),\n   \"Stage, name and trait follow a consistent visual hierarchy\");\n check(game.includes('document.getElementById(\"enemy-name\")'),\n   \"Enemy name reuses authored HTML instead of appending a runtime label\");\n check(!game.includes('document.getElementById(\"enemy-box\").appendChild(enemyNameText)'),\n   \"Old runtime name insertion removed\");\n check(css.includes(\"grid-template-columns: var(--enemy-nav-size) minmax(0, 1fr) var(--enemy-nav-size)\"),\n   \"Navigation uses two stable side columns with a constrained card\");\n check(css.includes(\"max-width: 464px\")&&css.includes(\"width: 100%\"),\n   \"Encounter row is bounded and responsive\");\n check(css.includes(\"#enemy-name\")&&css.includes(\"overflow-wrap: anywhere\"),\n   \"Long enemy names wrap without forcing row growth\");\n check(css.includes(\"margin-top: calc(var(--enemy-card-padding) + 51px)\"),\n   \"Navigation arrows are anchored at the sprite position\");\n check(css.includes(\"--enemy-nav-size: 42px\")&&css.includes(\"gap: 6px\"),\n   \"Phone layout retains fixed button slots\");\n check(sw.includes(\"heroes-of-click-v1.13.4\")&&html.includes(\"v1.13.4\"),\n   \"Installed PWA and visible version update together\");\n check(enemy.includes(\"enemyNameText.textContent = type.name\"),\n   \"Enemy spawning still updates the name\");\n const oldStage=currentLevel, oldEnemy=enemyType;\n try {\n   currentLevel=1;drawRandomEnemy();\n   const first=enemyNameText.textContent;\n   check(first.includes(getEnemyType(1).name),\"First enemy shows correct name\");\n   currentLevel=105;drawRandomEnemy();\n   check(enemyNameText.textContent.includes(\"Veteran\")&&enemyLevelText.textContent.includes(\"VETERAN\"),\n     \"Veteran text updates without extra DOM insertion\");\n   currentLevel=110;drawRandomEnemy();\n   check(enemyLevelText.textContent.includes(\"BOSS\"),\n     \"Boss stage label remains visible\");\n } finally {\n   currentLevel=oldStage;enemyType=oldEnemy;\n }\n return verified;\n})()",ctx,{timeout:2800});
+const enemyCardChecks = vm.runInContext("(() => {\n const verified=[],check=(value,label)=>{if(!value)throw Error(\"Enemy card: \"+label);verified.push(label)};\n const html=fs.readFileSync(path.join(__dirname,\"..\",\"index.html\"),\"utf8\");\n const css=fs.readFileSync(path.join(__dirname,\"..\",\"style.css\"),\"utf8\");\n const game=fs.readFileSync(path.join(__dirname,\"..\",\"game.js\"),\"utf8\");\n const enemy=fs.readFileSync(path.join(__dirname,\"..\",\"enemy.js\"),\"utf8\");\n const sw=fs.readFileSync(path.join(__dirname,\"..\",\"sw.js\"),\"utf8\");\n check(html.includes('id=\"enemy-name\"') && html.includes('id=\"enemy-trait\"'),\n   \"Name and trait labels are authored in the card\");\n check(html.indexOf('id=\"enemy-level\"')<html.indexOf('id=\"enemy-name\"') &&\n   html.indexOf('id=\"enemy-name\"')<html.indexOf('id=\"enemy-trait\"'),\n   \"Stage, name and trait follow a consistent visual hierarchy\");\n check(game.includes('document.getElementById(\"enemy-name\")'),\n   \"Enemy name reuses authored HTML instead of appending a runtime label\");\n check(!game.includes('document.getElementById(\"enemy-box\").appendChild(enemyNameText)'),\n   \"Old runtime name insertion removed\");\n check(css.includes(\"grid-template-columns: var(--enemy-nav-size) minmax(0, 1fr) var(--enemy-nav-size)\"),\n   \"Navigation uses two stable side columns with a constrained card\");\n check(css.includes(\"max-width: 464px\")&&css.includes(\"width: 100%\"),\n   \"Encounter row is bounded and responsive\");\n check(css.includes(\"#enemy-name\")&&css.includes(\"overflow-wrap: anywhere\"),\n   \"Long enemy names wrap without forcing row growth\");\n check(css.includes(\"margin-top: calc(var(--enemy-card-padding) + 51px)\"),\n   \"Navigation arrows are anchored at the sprite position\");\n check(css.includes(\"--enemy-nav-size: 42px\")&&css.includes(\"gap: 6px\"),\n   \"Phone layout retains fixed button slots\");\n check(sw.includes(\"heroes-of-click-v1.13.5\")&&html.includes(\"v1.13.5\"),\n   \"Installed PWA and visible version update together\");\n check(enemy.includes(\"enemyNameText.textContent = type.name\"),\n   \"Enemy spawning still updates the name\");\n const oldStage=currentLevel, oldEnemy=enemyType;\n try {\n   currentLevel=1;drawRandomEnemy();\n   const first=enemyNameText.textContent;\n   check(first.includes(getEnemyType(1).name),\"First enemy shows correct name\");\n   currentLevel=105;drawRandomEnemy();\n   check(enemyNameText.textContent.includes(\"Veteran\")&&enemyLevelText.textContent.includes(\"VETERAN\"),\n     \"Veteran text updates without extra DOM insertion\");\n   currentLevel=110;drawRandomEnemy();\n   check(enemyLevelText.textContent.includes(\"BOSS\"),\n     \"Boss stage label remains visible\");\n } finally {\n   currentLevel=oldStage;enemyType=oldEnemy;\n }\n return verified;\n})()",ctx,{timeout:2800});
 delete ctx.fs;delete ctx.path;delete ctx.__dirname;
 enemyCardChecks.forEach(label=>console.log("PASS "+label));
 console.log("Enemy card layout tests: "+enemyCardChecks.length+" passed.");
@@ -999,6 +999,22 @@ const sparkOfflineChecks = vm.runInContext(`(()=>{
 sparkOfflineChecks.forEach(x=>console.log("PASS "+x));
 console.log("Spark offline handoff checks: "+sparkOfflineChecks.length+" passed.");
 
+const lateReviewSafetyChecks=(()=>{
+ const checks=[],ok=(condition,label)=>{
+   if(!condition)throw Error("Delayed review: "+label);checks.push(label);
+ };
+ const guard=fs.readFileSync(path.join(__dirname,"../session-guard.js"),"utf8");
+ ok(guard.includes('const leaseSnapshot=await sessionGuardRef(uid).get({source:"server"})')&&
+    guard.includes('lease.deviceId!==sessionGuardDeviceId()'),
+    "Late cloud responses cannot activate a former session owner");
+ ok(guard.includes("sessionGuardPhase===\"lost\"")&&
+    guard.includes("sessionGuardSet(\"lost\",\"Device ownership changed while loading"),
+    "An already-lost session cannot be reactivated by delayed review");
+ return checks;
+})();
+lateReviewSafetyChecks.forEach(label=>console.log("PASS "+label));
+console.log("Delayed review safety checks: "+lateReviewSafetyChecks.length+" passed.");
+
 const restartRecoveryMarkupChecks=(()=>{
  const checks=[],ok=(v,label)=>{
    if(!v)throw Error("Restart recovery: "+label);checks.push(label);
@@ -1189,7 +1205,7 @@ const autoCloudMarkupChecks=(()=>{
  ok(html.includes('id="player-cloud-auto"') &&
     html.includes('id="player-cloud-auto-status"'),"Explicit opt-in checkbox and status authored");
  ok(worker.includes('"./player-account.js"')&&
-    worker.includes("heroes-of-click-v1.13.4"),"New cloud client included in offline cache");
+    worker.includes("heroes-of-click-v1.13.5"),"New cloud client included in offline cache");
  ok(css.includes(".player-auto-sync")&&css.includes("@media(max-width:520px)"),
     "Cloud settings accommodate narrow screens");
  ok(account.includes("playerSyncAnchor(user.uid)") &&
