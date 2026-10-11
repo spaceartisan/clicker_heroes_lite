@@ -204,3 +204,10 @@ The old paid-functions `functions/` source is archived as a future reference onl
 
 - Added one-click **Save & Switch Device** for the current Firestore session owner. It pauses combat, validates the local Season II save, checks the cloud revision, checkpoints progress transactionally, and **only after a successful upload** releases the owner session. A denied/stale upload cannot silently release the device or erase local data.
 - Waiting devices now watch the existing owner session and offer **Continue on This Device** after the active device releases, without automatically overwriting local progress. Handoff still requires intentional cloud restore or review, retains pre-restore recovery saves, and does not merge or server-validate scores. No new Firestore rules or paid backend required.
+
+### v1.13.1 — secure foreground resume (no new Firestore rules)
+
+- Pause combat during sign-in lease checks and foreground verification after the app returns from the background. Do not permit honest-client progression while Firebase is still establishing which device owns the session. If the lease was transferred or expired, remain paused with a reconnect/takeover option.
+- Preserve deferred same-tab offline rewards through temporary verification; a real lease loss/conflict still clears them. Guest play and unconfigured Spark projects retain their existing fallback behavior. No new backend services or Firestore rules.
+
+- Cloud check, restore, manual backup and auto-sync controls are disabled during a pending device claim or checkpoint-first handoff; they become available again as soon as the session decision is resolved.

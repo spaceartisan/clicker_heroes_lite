@@ -541,6 +541,11 @@ document.addEventListener("visibilitychange", () => {
         pauseBossClock();
         saveGame();
     } else {
+        // This visibility listener is registered before session-guard.js.
+        // Enter the checking state synchronously, before any combat timer
+        // or player click can use a session stolen while the tab was hidden.
+        if(typeof sessionGuardVerifyForeground==="function")
+            sessionGuardVerifyForeground();
         if (hiddenAt !== null) {
             // Account-linked devices must verify cloud ownership before
             // claiming time-away gold. Cross-device time is not stackable.
@@ -551,8 +556,12 @@ document.addEventListener("visibilitychange", () => {
             updateUI();
             saveGame();
         }
-        resumeBossClock();
-        startSquadAttack();
+        // Foreground ownership verification may still be in flight.
+        // Don't restart the boss countdown while the session is checking.
+        if(!(typeof sessionGuardBlocksGameplay==="function"&&sessionGuardBlocksGameplay())){
+            resumeBossClock();
+            startSquadAttack();
+        }
     }
 });
 window.addEventListener("pagehide", () => { pauseBossClock(); saveGame(); });

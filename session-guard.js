@@ -1,4 +1,4 @@
-// v1.13.0 — Spark device handoff with verified save-and-release and waiting-device notification. Coordination, not cheat-proof scoring.
+// v1.13.1 — Guard startup and foreground reconnects before any resumed combat. Coordination, not cheat-proof scoring.
 // Uses Firebase Auth + Firestore transactions/rules; no Cloud Functions or billing.
 const HANDOFF_COLLECTION="player_sessions";
 const HANDOFF_INSTALL_KEY="hotc_install_id_v1";
@@ -53,7 +53,11 @@ function sessionGuardCanCheckpoint(allowReview=false){
          (allowReview&&["review","handoff"].includes(sessionGuardPhase)));
 }
 function sessionGuardBlocksGameplay(){
-    return ["occupied","available","handoff","released","lost","review"].includes(sessionGuardPhase);
+    // While Firebase Auth is restoring a signed-in user, do not run a
+    // protected account's combat before its first lease check begins.
+    const uid=sessionGuardCurrentUid();
+    return Boolean(uid&&uid!==sessionGuardUid)||
+        ["checking","occupied","available","handoff","released","lost","review"].includes(sessionGuardPhase);
 }
 function sessionGuardDeviceLabel(){
     return (typeof navigator!=="undefined" &&
@@ -111,8 +115,13 @@ function sessionGuardSet(phase,message){
         if(el)el.inert=paused;
     }
     if(paused){
-        window.__hotcDeferredOfflineSavedAt=null;
-        window.__hotcDeferredOfflineSourceDeviceId=null;
+        // A startup/foreground verification is NOT a lost session.
+        // Preserve deferred same-tab offline eligibility until the cloud
+        // owner is checked; clear it only after a real loss or conflict.
+        if(phase!=="checking"){
+            window.__hotcDeferredOfflineSavedAt=null;
+            window.__hotcDeferredOfflineSourceDeviceId=null;
+        }
         if(typeof stopSquadAttack==="function")stopSquadAttack();
         if(typeof pauseBossClock==="function")pauseBossClock();
     }else if(!document.hidden&&typeof startSquadAttack==="function"){
@@ -207,8 +216,7 @@ async function sessionGuardClaim(takeover=false){
     if(!uid||sessionGuardBusy)return false;
     sessionGuardBusy=true;
     const generation=++sessionGuardGeneration;
-    sessionGuardPhase="checking";
-    sessionGuardStatus("Checking which device owns the account...");
+    sessionGuardSet("checking","Checking which device owns the account...");
     try{
         const id=sessionGuardDeviceId();
         const ref=sessionGuardRef(uid);
@@ -261,31 +269,54 @@ async function sessionGuardTakeover(){
     if(!confirm("Take over this account on this device?\n\nFirst back up progress on the other device. You will be asked to review/restore the cloud save here; local saves are not merged."))return false;
     return sessionGuardClaim(true);
 }
-async function sessionGuardPing(){
+// Force a foreground lease check BEFORE game.js resumes combat. A routine
+// heartbeat can run without interrupting an already-active game.
+function sessionGuardVerifyForeground(){
+    if(document.hidden||!["active","review"].includes(sessionGuardPhase))return false;
+    if(sessionGuardBusy)return false;
+    sessionGuardLastPing=0;
+    sessionGuardPing(true);
+    return true;
+}
+async function sessionGuardPing(pauseForVerification=false){
     const uid=sessionGuardCurrentUid();
+    const resumePhase=sessionGuardPhase;
+    const generation=sessionGuardGeneration;
     if(!uid||uid!==sessionGuardUid||sessionGuardBusy||
-        document.hidden||!["active","review"].includes(sessionGuardPhase))return false;
-    if(Date.now()-sessionGuardLastPing<HANDOFF_POLL_MS-3000)return true;
+        document.hidden||!["active","review"].includes(resumePhase))return false;
+    if(!pauseForVerification&&
+        Date.now()-sessionGuardLastPing<HANDOFF_POLL_MS-3000)return true;
     sessionGuardBusy=true;
+    if(pauseForVerification)sessionGuardSet("checking",
+        "Verifying this device before resuming gameplay...");
     try{
         const ref=sessionGuardRef(uid);
         const result=await db.runTransaction(async tx=>{
             const snap=await tx.get(ref);
             if(!snap.exists||snap.data().deviceId!==sessionGuardDeviceId()||
-                snap.data().ownerUid!==uid)return false;
+                snap.data().ownerUid!==uid||snap.data().released||
+                !sessionGuardLeaseActive(snap.data()))return false;
             tx.update(ref,{updatedAt:sessionGuardTimestamp()});
             return true;
         });
+        if(generation!==sessionGuardGeneration||uid!==sessionGuardCurrentUid())
+            return false;
         if(!result){
             if(typeof playerSyncPause==="function")playerSyncPause();
-            sessionGuardSet("lost","This account is now active on another device.");
+            sessionGuardSet("lost","This device no longer owns the account. Reconnect or take over before playing.");
             return false;
         }
         sessionGuardLastPing=Date.now();
+        if(pauseForVerification&&sessionGuardPhase==="checking"){
+            sessionGuardSet(resumePhase,resumePhase==="review"?
+                "Device verified. Compare or restore the cloud save before continuing.":
+                "This browser tab is active. Device ownership verified; scores remain unverified.");
+        }
         return true;
     }catch(error){
-        if(sessionGuardUsesServer())sessionGuardSet("lost",
-            "Could not renew device ownership: "+sessionGuardError(error));
+        if(generation===sessionGuardGeneration&&uid===sessionGuardCurrentUid()&&
+            sessionGuardUsesServer())sessionGuardSet("lost",
+            "Could not verify device ownership: "+sessionGuardError(error));
         return false;
     }finally{sessionGuardBusy=false}
 }
@@ -410,9 +441,6 @@ function sessionGuardAccountChanged(user){
     sessionGuardClaim(false);
 }
 document.addEventListener("visibilitychange",()=>{
-    if(!document.hidden&&["active","review"].includes(sessionGuardPhase)){
-        sessionGuardLastPing=0;
-        sessionGuardPing();
-    }
+    if(!document.hidden)sessionGuardVerifyForeground();
 });
 setInterval(sessionGuardPing,HANDOFF_POLL_MS);

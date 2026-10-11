@@ -50,8 +50,11 @@ function accountErrorMessage(error) {
         return "Firebase is unreachable. Your local game remains available.";
     return error && error.message ? String(error.message).slice(0,180) : "An unexpected error occurred.";
 }
-function accountHandoffInProgress(){
-    return typeof sessionGuardPhase!=="undefined"&&sessionGuardPhase==="handoff";
+function accountSessionTransitionBusy(){
+    // No restore/reload or checkpoint may race with a pending claim or
+    // checkpoint-first device release.
+    return typeof sessionGuardPhase!=="undefined"&&
+        ["checking","handoff"].includes(sessionGuardPhase);
 }
 function accountControlsUpdate() {
     const auth = accountAuth();
@@ -77,7 +80,7 @@ function accountControlsUpdate() {
     for(const id of ["player-cloud-check","player-cloud-upload","player-cloud-restore"]) {
         const control=document.getElementById(id);
         if(control) control.disabled=!signedIn||playerAccountCloudBusy||playerSyncInFlight||
-            accountHandoffInProgress()||
+            accountSessionTransitionBusy()||
             (id==="player-cloud-upload"&&typeof sessionGuardWritesBlocked==="function"&&
                 sessionGuardWritesBlocked());
     }
@@ -248,7 +251,7 @@ async function accountReadCloud() {
     return data;
 }
 async function playerCheckCloudSave() {
-    if(accountHandoffInProgress()||playerAccountCloudBusy||playerSyncInFlight)return false;
+    if(accountSessionTransitionBusy()||playerAccountCloudBusy||playerSyncInFlight)return false;
     playerAccountCloudBusy=true;
     accountControlsUpdate();
     accountCloudMessage("Checking your private cloud save...");
@@ -289,7 +292,7 @@ async function accountCommitSave(user,save,expected,allowReview=false){
 // Every overwrite is explicit. The transaction rejects a remote revision that
 // changed after the player examined it, avoiding races between two devices.
 async function playerBackupCloudSave() {
-    if(accountHandoffInProgress()||playerAccountCloudBusy||playerSyncInFlight)return false;
+    if(accountSessionTransitionBusy()||playerAccountCloudBusy||playerSyncInFlight)return false;
     if(typeof sessionGuardWritesBlocked==="function"&&sessionGuardWritesBlocked()){
         accountCloudMessage("Cannot upload: another device owns the server session. Take over and compare saves first.",true);
         return false;
@@ -330,7 +333,7 @@ async function playerBackupCloudSave() {
     }
 }
 async function playerRestoreCloudSave() {
-    if(accountHandoffInProgress()||playerAccountCloudBusy||playerSyncInFlight)return false;
+    if(accountSessionTransitionBusy()||playerAccountCloudBusy||playerSyncInFlight)return false;
     playerAccountCloudBusy=true;
     accountControlsUpdate();
     try {
@@ -445,7 +448,8 @@ function playerSyncControlsUpdate(){
     const checkbox=document.getElementById("player-cloud-auto");
     if(checkbox){
         checkbox.checked=playerSyncEnabled();
-        checkbox.disabled=!uid||playerAccountBusy||playerAccountCloudBusy||playerSyncInFlight;
+        checkbox.disabled=!uid||playerAccountBusy||playerAccountCloudBusy||playerSyncInFlight||
+            accountSessionTransitionBusy();
     }
     const info=document.getElementById("player-cloud-auto-status");
     if(info)info.textContent=playerSyncEnabled()?
@@ -454,6 +458,10 @@ function playerSyncControlsUpdate(){
         "Off · First perform a manual cloud backup or restore, then opt in.";
 }
 async function playerSetAutoCloudSync(enabled){
+    if(accountSessionTransitionBusy()){
+        accountCloudMessage("Device verification or handoff in progress. Try again when it finishes.",true);
+        return false;
+    }
     if(!enabled){
         playerSyncPause();
         accountCloudMessage("Automatic cloud backup turned off. Local and cloud saves are intact.");

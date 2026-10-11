@@ -319,6 +319,16 @@ async function run(){
     localStorage.getItem("clickerHeroSave")===beforeHandoffLocal&&
     transactionCount===beforeHandoffWrites&&reloads===beforeHandoffReloads,
     "Handoff blocks concurrent manual cloud writes and restore reload");
+ ctx.sessionGuardPhase="checking";
+ ctx.accountControlsUpdate();
+ ok(["player-cloud-check","player-cloud-upload","player-cloud-restore"].every(id=>
+    document.getElementById(id).disabled)&&
+    document.getElementById("player-cloud-auto").disabled,
+    "Device verification disables restore and cloud sync controls");
+ ok(!await ctx.playerRestoreCloudSave()&&
+    !await ctx.playerBackupCloudSave()&&
+    !await ctx.playerSetAutoCloudSync(true),
+    "Pending device claim cannot race cloud restores, manual uploads, or auto-sync");
  delete ctx.sessionGuardPhase;
  ctx.accountControlsUpdate();
  console.log("Player Account regression: "+passed+" passed.");

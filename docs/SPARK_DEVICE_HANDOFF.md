@@ -135,3 +135,9 @@ A restored cloud save contains the previous tab's `lastSavedDeviceId`, which is 
 ### v1.13.0 — clean checkpoint-first handoff (no new rules)
 
 When actively playing, open **Game Config → Active device handoff → Save & Switch Device**. This creates a validated local snapshot and uploads it with the latest expected revision using the existing authenticated Firestore transaction. **The session is released only after the upload succeeds.** If the cloud revision changed, the action stops and asks for a manual comparison. The other device can keep the game open: it listens to the existing session record and changes from **Use This Device (Take Over)** to **Continue on This Device** after release. Clicking Continue claims the released session, then reviews/restores the cloud save. Do not rely on an unverified guest or unprotected account for this handoff. No new collections, permissions or billing are needed.
+
+### v1.13.1 — foreground re-verification
+
+Returning from a hidden/background browser now pauses honest-client combat synchronously while Firestore confirms the current tab still owns an unexpired lease. A successful check resumes the previous active/review state; a failed, expired, or transferred lease stays paused until explicit reconnection. A fresh account sign-in also pauses combat while claiming its first session. Temporary checking preserves pending time-away eligibility, while actual loss/review clears it. This uses the existing transaction and session document, so **no Firestore rules update is required**.
+
+During the foreground and sign-in verification window, cloud restore, cloud check, backup, and automatic-sync controls are temporarily disabled so they cannot conflict with an in-flight device-ownership decision. Once verification completes, normal cloud review actions become available again.

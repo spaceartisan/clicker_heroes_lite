@@ -127,7 +127,13 @@ const progress={schemaVersion:2,seasonId:"dynasty-ii",playerLevel:5,gold:50,
  maxLevel:11,currentLevel:11,bestSeasonStage:11};
 async function run(){
  const pc=makeDevice(),phone=makeDevice(true);
- pc.context.sessionGuardAccountChanged(pc.account);await settle();
+ pc.context.window.__hotcDeferredOfflineSavedAt=Date.now()-120000;
+ pc.context.window.__hotcDeferredOfflineSourceDeviceId="0".repeat(64);
+ pc.context.sessionGuardAccountChanged(pc.account);
+ ok(phase(pc)==="checking"&&pc.nodes.get("hero-view").inert&&
+    pc.context.window.__hotcDeferredOfflineSavedAt!==null,
+    "Cold sign-in pauses combat but preserves deferred offline state while checking");
+ await settle();
  ok(phase(pc)==="active","First PC owns Firestore session");
  ok(pc.storage.get("hotc_account_linked_device_v1")==="1"&&
     pc.context.sessionGuardCanCheckpoint(),"Cloud-account marker and active writer");
@@ -251,6 +257,49 @@ async function run(){
     "Uncertain release pauses gameplay until ownership is reverified");
  await another.context.sessionGuardClaim(false);await settle();
  ok(phase(another)==="active","Owner can reclaim after a release failure");
+ // Mobile resumes can fire game.js visibilitychange before the Firestore
+ // listener notices that ownership was transferred while backgrounded.
+ // The check must block combat synchronously until a live read completes.
+ const deferredAt=Date.now()-60000;
+ another.context.window.__hotcDeferredOfflineSavedAt=deferredAt;
+ another.context.window.__hotcDeferredOfflineSourceDeviceId=newOwnerId;
+ const resumed=another.context.sessionGuardVerifyForeground();
+ ok(resumed&&phase(another)==="checking"&&
+    another.nodes.get("hero-view").inert,
+    "Foreground return blocks combat before the network verification finishes");
+ ok(another.context.window.__hotcDeferredOfflineSavedAt===deferredAt,
+    "Temporary foreground checks do not discard pending offline eligibility");
+ await settle();
+ ok(phase(another)==="active"&&!another.nodes.get("hero-view").inert,
+    "Valid foreground lease restores combat after confirmed ownership");
+ // The foreground verifier does not award time-away gold on its own.
+ ok(another.reward===0&&
+    another.context.window.__hotcDeferredOfflineSavedAt===deferredAt,
+    "Foreground verification cannot replay or consume the deferred time-away reward");
+ another.context.window.__hotcDeferredOfflineSavedAt=null;
+ another.context.window.__hotcDeferredOfflineSourceDeviceId=null;
+ // The session may have expired while offline without an observable
+ // realtime event. Reaching the foreground cannot keep stale ownership.
+ const expired={...sessions.get("player_sessions/"+uid),
+   updatedAt:{toMillis:()=>Date.now()-480001}};
+ sessions.set("player_sessions/"+uid,expired);
+ another.context.sessionGuardVerifyForeground();
+ ok(phase(another)==="checking"&&another.nodes.get("hero-view").inert,
+    "Expired foreground lease stays paused while checking");
+ await settle();
+ ok(phase(another)==="lost"&&another.nodes.get("hero-view").inert,
+    "Expired lease is rejected before gameplay resumes");
+ await another.context.sessionGuardClaim(false);await settle();
+ ok(phase(another)==="active","Same tab can reclaim an expired session deliberately");
+ // Mimic a background takeover that Firestore's realtime watcher hasn't
+ // delivered yet. The foreground transaction independently catches it.
+ const changed=sessions.get("player_sessions/"+uid);
+ sessions.set("player_sessions/"+uid,{...changed,deviceId:"f".repeat(64)});
+ another.context.sessionGuardVerifyForeground();
+ ok(phase(another)==="checking","Unseen takeover triggers recheck before combat");
+ await settle();
+ ok(phase(another)==="lost"&&another.nodes.get("hero-view").inert,
+    "Server-side device change is rejected even without a watcher notification");
  const noRules=makeDevice();
  permissionDenied=true;noRules.context.sessionGuardAccountChanged(noRules.account);await settle();
  ok(phase(noRules)==="unconfigured","Missing Firestore rules clearly shows inactive protection");
