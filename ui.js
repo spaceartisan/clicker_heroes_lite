@@ -209,12 +209,18 @@ function updateUI() {
             ? squads + " squads · Gold bonus ×" + getSquadGoldMultiplier().toFixed(2) + " · " + enemyType.trait + " enemy"
             : "Specialize squads at the Barracks; equip them at the Blacksmith.";
     }
-    healthFill.style.width = `${Math.max(0, Math.min(100, (enemyHealth / getEnemyHealth()) * 100))}%`;
+    const enemyMaxHealth=getEnemyHealth();
+    const healthPercent = Math.max(0,Math.min(100,
+        enemyMaxHealth>0 ? enemyHealth/enemyMaxHealth*100 : 0));
+    healthFill.style.width = `${healthPercent}%`;
+    const healthBar=document.getElementById("health-bar");
+    if(healthBar)healthBar.setAttribute("aria-valuenow",String(Math.round(healthPercent)));
     document.getElementById("gold-fixed").textContent = formatDigits(gold);
     updatePlayerText();
     document.getElementById("prev-level").disabled = currentLevel <= 1;
     document.getElementById("next-level").disabled = currentLevel >= maxLevel;
     checkAchievements();
+    updatePlayerLevelGearText();
 }
 
 // === Player Upgrade ===
@@ -222,17 +228,34 @@ function updatePlayerText() {
     updateAbilityHUD();
 }
 
+// Update authored controls in place. Rebuilding shop.innerHTML every time
+// gold/quantity changed discarded keyboard focus and touch interaction.
 function updatePlayerLevelGearText() {
-    const shop = document.getElementById("shop");
-    shop.innerHTML = ""; // Clear previous content
-    shop.innerHTML = `
-    <h3>Hero Upgrades</h3>
-    <button onclick="levelUpPlayer()">Level Up ${formatDigits(levelUpPlayerCost(), 2, 5)} g</button>
-    <button onclick="gearUpPlayer()">Upgrade Gear ${formatDigits(gearUpPlayerCost(), 2, 5)} g</button>
-    <p>Player Lv: ${formatDigits(playerLevel, 2, 0)}, Gear x${formatDigits(playerGearLevel, 2, 0)}</p>
-    <div class="upgrade-multiplier"></div>
-  `;
-    AddMultiplierButtons(shop);
+    const levelButton=document.getElementById("hero-level-upgrade");
+    const gearButton=document.getElementById("hero-gear-upgrade");
+    const levels=document.getElementById("hero-upgrade-levels");
+    if(!levelButton||!gearButton)return;
+    const offers=[
+        {button:levelButton,label:"Level Up",quote:levelUpPlayerCost(true)},
+        {button:gearButton,label:"Upgrade Gear",quote:gearUpPlayerCost(true)}
+    ];
+    for(const offer of offers){
+        const [cost,quantity,atCap]=offer.quote;
+        const available=quantity>0&&Number.isFinite(cost)&&cost>0&&gold>=cost;
+        const atLimit=quantity===0&&atCap;
+        const nextLabel=atLimit ? offer.label+" · MAX" :
+            offer.label+(quantity>1?" ×"+quantity:"")+" · "+formatDigits(cost,2,5)+" g";
+        if(offer.button.textContent!==nextLabel)offer.button.textContent=nextLabel;
+        offer.button.disabled=!available;
+        offer.button.title=atLimit?"Upgrade cap reached":
+            available?"Purchase "+quantity+" upgrade"+(quantity===1?"":"s"):
+            "Not enough gold for this purchase";
+    }
+    if(levels){
+        const nextLevels="Hero Lv "+formatDigits(playerLevel,2,0)+
+            " · Gear Lv "+formatDigits(playerGearLevel,2,0);
+        if(levels.textContent!==nextLevels)levels.textContent=nextLevels;
+    }
 }
 
 function showOptions() {

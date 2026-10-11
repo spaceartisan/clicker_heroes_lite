@@ -237,3 +237,9 @@ The old paid-functions `functions/` source is archived as a future reference onl
 - Active-session heartbeats move from three to four minutes (with an eight-minute lease and immediate foreground checks), reducing periodic session writes and listener updates while leaving ownership verification in place.
 - A verified active device with an unchanged local save now skips the otherwise redundant automatic-backup Firestore read; changed local progress still verifies the remote revision and uses a guarded transaction before uploading. Unprotected/legacy sessions still poll and never get a bypass.
 - The same confirmed active owner also avoids routine cloud-discovery polling when its previously verified preview revision matches its last acknowledged cloud revision. Explicit checks, sign-in discoveries, device review, and other devices still read the server. No save migration, new rules, or paid Firebase services are needed.
+
+### v1.14.0 — stable Hero Upgrades and accessible combat controls
+
+- Hero Upgrades use permanent authored HTML buttons instead of rebuilding the DOM on purchases, gold updates or changing ×1/×10/×100. The label shows the actual bulk quantity and current price; unaffordable and capped actions are disabled, including underfill purchases. Live prices update when combat earnings or upgrade limits change.
+- The enemy canvas supports Enter and Space (one click per keydown, ignoring keyboard auto-repeat), and the enemy health bar exposes its current percentage as a standard progressbar for assistive technology. Keyboard attacks use the same existing gameplay/session checks; no new input shortcuts interfere with other controls.
+- No changes to balancing, save format, Firebase rules, or paid services.

@@ -50,10 +50,10 @@
 
                 <div id="enemy-box">
                     <div id="enemy-wrapper">
-                        <canvas id="enemy-canvas" width="150" height="150" aria-label="Enemy. Tap or click to attack."></canvas>
+                        <canvas id="enemy-canvas" width="150" height="150" tabindex="0" role="button" aria-label="Attack current enemy. Tap, click, Enter or Space."></canvas>
                         <div id="gold-earned-overlay"></div>
                     </div>
-                    <div id="health-bar">
+                    <div id="health-bar" role="progressbar" aria-label="Enemy health" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
                         <div id="health-fill"></div>
                     </div>
                     <p id="enemy-level">Stage 1</p>
@@ -106,8 +106,12 @@
                 </div>
             </div>
 
-            <div id="shop">
-                <!-- Dynamic player upgrades added by JS -->
+            <div id="shop" aria-label="Hero upgrades">
+                <h3>Hero Upgrades</h3>
+                <button type="button" id="hero-level-upgrade" onclick="levelUpPlayer()">Level Up</button>
+                <button type="button" id="hero-gear-upgrade" onclick="gearUpPlayer()">Upgrade Gear</button>
+                <p id="hero-upgrade-levels">Hero Lv 1 · Gear Lv 0</p>
+                <div class="upgrade-multiplier" role="group" aria-label="Upgrade purchase quantity"></div>
             </div>
 
 
@@ -297,7 +301,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.13.6 – Heroes of the Click
+        v1.14.0 – Heroes of the Click
     </p>
     <br>
 

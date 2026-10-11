@@ -395,7 +395,6 @@ function levelUpPlayer() {
         playerLevel += _upgradeMultiplier;
         playerUpgradeCost = Math.floor(10 + playerLevel ** 1.5);
         updateUI();
-        updatePlayerLevelGearText();
     } else if (costReturn[2]) {
         showPopupMessage("You have reached the level cap!", null, 500);
     } else {
@@ -422,7 +421,6 @@ function gearUpPlayer() {
         playerGearLevel += cost[1];
         nextPlayerGearLevelReq += 0;
         updateUI();
-        updatePlayerLevelGearText()
     } else if (cost[2]) {
         showPopupMessage("You have reached the gear cap!", null, 500);
     } else {

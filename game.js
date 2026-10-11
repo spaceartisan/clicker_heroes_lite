@@ -537,7 +537,6 @@ function setUpgradeMultiplier(menu, x) {
         .find(b => b.textContent.trim() === `×${x}`);
     if (btn) btn.classList.add('active');
     updateUI();
-    updatePlayerLevelGearText();
 }
 
 // Mobile browsers may throttle background tabs; stop combat completely while hidden.
@@ -576,6 +575,13 @@ window.addEventListener("pagehide", () => { pauseBossClock(); saveGame(); });
 
 // === Init ===
 enemyCanvas.onclick = () => attack(false);
+enemyCanvas.addEventListener("keydown",event=>{
+    // One strike per physical key press, not an auto-repeat macro.
+    if(event.key==="Enter"||event.key===" "){
+        event.preventDefault(); // also prevent scrolling on held Space
+        if(!event.repeat)attack(false); // cooldown and ownership still apply
+    }
+});
 kingdomCanvas.onclick = (event) => checkClickLocation(event);
 const autoNextToggle = document.getElementById("auto-next-toggle");
 const batterySaverToggle = document.getElementById("battery-saver-toggle");
@@ -599,7 +605,10 @@ autoNextToggle.onchange = e => autoAdvance = e.target.checked;
 scientificCheckbox.onchange = e => scientificNotation = e.target.checked;
 scientificCheckbox.addEventListener("change", () => {updateUI();});
 underfillEnabled = underfillCheckbox.checked; // ensure variable matches UI
-underfillCheckbox.onchange = e => underfillEnabled = e.target.checked;
+underfillCheckbox.onchange = e => {
+    underfillEnabled = e.target.checked;
+    updatePlayerLevelGearText();
+};
 
 window.addEventListener("DOMContentLoaded", () => {
     prepareSeasonSave();
@@ -616,7 +625,9 @@ window.addEventListener("DOMContentLoaded", () => {
     renderDynastyPanel();
     renderRelicVault();
     renderSquadCampaigns();
-    setUpgradeMultiplier(document.getElementById("shop"), upgradeMultiplier);
+    const heroShop=document.getElementById("shop");
+    AddMultiplierButtons(heroShop); // Initialize quantity controls once.
+    setUpgradeMultiplier(heroShop,upgradeMultiplier);
 });
 
 setInterval(() => {

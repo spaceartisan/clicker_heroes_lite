@@ -17,7 +17,13 @@ function element(tag = "div") {
         appendChild(item) { this.childNodes.push(item); return item; },
         append(...items) { this.childNodes.push(...items); },
         replaceChildren(...items) { this.childNodes = items; },
-        remove() {}, addEventListener() {}, setAttribute() {}, querySelector() { return element(); },
+        remove() {}, addEventListener(name,callback) {
+            if(!this._listeners)this._listeners={};
+            this._listeners[name]=callback;
+        }, setAttribute(name,value) {
+            if(!this._attributes)this._attributes={};
+            this._attributes[name]=String(value);
+        }, querySelector() { return element(); },
         querySelectorAll() { return []; }, closest() { return element(); },
         getContext() { return { clearRect() {}, fillRect() {} }; },
         getBoundingClientRect() { return { width: this.width, height: this.height, top: 0, left: 0 }; }
@@ -144,7 +150,7 @@ const visualAssetChecks = (() => {
  ok(css.includes(':root[data-theme="stone"]')&&css.includes("--panel-fill"),
     "Stone mode uses semantic design tokens");
  ok(css.includes("background-attachment: scroll"),"Background avoids fixed-position mobile repaint");
- ok(sw.includes("heroes-of-click-v1.13.6")&&sw.includes('"./theme.js"'),
+ ok(sw.includes("heroes-of-click-v1.14.0")&&sw.includes('"./theme.js"'),
     "Theme controller is precached in PWA");
  for(const name of glyphNames){
     const file="icons/ui-"+name+".svg";
@@ -231,12 +237,105 @@ pacingChecks.forEach(label=>console.log("PASS "+label));
 console.log("Dynasty pacing tests: "+pacingChecks.length+" passed.");
 
 
+const heroInteractionChecks=vm.runInContext(`(() => {
+ const checks=[],ok=(v,label)=>{if(!v)throw Error("Hero interaction: "+label);checks.push(label)};
+ const levelButton=document.getElementById("hero-level-upgrade");
+ const gearButton=document.getElementById("hero-gear-upgrade");
+ const original={gold,playerLevel,playerGearLevel,upgradeMultiplier,underfillEnabled,
+    castle:structures.castle.level,blacksmith:structures.blacksmith.level};
+ try {
+    gold=0;playerLevel=1;playerGearLevel=0;upgradeMultiplier=1;
+    structures.castle.level=1;structures.blacksmith.level=1;
+    underfillEnabled=false;
+    updatePlayerLevelGearText();
+    ok(levelButton.disabled&&gearButton.disabled,
+       "Unaffordable upgrade actions are disabled");
+    gold=1000000000;upgradeMultiplier=10;
+    updatePlayerLevelGearText();
+    ok(!levelButton.disabled&&!gearButton.disabled&&
+       levelButton.textContent.includes("×10")&&gearButton.textContent.includes("×5"),
+       "Bulk labels show actual purchasable quantity and gear cap");
+    // Compute a valid two-level budget independent of other research,
+    // market discounts or balancing changes in earlier smoke tests.
+    underfillEnabled=false;upgradeMultiplier=2;
+    const twoLevelBudget=levelUpPlayerCost(true)[0];
+    upgradeMultiplier=10;gold=twoLevelBudget;underfillEnabled=true;
+    updatePlayerLevelGearText();
+    const q=levelUpPlayerCost(true);
+    ok(q[1]>0&&q[1]<10&&
+       levelButton.textContent.includes("×"+q[1])&&
+       !levelButton.disabled,
+       "Affordable underfill displays the actual partial purchase");
+    playerLevel=structures.castle.level*10+100;
+    playerGearLevel=(structures.blacksmith.level-1)*2+5;
+    updatePlayerLevelGearText();
+    ok(levelButton.disabled&&gearButton.disabled&&
+       levelButton.textContent.includes("MAX")&&gearButton.textContent.includes("MAX"),
+       "Both capped upgrades have disabled maximum-rank labels");
+    const enter=document.getElementById("enemy-canvas")._listeners?.keydown;
+    const oldAttack=attack;
+    let strikes=0,prevented=0;
+    attack=()=>{strikes++};
+    try{
+       ok(typeof enter==="function","Keyboard handler is registered on the enemy canvas");
+       enter({key:"Enter",repeat:false,preventDefault(){prevented++}});
+       enter({key:" ",repeat:false,preventDefault(){prevented++}});
+       enter({key:" ",repeat:true,preventDefault(){prevented++}});
+       enter({key:"Escape",repeat:false,preventDefault(){prevented++}});
+       ok(strikes===2&&prevented===3,
+          "Enter/Space strike once; repeated Space prevents scrolling without extra damage");
+    }finally{attack=oldAttack}
+    const oldHealth=enemyHealth,oldCheck=checkAchievements;
+    try{
+       // The test changes player levels for UI validation only. Don't award
+       // persistent achievements or rewrite saves for that synthetic state.
+       checkAchievements=()=>{};
+       enemyHealth=getEnemyHealth()/4;
+       updateUI();
+       const progress=document.getElementById("health-bar")._attributes;
+       ok(progress&&progress["aria-valuenow"]==="25",
+          "Health meter exposes a current accessible percentage");
+    }finally{enemyHealth=oldHealth;checkAchievements=oldCheck}
+    return checks;
+ }finally{
+    gold=original.gold;playerLevel=original.playerLevel;
+    playerGearLevel=original.playerGearLevel;
+    upgradeMultiplier=original.upgradeMultiplier;underfillEnabled=original.underfillEnabled;
+    structures.castle.level=original.castle;
+    structures.blacksmith.level=original.blacksmith;
+    updatePlayerLevelGearText();
+ }
+})()`,ctx,{timeout:3000});
+heroInteractionChecks.forEach(label=>console.log("PASS "+label));
+console.log("Hero interaction tests: "+heroInteractionChecks.length+" passed.");
+
+const heroMarkupChecks=(()=>{
+ const checks=[],ok=(v,label)=>{if(!v)throw Error("Hero markup: "+label);checks.push(label)};
+ const html=fs.readFileSync(path.join(__dirname,"../index.html"),"utf8");
+ const ui=fs.readFileSync(path.join(__dirname,"../ui.js"),"utf8");
+ const css=fs.readFileSync(path.join(__dirname,"../style.css"),"utf8");
+ const game=fs.readFileSync(path.join(__dirname,"../game.js"),"utf8");
+ ok(game.includes("AddMultiplierButtons(heroShop)")&&
+    game.includes("setUpgradeMultiplier(heroShop,upgradeMultiplier)"),
+    "Bulk quantity buttons are initialized once at startup");
+ ok(html.includes('id="hero-level-upgrade"')&&html.includes('id="hero-gear-upgrade"')&&
+    html.includes('id="hero-upgrade-levels"'),"Hero upgrade controls are authored in HTML");
+ ok(!/shop\.innerHTML\s*=/.test(ui)&&ui.includes('offer.button.textContent!==nextLabel'),
+    "Refreshes update labels in place without replacing focused controls");
+ ok(html.includes('id="enemy-canvas"')&&html.includes('tabindex="0" role="button"')&&
+    html.includes('role="progressbar" aria-label="Enemy health"')&&
+    css.includes("#enemy-canvas:focus-visible"),"Combat has visible keyboard focus and accessible health");
+ return checks;
+})();
+heroMarkupChecks.forEach(label=>console.log("PASS "+label));
+console.log("Hero markup tests: "+heroMarkupChecks.length+" passed.");
+
 const layoutChecks = (() => {
  const checked=[],assert=(v,label)=>{if(!v)throw Error("Responsive layout: "+label);checked.push(label)};
  const source=fs.readFileSync(path.join(__dirname,"..","index.html"),"utf8");
  const css=fs.readFileSync(path.join(__dirname,"..","style.css"),"utf8");
  const sw=fs.readFileSync(path.join(__dirname,"..","sw.js"),"utf8");
- assert(source.includes('v1.13.6') && sw.includes('heroes-of-click-v1.13.6'),"Markup and PWA cache versions match");
+ assert(source.includes('v1.14.0') && sw.includes('heroes-of-click-v1.14.0'),"Markup and PWA cache versions match");
  for(const section of ["hero","kingdom","army"]) {
     assert(source.includes('id="view-tab-'+section+'"'),"Accessible tab exists for "+section);
  }
@@ -273,7 +372,7 @@ layoutChecks.forEach(label=>console.log("PASS "+label));
 console.log("Responsive layout tests: "+layoutChecks.length+" passed.");
 
 ctx.fs=fs;ctx.path=path;ctx.__dirname=__dirname;
-const enemyCardChecks = vm.runInContext("(() => {\n const verified=[],check=(value,label)=>{if(!value)throw Error(\"Enemy card: \"+label);verified.push(label)};\n const html=fs.readFileSync(path.join(__dirname,\"..\",\"index.html\"),\"utf8\");\n const css=fs.readFileSync(path.join(__dirname,\"..\",\"style.css\"),\"utf8\");\n const game=fs.readFileSync(path.join(__dirname,\"..\",\"game.js\"),\"utf8\");\n const enemy=fs.readFileSync(path.join(__dirname,\"..\",\"enemy.js\"),\"utf8\");\n const sw=fs.readFileSync(path.join(__dirname,\"..\",\"sw.js\"),\"utf8\");\n check(html.includes('id=\"enemy-name\"') && html.includes('id=\"enemy-trait\"'),\n   \"Name and trait labels are authored in the card\");\n check(html.indexOf('id=\"enemy-level\"')<html.indexOf('id=\"enemy-name\"') &&\n   html.indexOf('id=\"enemy-name\"')<html.indexOf('id=\"enemy-trait\"'),\n   \"Stage, name and trait follow a consistent visual hierarchy\");\n check(game.includes('document.getElementById(\"enemy-name\")'),\n   \"Enemy name reuses authored HTML instead of appending a runtime label\");\n check(!game.includes('document.getElementById(\"enemy-box\").appendChild(enemyNameText)'),\n   \"Old runtime name insertion removed\");\n check(css.includes(\"grid-template-columns: var(--enemy-nav-size) minmax(0, 1fr) var(--enemy-nav-size)\"),\n   \"Navigation uses two stable side columns with a constrained card\");\n check(css.includes(\"max-width: 464px\")&&css.includes(\"width: 100%\"),\n   \"Encounter row is bounded and responsive\");\n check(css.includes(\"#enemy-name\")&&css.includes(\"overflow-wrap: anywhere\"),\n   \"Long enemy names wrap without forcing row growth\");\n check(css.includes(\"margin-top: calc(var(--enemy-card-padding) + 51px)\"),\n   \"Navigation arrows are anchored at the sprite position\");\n check(css.includes(\"--enemy-nav-size: 42px\")&&css.includes(\"gap: 6px\"),\n   \"Phone layout retains fixed button slots\");\n check(sw.includes(\"heroes-of-click-v1.13.6\")&&html.includes(\"v1.13.6\"),\n   \"Installed PWA and visible version update together\");\n check(enemy.includes(\"enemyNameText.textContent = type.name\"),\n   \"Enemy spawning still updates the name\");\n const oldStage=currentLevel, oldEnemy=enemyType;\n try {\n   currentLevel=1;drawRandomEnemy();\n   const first=enemyNameText.textContent;\n   check(first.includes(getEnemyType(1).name),\"First enemy shows correct name\");\n   currentLevel=105;drawRandomEnemy();\n   check(enemyNameText.textContent.includes(\"Veteran\")&&enemyLevelText.textContent.includes(\"VETERAN\"),\n     \"Veteran text updates without extra DOM insertion\");\n   currentLevel=110;drawRandomEnemy();\n   check(enemyLevelText.textContent.includes(\"BOSS\"),\n     \"Boss stage label remains visible\");\n } finally {\n   currentLevel=oldStage;enemyType=oldEnemy;\n }\n return verified;\n})()",ctx,{timeout:2800});
+const enemyCardChecks = vm.runInContext("(() => {\n const verified=[],check=(value,label)=>{if(!value)throw Error(\"Enemy card: \"+label);verified.push(label)};\n const html=fs.readFileSync(path.join(__dirname,\"..\",\"index.html\"),\"utf8\");\n const css=fs.readFileSync(path.join(__dirname,\"..\",\"style.css\"),\"utf8\");\n const game=fs.readFileSync(path.join(__dirname,\"..\",\"game.js\"),\"utf8\");\n const enemy=fs.readFileSync(path.join(__dirname,\"..\",\"enemy.js\"),\"utf8\");\n const sw=fs.readFileSync(path.join(__dirname,\"..\",\"sw.js\"),\"utf8\");\n check(html.includes('id=\"enemy-name\"') && html.includes('id=\"enemy-trait\"'),\n   \"Name and trait labels are authored in the card\");\n check(html.indexOf('id=\"enemy-level\"')<html.indexOf('id=\"enemy-name\"') &&\n   html.indexOf('id=\"enemy-name\"')<html.indexOf('id=\"enemy-trait\"'),\n   \"Stage, name and trait follow a consistent visual hierarchy\");\n check(game.includes('document.getElementById(\"enemy-name\")'),\n   \"Enemy name reuses authored HTML instead of appending a runtime label\");\n check(!game.includes('document.getElementById(\"enemy-box\").appendChild(enemyNameText)'),\n   \"Old runtime name insertion removed\");\n check(css.includes(\"grid-template-columns: var(--enemy-nav-size) minmax(0, 1fr) var(--enemy-nav-size)\"),\n   \"Navigation uses two stable side columns with a constrained card\");\n check(css.includes(\"max-width: 464px\")&&css.includes(\"width: 100%\"),\n   \"Encounter row is bounded and responsive\");\n check(css.includes(\"#enemy-name\")&&css.includes(\"overflow-wrap: anywhere\"),\n   \"Long enemy names wrap without forcing row growth\");\n check(css.includes(\"margin-top: calc(var(--enemy-card-padding) + 51px)\"),\n   \"Navigation arrows are anchored at the sprite position\");\n check(css.includes(\"--enemy-nav-size: 42px\")&&css.includes(\"gap: 6px\"),\n   \"Phone layout retains fixed button slots\");\n check(sw.includes(\"heroes-of-click-v1.14.0\")&&html.includes(\"v1.14.0\"),\n   \"Installed PWA and visible version update together\");\n check(enemy.includes(\"enemyNameText.textContent = type.name\"),\n   \"Enemy spawning still updates the name\");\n const oldStage=currentLevel, oldEnemy=enemyType;\n try {\n   currentLevel=1;drawRandomEnemy();\n   const first=enemyNameText.textContent;\n   check(first.includes(getEnemyType(1).name),\"First enemy shows correct name\");\n   currentLevel=105;drawRandomEnemy();\n   check(enemyNameText.textContent.includes(\"Veteran\")&&enemyLevelText.textContent.includes(\"VETERAN\"),\n     \"Veteran text updates without extra DOM insertion\");\n   currentLevel=110;drawRandomEnemy();\n   check(enemyLevelText.textContent.includes(\"BOSS\"),\n     \"Boss stage label remains visible\");\n } finally {\n   currentLevel=oldStage;enemyType=oldEnemy;\n }\n return verified;\n})()",ctx,{timeout:2800});
 delete ctx.fs;delete ctx.path;delete ctx.__dirname;
 enemyCardChecks.forEach(label=>console.log("PASS "+label));
 console.log("Enemy card layout tests: "+enemyCardChecks.length+" passed.");
@@ -1225,7 +1324,7 @@ const autoCloudMarkupChecks=(()=>{
  ok(html.includes('id="player-cloud-auto"') &&
     html.includes('id="player-cloud-auto-status"'),"Explicit opt-in checkbox and status authored");
  ok(worker.includes('"./player-account.js"')&&
-    worker.includes("heroes-of-click-v1.13.6"),"New cloud client included in offline cache");
+    worker.includes("heroes-of-click-v1.14.0"),"New cloud client included in offline cache");
  ok(css.includes(".player-auto-sync")&&css.includes("@media(max-width:520px)"),
     "Cloud settings accommodate narrow screens");
  ok(account.includes("playerSyncAnchor(user.uid)") &&
