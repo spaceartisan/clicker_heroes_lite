@@ -211,3 +211,8 @@ The old paid-functions `functions/` source is archived as a future reference onl
 - Preserve deferred same-tab offline rewards through temporary verification; a real lease loss/conflict still clears them. Guest play and unconfigured Spark projects retain their existing fallback behavior. No new backend services or Firestore rules.
 
 - Cloud check, restore, manual backup and auto-sync controls are disabled during a pending device claim or checkpoint-first handoff; they become available again as soon as the session decision is resolved.
+
+### v1.13.2 — interrupted-session recovery (Spark)
+
+- Before pausing a registered account due to session loss or cloud conflict, preserve a one-time, UID-scoped local safety copy separate from both the live save and the pre-cloud-restore slot. The first interrupted snapshot is kept until deliberately recovered; repeat network errors never overwrite it. **Export Interrupted Progress** downloads it in the existing CHS import format, but never merges it into the cloud automatically.
+- A failed transactional cloud checkpoint now fails closed and pauses further play until the account is reclaimed and its cloud revision checked. No new Firebase rules, collections, Functions or billing are required.

@@ -139,6 +139,10 @@ async function run(){
     pc.context.sessionGuardCanCheckpoint(),"Cloud-account marker and active writer");
  const owner1=sessions.get("player_sessions/"+uid).deviceId;
  ok(owner1.length===64,"Stable install plus per-tab random identifier");
+ // Record a later unuploaded PC save before its ownership is lost.
+ const unsyncedPc={...progress,gold:713,maxLevel:15,currentLevel:15,
+   bestSeasonStage:15,lastSavedDeviceId:owner1};
+ pc.storage.set("clickerHeroSave",JSON.stringify(unsyncedPc));
  ok(await pc.context.sessionGuardCheckpoint(progress,0)===1&&
     saves.get("player_saves/"+uid).deviceId===owner1,"Initial checkpoint tagged with owner device");
  phone.context.sessionGuardAccountChanged(phone.account);await settle();
@@ -150,6 +154,17 @@ async function run(){
  ok(phase(phone)==="review"&&phone.nodes.get("account-session-review").hidden===false,
     "Takeover requires reviewing PC cloud save");
  ok(phase(pc)==="lost"&&pc.stops>0,"Realtime notification pauses old PC");
+ const copyKey="hotc_handoff_recovery_v1_"+uid;
+ const recovery=JSON.parse(pc.storage.get(copyKey));
+ ok(recovery.ownerUid===uid&&
+    JSON.parse(recovery.save).gold===713,
+    "Losing device locally preserves unsynced progress independent of cloud");
+ ok(saves.get("player_saves/"+uid).save.gold===50,
+    "Recoverable local snapshot does not overwrite cloud progress");
+ pc.storage.set("clickerHeroSave",JSON.stringify({...progress,gold:3}));
+ ok(pc.context.sessionGuardPreserveRecovery()&&
+    JSON.parse(JSON.parse(pc.storage.get(copyKey)).save).gold===713,
+    "Repeated disconnects cannot overwrite the first recovery snapshot");
  const owner2=sessions.get("player_sessions/"+uid).deviceId;
  ok(owner2!==owner1,"Phone writes a different device identifier");
  let denied=false;
@@ -218,6 +233,9 @@ async function run(){
     !sessions.get("player_sessions/"+uid).released&&
     saves.get("player_saves/"+uid).revision===2,
     "Rejected handoff checkpoint cannot release ownership or overwrite progress");
+ ok(phase(phone)==="lost"&&
+    phone.context.sessionGuardRecoveryRead(uid)!==null,
+    "Cloud write rejection fails closed and preserves an account safety copy");
  await phone.context.sessionGuardClaim(false);await settle();
  ok(phase(phone)==="active","Owner can recover after an interrupted handoff");
  // The active device has unsynced local progress; saving it for the next
@@ -304,6 +322,8 @@ async function run(){
  permissionDenied=true;noRules.context.sessionGuardAccountChanged(noRules.account);await settle();
  ok(phase(noRules)==="unconfigured","Missing Firestore rules clearly shows inactive protection");
  ok(!noRules.context.sessionGuardUsesServer(),"Missing rules does not pretend enforcement exists");
+ ok(noRules.context.sessionGuardRecoveryRead("different-uid")===null,
+    "Recovery copies are scoped to the authenticated account UID");
  permissionDenied=false;
  const pcIdAgain=pc.context.sessionGuardDeviceId();
  ok(pcIdAgain===owner1,"Device ID remains stable through reload within the same tab");

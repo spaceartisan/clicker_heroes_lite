@@ -601,6 +601,40 @@ async function playerGoogleAccount(linkAnonymous=false) {
         accountControlsUpdate();
     }
 }
+// Export the immutable local snapshot captured at the first interrupted
+// session. It is deliberately never loaded or uploaded automatically.
+function playerExportInterruptedRecovery(){
+    const user=accountAuth()?.currentUser;
+    if(!playerAccountIsRegistered(user)||typeof sessionGuardRecoveryRead!=="function"){
+        accountDisplayMessage("Sign into the original account to export its interrupted progress.",true);
+        return false;
+    }
+    const entry=sessionGuardRecoveryRead(user.uid);
+    if(!entry){
+        accountDisplayMessage("No valid interrupted-session safety copy exists on this device.",true);
+        return false;
+    }
+    const raw=entry.save;
+    if(!accountValidSave(inspectSeasonSave(raw))){
+        accountDisplayMessage("Interrupted-session recovery data is invalid. No local save was changed.",true);
+        return false;
+    }
+    try{
+        const encoded=btoa(unescape(encodeURIComponent(raw)));
+        const blob=new Blob([encoded],{type:"text/plain"});
+        const url=URL.createObjectURL(blob);
+        const element=document.createElement("a");
+        element.href=url;
+        element.download="clicker_hero_interrupted_recovery.chs";
+        element.click();
+        setTimeout(()=>URL.revokeObjectURL(url),100);
+        accountDisplayMessage("Interrupted progress exported. Compare both saves before importing; nothing was uploaded.");
+        return true;
+    }catch(error){
+        accountDisplayMessage("Could not export recovery file: "+accountErrorMessage(error),true);
+        return false;
+    }
+}
 function playerExportCloudRecovery() {
     const raw=localStorage.getItem(PLAYER_CLOUD_BACKUP_KEY);
     if(!raw){

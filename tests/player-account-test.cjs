@@ -331,6 +331,34 @@ async function run(){
     "Pending device claim cannot race cloud restores, manual uploads, or auto-sync");
  delete ctx.sessionGuardPhase;
  ctx.accountControlsUpdate();
+ // Recovery download uses the existing CHS format, without uploading or
+ // overwriting either the current local save or the cloud checkpoint.
+ const recoverySave={...local,gold:7654,maxLevel:34,bestSeasonStage:34};
+ const beforeRecoveryLocal=localStorage.getItem("clickerHeroSave");
+ const beforeRecoveryRemote=remote;
+ let downloaded=null;
+ ctx.sessionGuardRecoveryRead=()=>({ownerUid:currentUser.uid,
+   schemaVersion:1,savedAt:Date.now(),save:JSON.stringify(recoverySave)});
+ ctx.btoa=text=>Buffer.from(text,"binary").toString("base64");
+ ctx.unescape=unescape;
+ ctx.encodeURIComponent=encodeURIComponent;
+ ctx.Blob=class{constructor(content){this.content=content}};
+ ctx.URL={createObjectURL:blob=>{downloaded={blob};return "blob:test"},
+   revokeObjectURL(){}};
+ document.createElement=()=>({set href(v){this._href=v},
+   set download(v){this._download=v;downloaded.name=v},
+   click(){downloaded.clicked=true}});
+ ctx.setTimeout=fn=>{fn();return 1};
+ ok(ctx.playerExportInterruptedRecovery()&&downloaded.clicked&&
+    downloaded.name==="clicker_hero_interrupted_recovery.chs"&&
+    JSON.parse(Buffer.from(downloaded.blob.content[0],"base64").toString("utf8")).gold===7654,
+    "Interrupted recovery exports a valid CHS save without loading it");
+ ok(localStorage.getItem("clickerHeroSave")===beforeRecoveryLocal&&
+    remote===beforeRecoveryRemote,
+    "Recovery export cannot overwrite current local or cloud progress");
+ ctx.sessionGuardRecoveryRead=()=>null;
+ ok(!ctx.playerExportInterruptedRecovery(),
+    "Invalid or absent account recovery cannot be exported");
  console.log("Player Account regression: "+passed+" passed.");
 }
 run().catch(error=>{console.error(error);process.exitCode=1});

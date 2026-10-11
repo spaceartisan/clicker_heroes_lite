@@ -1,10 +1,11 @@
-// v1.13.1 — Guard startup and foreground reconnects before any resumed combat. Coordination, not cheat-proof scoring.
+// v1.13.2 — Preserve a separate local recovery copy if the cloud session is interrupted. Coordination, not cheat-proof scoring.
 // Uses Firebase Auth + Firestore transactions/rules; no Cloud Functions or billing.
 const HANDOFF_COLLECTION="player_sessions";
 const HANDOFF_INSTALL_KEY="hotc_install_id_v1";
 const HANDOFF_TAB_KEY="hotc_tab_id_v1";
 const HANDOFF_ACCOUNT_MARKER="hotc_account_linked_device_v1";
 const HANDOFF_PROTECTED_PREFIX="hotc_handoff_protected_v1_";
+const HANDOFF_RECOVERY_PREFIX="hotc_handoff_recovery_v1_";
 const HANDOFF_POLL_MS=180000;
 const HANDOFF_LEASE_MS=480000;
 let sessionGuardPhase="unconfigured"; // active, occupied, review, lost, checking, unconfigured
@@ -81,6 +82,57 @@ function sessionGuardError(error){
     if(code==="unavailable"||code==="deadline-exceeded")return "Firestore unreachable. Local progress remains safe.";
     return String(error?.message||"Device handoff unavailable.").slice(0,180);
 }
+// A recovery snapshot is local-only, scoped by authenticated UID. It does
+// not acquire a lease, update the cloud, or grant offline earnings.
+function sessionGuardRecoveryKey(uid){
+    return HANDOFF_RECOVERY_PREFIX+uid;
+}
+function sessionGuardRecoveryRead(uid){
+    if(!uid)return null;
+    try{
+        const raw=localStorage.getItem(sessionGuardRecoveryKey(uid));
+        if(!raw)return null;
+        const entry=JSON.parse(raw);
+        return entry?.schemaVersion===1&&entry.ownerUid===uid&&
+            typeof entry.save==="string"&&
+            typeof inspectSeasonSave==="function"&&
+            typeof accountValidSave==="function"&&
+            accountValidSave(inspectSeasonSave(entry.save))?entry:null;
+    }catch(_){return null}
+}
+function sessionGuardPreserveRecovery(){
+    const uid=sessionGuardCurrentUid();
+    if(!uid)return false;
+    try{
+        if(sessionGuardRecoveryRead(uid))return true; // never clobber an earlier unsynced copy
+        const raw=localStorage.getItem("clickerHeroSave");
+        if(!raw||typeof inspectSeasonSave!=="function"||
+            typeof accountValidSave!=="function"||
+            !accountValidSave(inspectSeasonSave(raw)))return false;
+        localStorage.setItem(sessionGuardRecoveryKey(uid),
+            JSON.stringify({schemaVersion:1,ownerUid:uid,savedAt:Date.now(),save:raw}));
+        return true;
+    }catch(error){
+        console.warn("Could not preserve recovery snapshot; retain or export the current local save.",error);
+        return false;
+    }
+}
+function sessionGuardRecoveryRefresh(){
+    const uid=sessionGuardCurrentUid();
+    const entry=sessionGuardRecoveryRead(uid);
+    const exportControl=document.getElementById("account-session-export-recovery");
+    if(exportControl)exportControl.hidden=!uid||!entry;
+    const hint=document.getElementById("account-session-recovery-hint");
+    if(hint){
+        hint.hidden=!entry;
+        if(entry){
+            const date=new Date(entry.savedAt);
+            const since=Number.isFinite(date.getTime())?date.toLocaleString():"an earlier interruption";
+            hint.textContent="Local safety copy preserved from "+since+
+                ". Export it before replacing this device's progress. It never uploads automatically.";
+        }
+    }
+}
 function sessionGuardStatus(message,warning=false){
     sessionGuardLastMessage=message;
     const status=document.getElementById("account-session-status");
@@ -105,8 +157,21 @@ function sessionGuardStatus(message,warning=false){
     }
     const review=document.getElementById("account-session-review");
     if(review)review.hidden=sessionGuardPhase!=="review";
+    sessionGuardRecoveryRefresh();
 }
 function sessionGuardSet(phase,message){
+    const previous=sessionGuardPhase;
+    // Save the final in-memory frame before taking a separate safety copy.
+    // A failed session must never erase an earlier unexported recovery.
+    if(["lost","review"].includes(phase)&&phase!==previous){
+        if(previous==="active"&&typeof saveGame==="function"&&
+            window.__hotcCloudRestorePending!==true){
+            try{saveGame()}catch(error){console.warn("Local save failed during disconnect.",error)}
+        }
+        const saved=sessionGuardPreserveRecovery();
+        if(saved)message+=" Local safety copy available for export in Player Account.";
+        else message+=" Keep your existing local save or use Export Save; a separate recovery could not be confirmed.";
+    }
     sessionGuardPhase=phase;
     sessionGuardStatus(message,["occupied","lost","review"].includes(phase));
     const paused=sessionGuardBlocksGameplay();
@@ -324,21 +389,30 @@ async function sessionGuardCheckpoint(save,expectedRevision,allowReview=false){
     if(!sessionGuardCanCheckpoint(allowReview))throw Error("This tab must own the account before uploading.");
     const uid=sessionGuardCurrentUid(),id=sessionGuardDeviceId();
     const saveRef=accountCloudRef({uid}),sessionRef=sessionGuardRef(uid);
-    const revision=await db.runTransaction(async tx=>{
-        const sessionSnap=await tx.get(sessionRef);
-        const saveSnap=await tx.get(saveRef);
-        const active=sessionSnap.exists?sessionSnap.data():null;
-        if(!active||active.ownerUid!==uid||active.deviceId!==id||
-            !sessionGuardLeaseActive(active))throw Error("Another device owns the cloud session.");
-        const actual=saveSnap.exists?Number(saveSnap.data().revision):0;
-        if(actual!==expectedRevision)throw Error("Cloud revision changed. Review the new save first.");
-        tx.set(saveRef,{...accountCloudDocument({uid},save,actual+1),deviceId:id});
-        return actual+1;
-    });
-    if(uid!==sessionGuardCurrentUid())throw Error("Account changed during cloud upload.");
-    if(sessionGuardPhase==="review")sessionGuardSet("active",
-        "You chose this device's save and now own cloud uploads.");
-    return revision;
+    try{
+        const revision=await db.runTransaction(async tx=>{
+            const sessionSnap=await tx.get(sessionRef);
+            const saveSnap=await tx.get(saveRef);
+            const active=sessionSnap.exists?sessionSnap.data():null;
+            if(!active||active.ownerUid!==uid||active.deviceId!==id||
+                !sessionGuardLeaseActive(active))throw Error("Another device owns the cloud session.");
+            const actual=saveSnap.exists?Number(saveSnap.data().revision):0;
+            if(actual!==expectedRevision)throw Error("Cloud revision changed. Review the new save first.");
+            tx.set(saveRef,{...accountCloudDocument({uid},save,actual+1),deviceId:id});
+            return actual+1;
+        });
+        if(uid!==sessionGuardCurrentUid())throw Error("Account changed during cloud upload.");
+        if(sessionGuardPhase==="review")sessionGuardSet("active",
+            "You chose this device's save and now own cloud uploads.");
+        return revision;
+    }catch(error){
+        if(uid===sessionGuardCurrentUid()&&sessionGuardUsesServer()){
+            if(typeof playerSyncPause==="function")playerSyncPause();
+            sessionGuardSet("lost","Cloud checkpoint failed: "+sessionGuardError(error)+
+                " Check the latest cloud save before uploading again.");
+        }
+        throw error;
+    }
 }
 // Save the latest local progress FIRST. Only release ownership after the
 // revision-guarded cloud checkpoint is confirmed. This uses the existing
@@ -437,6 +511,7 @@ function sessionGuardAccountChanged(user){
     sessionGuardProtected=false;
     sessionGuardLastPing=0;
     if(!uid){sessionGuardSet("unconfigured","Sign in to use device handoff.");return}
+    sessionGuardRecoveryRefresh();
     localStorage.setItem(HANDOFF_ACCOUNT_MARKER,"1");
     sessionGuardClaim(false);
 }

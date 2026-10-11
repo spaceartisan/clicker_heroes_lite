@@ -297,7 +297,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.13.1 – Heroes of the Click
+        v1.13.2 – Heroes of the Click
     </p>
     <br>
 
@@ -402,6 +402,8 @@
                         <button id="account-session-claim" type="button" onclick="sessionGuardTakeover()" hidden>Use This Device (Take Over)</button>
                         <button id="account-session-handoff" type="button" onclick="sessionGuardHandoff()" hidden>Save & Switch Device</button>
                         <button id="account-session-review" type="button" onclick="playerOpenCloudReview()" hidden>Compare / Restore Cloud Progress</button>
+                        <button id="account-session-export-recovery" type="button" onclick="playerExportInterruptedRecovery()" hidden>Export Interrupted Progress</button>
+                        <p id="account-session-recovery-hint" class="player-account-hint" hidden></p>
                         <p class="player-account-hint">Uses the free Firestore plan after you publish the device-handoff rules. Switching tabs or devices requires cloud save review. Offline gold is not doubled across devices. Leaderboard scores remain unverified.</p>
                     </section>
                     <button type="button" id="player-account-logout" onclick="playerAccountSignOut()">Sign Out</button>
