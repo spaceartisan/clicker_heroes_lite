@@ -131,7 +131,9 @@ function makeDevice(mobile=false,existingLocal=null,existingTab=null){
    get stops(){return stops},get reward(){return reward}};
 }
 const phase=device=>vm.runInContext("sessionGuardPhase",device.context);
-async function settle(){for(let i=0;i<12;i++)await Promise.resolve()}
+// The additional authoritative lease read adds async steps. Flush the
+// complete simulated claim rather than racing its finally/unlock path.
+async function settle(){for(let i=0;i<64;i++)await Promise.resolve()}
 const progress={schemaVersion:2,seasonId:"dynasty-ii",playerLevel:5,gold:50,
  maxLevel:11,currentLevel:11,bestSeasonStage:11};
 async function run(){
@@ -397,7 +399,9 @@ async function runRoundTrip(){
  phone.context.playerSyncSetAnchor(uid,pcCloud.revision,pcCloud.save);
  await phone.context.sessionGuardClaim(false);await settle();
  ok(phase(phone)==="active"&&phone.reward===0,
-    "Roundtrip: explicit phone restore can resume without double-dipping");
+    "Roundtrip: explicit phone restore can resume without double-dipping"+
+    " (phase "+phase(phone)+", reward "+phone.reward+
+    ", busy "+vm.runInContext("sessionGuardBusy",phone.context)+")");
  const phoneId=phone.context.sessionGuardDeviceId();
  const phoneSave={...pcSave,gold:960,maxLevel:44,currentLevel:44,
    bestSeasonStage:44,lastSavedDeviceId:phoneId};
