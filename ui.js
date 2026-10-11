@@ -110,7 +110,9 @@ function AddMultiplierButtons(menu) {
     multipliers.forEach(mult => {
         const btn = document.createElement("button");
         btn.className = "mult-btn";
+        btn.type = "button";
         btn.textContent = `×${mult}`;
+        btn.setAttribute("aria-pressed", String(mult === upgradeMultiplier));
         btn.onclick = () => {
             setUpgradeMultiplier(menu, mult);
         };

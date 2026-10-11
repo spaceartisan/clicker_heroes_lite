@@ -531,11 +531,10 @@ function importGame() {
 function setUpgradeMultiplier(menu, x) {
     upgradeMultiplier = x;
     menu.querySelectorAll('.upgrade-multiplier button').forEach(btn => {
-        btn.classList.remove('active');
+        const selected = btn.textContent.trim() === `×${x}`;
+        btn.classList.toggle('active',selected);
+        btn.setAttribute('aria-pressed',String(selected));
     });
-    const btn = Array.from(menu.querySelectorAll('.upgrade-multiplier button'))
-        .find(b => b.textContent.trim() === `×${x}`);
-    if (btn) btn.classList.add('active');
     updateUI();
 }
 

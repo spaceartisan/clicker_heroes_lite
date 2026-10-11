@@ -243,3 +243,7 @@ The old paid-functions `functions/` source is archived as a future reference onl
 - Hero Upgrades use permanent authored HTML buttons instead of rebuilding the DOM on purchases, gold updates or changing ×1/×10/×100. The label shows the actual bulk quantity and current price; unaffordable and capped actions are disabled, including underfill purchases. Live prices update when combat earnings or upgrade limits change.
 - The enemy canvas supports Enter and Space (one click per keydown, ignoring keyboard auto-repeat), and the enemy health bar exposes its current percentage as a standard progressbar for assistive technology. Keyboard attacks use the same existing gameplay/session checks; no new input shortcuts interfere with other controls.
 - No changes to balancing, save format, Firebase rules, or paid services.
+
+### v1.14.1 — accessible purchase-quantity selection
+
+- Generated ×1/×10/×100 quantity selectors now expose their selected state with `aria-pressed`, updating whenever the player changes the bulk-purchase quantity. Buttons are explicitly non-submitting to avoid accidental form actions. Existing visuals, game balance, save schema and Firebase rules remain unchanged.
