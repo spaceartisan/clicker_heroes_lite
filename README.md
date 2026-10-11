@@ -221,3 +221,8 @@ The old paid-functions `functions/` source is archived as a future reference onl
 
 - Account panel now compares the **first preserved interrupted-session copy** against the current device save, showing each save's stage, dynasty and timestamp without silently loading either. **Export Interrupted Progress** still downloads the same CHS file.
 - A deliberately confirmed **Clear Exported Recovery Copy** action is disabled until the user triggers a CHS export of the currently stored snapshot. After explicit confirmation it deletes only that account's interrupted-session snapshot and allows a newer future interruption to create a fresh safety copy. A browser-triggered download does not prove a file was actually saved: players must verify it before deleting. No changes to live local saves, cloud records, schema, or Firestore rules.
+
+### v1.13.4 — preserve restart checkpoint provenance
+
+- On initial page load, hold the exact original local checkpoint before an early autosave can rewrite its timestamp and tab/device origin. If login/reconnection subsequently reports a cloud revision conflict or session loss, recovery captures the original boot checkpoint when the only intervening changes are save metadata. If real gameplay progress changed, recovery chooses the latest valid local save instead.
+- This snapshot is only used in the existing per-account interrupted-progress recovery slot; it is never auto-uploaded, auto-restored, or eligible for additional offline rewards. Existing Season II saves and the Spark Firestore rules remain compatible.

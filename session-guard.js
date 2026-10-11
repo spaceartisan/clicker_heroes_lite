@@ -1,4 +1,4 @@
-// v1.13.3 — Recovery review and guarded cleanup after explicit export. Coordination, not cheat-proof scoring.
+// v1.13.4 — Preserve original startup provenance across account reconnection and cloud conflicts. Coordination, not cheat-proof scoring.
 // Uses Firebase Auth + Firestore transactions/rules; no Cloud Functions or billing.
 const HANDOFF_COLLECTION="player_sessions";
 const HANDOFF_INSTALL_KEY="hotc_install_id_v1";
@@ -151,10 +151,24 @@ function sessionGuardPreserveRecovery(){
     if(!uid)return false;
     try{
         if(sessionGuardRecoveryRead(uid))return true; // never clobber an earlier unsynced copy
-        const raw=localStorage.getItem("clickerHeroSave");
-        if(!raw||typeof inspectSeasonSave!=="function"||
-            typeof accountValidSave!=="function"||
-            !accountValidSave(inspectSeasonSave(raw)))return false;
+        const currentRaw=localStorage.getItem("clickerHeroSave");
+        const bootRaw=window.__hotcBootSaveRaw;
+        const current=currentRaw&&typeof inspectSeasonSave==="function"?
+            inspectSeasonSave(currentRaw):null;
+        const boot=bootRaw&&typeof inspectSeasonSave==="function"?
+            inspectSeasonSave(bootRaw):null;
+        const currentValid=typeof accountValidSave==="function"&&accountValidSave(current);
+        const bootValid=typeof accountValidSave==="function"&&accountValidSave(boot);
+        // A browser-restarted tab may rewrite only lastSaved/lastSavedDeviceId
+        // during initial UI setup. Prefer the original checkpoint in that
+        // case so a recovery export retains its true originating device.
+        // If actual gameplay changed after load, preserve the NEWER local
+        // save instead. Nothing here decides or replays offline earnings.
+        const unchangedProgress=bootValid&&currentValid&&
+            typeof playerSyncFingerprint==="function"&&
+            playerSyncFingerprint(boot)===playerSyncFingerprint(current);
+        const raw=bootValid&&(!currentValid||unchangedProgress)?bootRaw:currentRaw;
+        if(!raw||!(bootValid&&raw===bootRaw||currentValid&&raw===currentRaw))return false;
         localStorage.setItem(sessionGuardRecoveryKey(uid),
             JSON.stringify({schemaVersion:1,ownerUid:uid,savedAt:Date.now(),save:raw}));
         return true;

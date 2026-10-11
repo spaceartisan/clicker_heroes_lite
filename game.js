@@ -330,6 +330,14 @@ function saveGame() {
 
 function loadGame() {
     const saved = localStorage.getItem("clickerHeroSave");
+    // Capture the exact checkpoint BEFORE startup autosaves rewrite its
+    // timestamp and tab ID. Firebase restores ownership asynchronously,
+    // so a later cloud conflict must still be able to preserve this version.
+    // Only the first load of this document is a restart checkpoint.
+    if(!window.__hotcBootSaveCaptured){
+        window.__hotcBootSaveCaptured=true;
+        window.__hotcBootSaveRaw=saved;
+    }
     if (saved) {
         let data;
         try { data=JSON.parse(saved); }
