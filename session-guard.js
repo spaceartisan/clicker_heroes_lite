@@ -1,4 +1,4 @@
-// v1.13.5 — Verify ownership after delayed cloud reviews and test round-trip handoffs. Coordination, not cheat-proof scoring.
+// v1.13.6 — Fewer verified-owner idle reads and four-minute session heartbeats. Coordination, not cheat-proof scoring.
 // Uses Firebase Auth + Firestore transactions/rules; no Cloud Functions or billing.
 const HANDOFF_COLLECTION="player_sessions";
 const HANDOFF_INSTALL_KEY="hotc_install_id_v1";
@@ -7,7 +7,9 @@ const HANDOFF_ACCOUNT_MARKER="hotc_account_linked_device_v1";
 const HANDOFF_PROTECTED_PREFIX="hotc_handoff_protected_v1_";
 const HANDOFF_RECOVERY_PREFIX="hotc_handoff_recovery_v1_";
 const HANDOFF_EXPORTED_PREFIX="hotc_recovery_exported_v1_";
-const HANDOFF_POLL_MS=180000;
+// Four minutes keeps a second four-minute cushion under the eight-minute lease.
+// Foreground resumes still force a fresh ownership check immediately.
+const HANDOFF_POLL_MS=240000;
 const HANDOFF_LEASE_MS=480000;
 let sessionGuardPhase="unconfigured"; // active, occupied, review, lost, checking, unconfigured
 let sessionGuardUid=null;

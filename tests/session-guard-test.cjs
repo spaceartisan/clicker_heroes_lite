@@ -148,6 +148,17 @@ async function run(){
  ok(phase(pc)==="active","First PC owns Firestore session");
  ok(pc.storage.get("hotc_account_linked_device_v1")==="1"&&
     pc.context.sessionGuardCanCheckpoint(),"Cloud-account marker and active writer");
+ ok(vm.runInContext("HANDOFF_POLL_MS",pc.context)===240000,
+    "Session heartbeat is four minutes, with an eight-minute lease");
+ const leaseBefore=sessions.get("player_sessions/"+uid);
+ ok(await pc.context.sessionGuardPing()&&
+    sessions.get("player_sessions/"+uid)===leaseBefore,
+    "Recent heartbeat avoids an unnecessary Firestore transaction");
+ vm.runInContext("sessionGuardLastPing=Date.now()-HANDOFF_POLL_MS-4000",pc.context);
+ ok(await pc.context.sessionGuardPing()&&
+    sessions.get("player_sessions/"+uid)!==leaseBefore&&
+    sessions.get("player_sessions/"+uid).deviceId===pc.context.sessionGuardDeviceId(),
+    "Scheduled heartbeat renews exactly the current device lease");
  const owner1=sessions.get("player_sessions/"+uid).deviceId;
  ok(owner1.length===64,"Stable install plus per-tab random identifier");
  // A browser restart may rewrite only the lastSaved and tab origin

@@ -198,6 +198,20 @@ function playerCloudUpdateNotice(record){
         playerCloudNoticeSet(false,"");
     }
 }
+function playerCloudCanSkipActiveDiscovery(user){
+    // Only the confirmed owner on the Spark session path may skip idle
+    // polling. We already hold a validated cloud record for its revision.
+    // Other devices, reviews, lost connections, and all manual/forced reads
+    // still perform real Firestore reads so changes remain discoverable.
+    if(!playerAccountIsRegistered(user)||
+        typeof sessionGuardUsesServer!=="function"||
+        !sessionGuardUsesServer()||
+        typeof sessionGuardPhase==="undefined"||sessionGuardPhase!=="active")
+        return false;
+    const anchor=playerSyncAnchor(user.uid);
+    return Boolean(anchor&&accountCloudRecordValid(playerCloudPreview,user)&&
+        anchor.revision===playerCloudPreview.revision);
+}
 async function playerCloudDiscover(force=false){
     const user=accountAuth()?.currentUser;
     if(!playerAccountIsRegistered(user)||playerCloudDiscoveryBusy||
@@ -205,6 +219,7 @@ async function playerCloudDiscover(force=false){
     const now=Date.now();
     if(!force && user.uid===playerCloudLastUid &&
         now-playerCloudLastDiscovery<PLAYER_CLOUD_DISCOVERY_MS)return false;
+    if(!force&&playerCloudCanSkipActiveDiscovery(user))return false;
     playerCloudDiscoveryBusy=true;
     playerCloudLastUid=user.uid;
     playerCloudLastDiscovery=now;
@@ -453,8 +468,8 @@ function playerSyncControlsUpdate(){
     }
     const info=document.getElementById("player-cloud-auto-status");
     if(info)info.textContent=playerSyncEnabled()?
-        "On · Backups check every 5 minutes while this tab is active. "+
-        "Cloud restores remain manual.":
+        "On · Checks local changes every 5 minutes; only changed saves query Firestore "+
+        "when this is the verified active device. Restores remain manual.":
         "Off · First perform a manual cloud backup or restore, then opt in.";
 }
 async function playerSetAutoCloudSync(enabled){
@@ -509,17 +524,27 @@ async function playerSyncCloudTick(){
             playerSyncPause("Automatic backup paused: no confirmed cloud revision. Back up or restore manually.");
             return false;
         }
+        const local=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
+        const fingerprint=playerSyncFingerprint(local);
+        if(!fingerprint){
+            playerSyncPause("Automatic backup paused: local save is invalid. Use Export Save to preserve a copy.");
+            return false;
+        }
+        // A verified active owner with *unchanged* gameplay cannot have a
+        // meaningful backup to write. Session ownership is still watched;
+        // every changed save continues to read and verify the cloud revision
+        // before its server-guarded transaction. Keep legacy/unprotected
+        // behavior (remote polling even when idle) unchanged.
+        if(fingerprint===anchor.fingerprint&&
+            typeof sessionGuardUsesServer==="function"&&
+            sessionGuardUsesServer()&&
+            typeof sessionGuardPhase!=="undefined"&&sessionGuardPhase==="active")
+            return false;
         const remote=await accountReadCloud();
         if(!accountCloudRecordValid(remote,user)||
             remote.revision!==anchor.revision){
             playerSyncPause("Another device has changed the cloud save. "+
                 "Automatic backup paused. Compare saves, then back up or restore manually.");
-            return false;
-        }
-        const local=inspectSeasonSave(localStorage.getItem("clickerHeroSave"));
-        const fingerprint=playerSyncFingerprint(local);
-        if(!fingerprint){
-            playerSyncPause("Automatic backup paused: local save is invalid. Use Export Save to preserve a copy.");
             return false;
         }
         if(fingerprint===anchor.fingerprint)return false;

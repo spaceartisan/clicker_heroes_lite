@@ -231,3 +231,9 @@ The old paid-functions `functions/` source is archived as a future reference onl
 
 - Recheck the current Firestore lease **after** a cloud save finishes loading and **before** activating gameplay. A PC→phone takeover while the PC's earlier cloud read is still pending now leaves the PC paused, even if its realtime listener did not deliver the takeover.
 - Add simulated PC→phone→PC handoff/restart coverage: only the active owner writes cloud revisions; returning as a new tab requires explicit cloud comparison and cannot earn the other device's offline interval. Save formats and existing Spark rules are unchanged. This remains coordination rather than cheat-proof authority.
+
+### v1.13.6 — reduce Spark read/write usage for idle owners
+
+- Active-session heartbeats move from three to four minutes (with an eight-minute lease and immediate foreground checks), reducing periodic session writes and listener updates while leaving ownership verification in place.
+- A verified active device with an unchanged local save now skips the otherwise redundant automatic-backup Firestore read; changed local progress still verifies the remote revision and uses a guarded transaction before uploading. Unprotected/legacy sessions still poll and never get a bypass.
+- The same confirmed active owner also avoids routine cloud-discovery polling when its previously verified preview revision matches its last acknowledged cloud revision. Explicit checks, sign-in discoveries, device review, and other devices still read the server. No save migration, new rules, or paid Firebase services are needed.

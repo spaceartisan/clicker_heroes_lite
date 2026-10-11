@@ -7,7 +7,7 @@ const root=path.join(__dirname,"..");
 const storage=new Map();
 const nodes=new Map();
 let confirmDecision=true,reloads=0,reloadGuardObserved=false,remote=null,permissionDenied=false;
-let simulateConcurrentEdit=false,saveCalls=0,transactionCount=0;
+let simulateConcurrentEdit=false,saveCalls=0,transactionCount=0,cloudReadCount=0;
 let currentUser={uid:"test-user-123",email:"test@example.com",isAnonymous:false};
 let signIns=0,links=0,authEvent=null;
 const auth={
@@ -39,6 +39,7 @@ const firebase={auth:()=>auth,firestore};
 firebase.auth.EmailAuthProvider={credential:(email,password)=>({email,password})};
 firebase.auth.GoogleAuthProvider=class {};
 const ref={async get(){
+ cloudReadCount++;
  if(permissionDenied)throw {code:"permission-denied"};
  return {exists:remote!==null,data:()=>remote};
 }};
@@ -189,9 +190,30 @@ async function run(){
     "Opt-in enables guarded automatic uploads after verifying remote revision");
  const writesBefore=transactionCount;
  editLocal({...local,gold:1000,lastSaved:Date.now()+10000,lastSubmittedScore:421});
+ // No idle Spark polling when local progress is unchanged. Explicit checks
+ // and devices needing review continue making fresh server reads.
+ ctx.sessionGuardUsesServer=()=>true;
+ ctx.sessionGuardPhase="active";
+ const idleReads=cloudReadCount;
  vm.runInContext("playerSyncLastCheck=Date.now()-PLAYER_SYNC_CHECK_MS-10",ctx);
- ok(!await ctx.playerSyncCloudTick()&&transactionCount===writesBefore,
-    "Heartbeat and leaderboard bookkeeping alone do not upload again");
+ ok(!await ctx.playerSyncCloudTick()&&transactionCount===writesBefore&&
+    cloudReadCount===idleReads,
+    "Verified active owner skips the idle automatic-backup cloud read");
+ vm.runInContext("playerCloudLastDiscovery=0;playerCloudLastUid=null",ctx);
+ ok(!await ctx.playerCloudDiscover()&&cloudReadCount===idleReads,
+    "Verified owner with matching cloud preview skips periodic discovery read");
+ ok(await ctx.playerCloudDiscover(true)&&cloudReadCount===idleReads+1,
+    "Explicit cloud discovery still reads Firebase while this tab is active");
+ ctx.sessionGuardPhase="review";
+ vm.runInContext("playerCloudLastDiscovery=0;playerCloudLastUid=null",ctx);
+ ok(await ctx.playerCloudDiscover()&&cloudReadCount===idleReads+2,
+    "Pending review reads the cloud instead of trusting a cached revision");
+ delete ctx.sessionGuardPhase;
+ delete ctx.sessionGuardUsesServer;
+ const fallbackReads=cloudReadCount;
+ vm.runInContext("playerSyncLastCheck=Date.now()-PLAYER_SYNC_CHECK_MS-10",ctx);
+ ok(!await ctx.playerSyncCloudTick()&&cloudReadCount===fallbackReads+1,
+    "Unprotected sessions retain their original idle revision reads");
  editLocal({...local,gold:1500,maxLevel:45,lastSaved:Date.now()});
  vm.runInContext("playerSyncLastCheck=Date.now()-PLAYER_SYNC_CHECK_MS-10",ctx);
  ok(await ctx.playerSyncCloudTick()&&remote.revision===2&&remote.save.gold===1500,
