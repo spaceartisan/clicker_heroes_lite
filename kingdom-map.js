@@ -164,28 +164,87 @@
             ctx.fillRect(Math.round(x*unit),Math.round(y*unit),
                 Math.round(w*unit),Math.round(h*unit));
         };
-        const hall = (x,y,roof,light) => {
-            tile(x-.25,y+.1,2.7,2.15,"#27282b");
-            tile(x,y+.3,2.2,1.7,"#a2977e");
-            tile(x-.18,y-.1,2.56,.62,roof);
-            tile(x+.25,y+.55,.3,.5,light);
-            tile(x+1.58,y+.55,.3,.5,light);
-            tile(x+.86,y+1.14,.48,.85,"#373130");
+        // The original buildings are seen FROM ABOVE. Keep nearly all of
+        // each sprite occupied by its roof, with just a narrow stone/wood
+        // foundation at the south edge. No front-facing facade or windows.
+        const roofFromAbove = (x,y,w,h,p) => {
+            tile(x-.16,y-.08,w+.32,h+.27,"#29272a");           // ground shadow
+            tile(x-.08,y-.07,w+.16,h+.17,p.wall);              // thin foundation
+            tile(x-.16,y-.19,w+.32,h+.20,p.eaves);             // northern eaves
+            tile(x-.16,y-.12,.18,h+.10,p.eaves);               // west eave
+            tile(x+w-.02,y-.12,.18,h+.10,p.eaves);             // east eave
+            tile(x+.03,y+.02,w-.06,h*.48,p.upper);             // north roof slope
+            tile(x+.03,y+h*.49,w-.06,h*.42,p.lower);           // south roof slope
+            tile(x+.09,y+h*.475,w-.18,.13,p.ridge);            // roof ridge
+            tile(x+.11,y+.09,w-.22,.12,p.highlight);          // sunlit upper edge
+            tile(x+.07,y+h-.20,w-.14,.11,p.eaves);             // tiny south fascia
         };
-        hall(2.2,3.6,"#68527e","#d8c6ee");   // Academy
-        tile(3.02,3.1,.55,.65,"#e5c8f1");
-        hall(15.3,3.6,"#ab8646","#ffe4a2");  // Treasury
-        tile(16.05,3.12,.72,.65,"#d8bb67");
-        hall(1.9,15.65,"#657c79","#afd0cb"); // Archives
-        tile(2.78,15.2,.38,.48,"#c3d4cc");
-        hall(16.05,15.65,"#74536e","#eac1d3"); // Dynasty
-        tile(16.95,15.14,.24,.59,"#edc16b");
-        tile(9.18,8.7,1.65,1.55,"#3d4247"); // Relic shrine
-        tile(9.35,8.85,1.31,1.18,"#939997");
-        tile(9.77,8.94,.48,.63,"#67c6ab");
-        tile(9.88,8.72,.26,.25,"#baf1db");
-        tile(9.43,9.82,1.1,.12,"#dad6b8");
-        // Keyboard focus only: outline the building, never cover its artwork.
+        // Academy: violet slate pitched roof and clerestory skylights.
+        // The pale panes lie ON the roof, not on a front-facing wall.
+        roofFromAbove(2.16,3.58,2.52,2.06,{
+            wall:"#b0a392",eaves:"#3a3644",upper:"#716a84",
+            lower:"#57536d",ridge:"#ac9fbd",highlight:"#918ba1"
+        });
+        tile(2.52,3.38,.37,.38,"#484252");                     // square chimney
+        tile(2.60,3.42,.20,.20,"#b9aebf");
+        tile(3.04,4.22,.38,.37,"#292b39");                     // roof skylights
+        tile(3.10,4.27,.26,.25,"#dfd4b1");
+        tile(3.65,4.22,.38,.37,"#292b39");
+        tile(3.71,4.27,.26,.25,"#dfd4b1");
+        tile(4.12,5.21,.30,.20,"#dbc68f");                     // academic crest
+        // Treasury: broad warm stone roof with a secured golden ridge.
+        roofFromAbove(15.32,3.60,2.47,2.04,{
+            wall:"#b0a081",eaves:"#554735",upper:"#a68b56",
+            lower:"#806a43",ridge:"#e1bd6d",highlight:"#d4b27c"
+        });
+        tile(15.53,3.32,.43,.42,"#514633");                    // fortified corner
+        tile(15.62,3.40,.25,.21,"#c2ac78");
+        for (const ox of [15.90,16.43,16.96]) {
+            tile(ox,4.42,.23,.23,"#56482f");                   // coin-shaped roof rivets
+            tile(ox+.05,4.46,.13,.13,"#e6c36a");
+        }
+        tile(16.29,5.29,.52,.14,"#e3c16d");                    // small brass threshold
+        // Royal Archives: dark teal pitched roof with roof hatches and a stack.
+        roofFromAbove(1.98,15.65,2.46,2.02,{
+            wall:"#a7a99b",eaves:"#303e42",upper:"#647d80",
+            lower:"#485e65",ridge:"#a1b6b2",highlight:"#91a5a2"
+        });
+        tile(2.15,15.39,.44,.39,"#394345");                    // chimney viewed above
+        tile(2.23,15.45,.26,.21,"#c0c0a9");
+        for (const ox of [2.50,3.16,3.82]) {
+            tile(ox,16.22,.34,.38,"#343b40");                  // narrow skylights
+            tile(ox+.07,16.29,.20,.23,"#c0d4cc");
+        }
+        tile(2.91,17.36,.49,.10,"#b5baa8");
+        // Dynasty estate: roof-first manor with corner turrets and a pennant.
+        roofFromAbove(16.03,15.67,2.34,2.02,{
+            wall:"#baa18d",eaves:"#433440",upper:"#826475",
+            lower:"#644d65",ridge:"#c7a589",highlight:"#ad8c9d"
+        });
+        for (const corner of [[15.85,15.43],[18.22,15.43]]) {
+            tile(corner[0],corner[1],.40,.42,"#382e39");       // turret caps
+            tile(corner[0]+.08,corner[1]+.07,.24,.25,"#af8a9c");
+        }
+        tile(16.90,16.22,.54,.52,"#493644");                   // inset heraldic skylight
+        tile(17.04,16.34,.25,.26,"#e7bd69");
+        tile(17.10,16.27,.12,.10,"#f3d993");
+        tile(18.36,15.07,.12,.63,"#d9c69e");                   // pennant
+        tile(18.49,15.12,.40,.25,"#b7785e");
+        // Relic Vault: a ROOFLESS top-down stone shrine at the crossroads,
+        // with corner pillars and a gem in its central open courtyard.
+        tile(9.00,8.48,2.05,2.02,"#292d31");
+        tile(9.13,8.61,1.79,1.73,"#a2a397");
+        tile(9.30,8.79,1.45,1.34,"#5b6967");
+        tile(9.47,8.96,1.12,1.01,"#8a968c");
+        for (const corner of [[9.12,8.58],[10.64,8.58],[9.12,10.05],[10.64,10.05]]) {
+            tile(corner[0],corner[1],.32,.32,"#4d5252");
+            tile(corner[0]+.06,corner[1]+.05,.20,.17,"#d5d2b8");
+        }
+        tile(9.88,9.14,.31,.62,"#2b4748");
+        tile(9.96,9.05,.16,.69,"#67cfb7");                     // gem viewed from above
+        tile(9.84,9.36,.39,.18,"#89e1cc");
+        tile(10.02,9.18,.10,.12,"#d2fff0");
+        // Keyboard outline remains a temporary 2px outline, never a label/card.
         if (keyboardIndex >= 0 && document.activeElement === canvas) {
             const b = locations[keyboardIndex].bounds;
             ctx.lineWidth = 2;
@@ -194,7 +253,7 @@
                 Math.round((b[2]-b[0])*unit),Math.round((b[3]-b[1])*unit));
         }
     }
-    drawKingdom = function (...args) {
+        drawKingdom = function (...args) {
         const result = originalDrawKingdom(...args);
         paintLandmarks();
         return result;
