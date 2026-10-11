@@ -2089,107 +2089,71 @@ button:has(> .ui-icon) { display: inline-flex; }
 #account-session-recovery-hint{white-space:pre-line;overflow-wrap:anywhere}
 
 
-/* Map-first Kingdom management, preserving the original controls as fallback. */
+/* The illustrated kingdom is the interactive control. No cards obscure buildings. */
 #kingdom-view.kingdom-map-ready .structure-list,
 #kingdom-view.kingdom-map-ready .kingdom-legacy-heading,
 #kingdom-view.kingdom-map-ready .research-entry { display:none; }
 .kingdom-map-kicker {
-    font:700 12px/1.3 Georgia,serif;
-    letter-spacing:.18em; color:var(--accent,#e1bb75);
-    text-align:center; margin:15px auto 2px;
+    font:700 12px/1.3 Georgia,serif;letter-spacing:.18em;
+    color:var(--accent,#e1bb75);text-align:center;margin:15px auto 2px;
 }
 #kingdom-view.kingdom-map-ready #kingdom-box {
-    position:relative; display:block;
-    width:min(100%,640px); max-width:640px;
-    padding:5px; margin:10px auto 6px;
-    aspect-ratio:1/1;
-    border:4px double #baa06e;
-    border-radius:12px;
-    box-shadow:0 5px 25px #080b0880, inset 0 0 0 2px #29291c;
-    background:#222b20; overflow:hidden;
-    isolation:isolate;
+    position:relative;display:block;width:min(100%,640px);max-width:640px;
+    padding:5px;margin:10px auto 6px;aspect-ratio:1/1;
+    border:4px double #baa06e;border-radius:12px;
+    box-shadow:0 5px 25px #080b0880,inset 0 0 0 2px #29291c;
+    background:#222b20;overflow:hidden;
 }
 #kingdom-view.kingdom-map-ready #kingdom-canvas {
-    width:100%; height:100%;
-    image-rendering:pixelated; cursor:pointer;
+    width:100%;height:100%;display:block;image-rendering:pixelated;
+    cursor:default;touch-action:manipulation;
 }
-.kingdom-map-sites { position:absolute; inset:5px; pointer-events:none; }
-.kingdom-pin {
-    position:absolute;
-    transform:translate(-50%,-50%);
-    width:clamp(65px,22%,128px);
-    min-height:44px;
-    pointer-events:auto;
-    border:1px solid #d1ae6b;
-    border-radius:6px;
-    background:linear-gradient(180deg,#30251de8,#151c1ce9);
-    color:#f5e8c9;
-    box-shadow:0 2px 5px #121011bb, inset 0 1px #ffffff26;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:0; padding:4px 3px;
-    font:700 clamp(10px,1.8vw,14px)/1.2 Georgia,serif;
-    text-align:center;
-    overflow-wrap:anywhere;
-    transition:border-color .12s,background-color .12s;
+#kingdom-view.kingdom-map-ready #kingdom-canvas:focus-visible {
+    outline:3px solid #f8d38b;outline-offset:-4px;
 }
-.kingdom-pin .ui-icon {color:#e4c37b;font-size:clamp(12px,1.8vw,17px);}
-.kingdom-pin-label {display:block;}
-.kingdom-pin-status {
-    display:block; font:10px/1.3 Arial,sans-serif;
-    color:#d4bb86; padding-top:1px;
+#kingdom-view .map-caption {
+    max-width:640px;margin:0 auto 14px;text-align:center;
 }
-.kingdom-pin.is-unbuilt {border-style:dashed;opacity:.92;}
-.kingdom-pin.is-locked {border-color:#938c77;}
-.kingdom-pin.is-locked .kingdom-pin-status {color:#d4b8a6;}
-.kingdom-pin:hover, .kingdom-pin.is-selected {
-    transform:translate(-50%,-50%);
-    border-color:#fff0b0; background:#3b2e23;
+#kingdom-location-popup {padding:12px max(12px,env(safe-area-inset-right))
+    max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));}
+#kingdom-location-popup .popup-content {
+    width:min(100%,760px);max-width:760px;max-height:min(88dvh,900px);
+    padding:0;display:flex;flex-direction:column;justify-content:flex-start;
+    gap:0;align-items:stretch;text-align:left;overflow:hidden;
+    background:var(--panel-fill,#2e1b10);border-color:var(--panel-line,#a67c52);
 }
-.kingdom-pin:focus-visible {
-    transform:translate(-50%,-50%);
-    outline:3px solid #fff0b0;outline-offset:3px;z-index:2;
+.kingdom-modal-header {
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;flex:0 0 auto;padding:14px 16px;
+    border-bottom:1px solid var(--panel-line,#a67c52);
 }
-#kingdom-view .map-caption {max-width:640px;margin:0 auto 14px; text-align:center;}
-.kingdom-detail {
-    margin:10px auto 22px;
-    width:min(100%,700px);
-    border:2px solid var(--panel-line,#977a55);
-    border-radius:9px;
-    background:var(--panel-fill,#30251d);
-    padding:12px;
+.kingdom-modal-header h3 {margin:0;border:0;font:700 21px Georgia,serif;}
+.kingdom-modal-header button {min-height:44px;min-width:85px;}
+#kingdom-location-body {
+    flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+    padding:14px 16px 18px;scrollbar-color:var(--panel-line,#a67c52) transparent;
 }
-.kingdom-detail[hidden],.kingdom-location[hidden] {display:none!important;}
-.kingdom-detail-head {
-    display:flex; align-items:center; justify-content:space-between;
-    flex-wrap:wrap; gap:9px; margin-bottom:12px;
-}
-.kingdom-detail-head h3 {margin:0; font:700 20px Georgia,serif;}
-.kingdom-detail-head button {min-height:42px;}
-.kingdom-detail .treasury-card,.kingdom-detail .dynasty-panel {margin:0;}
-.kingdom-detail .system-panel {margin:10px 0;}
+.kingdom-modal-section[hidden] {display:none!important;}
+#kingdom-location-body .treasury-card,
+#kingdom-location-body .dynasty-panel {margin:0;}
+#kingdom-location-body .system-panel {margin:8px 0;}
+#kingdom-location-body .system-panel:first-child {margin-top:0;}
 .kingdom-construction {
-    border:1px solid var(--panel-line,#8e724e);
-    border-radius:8px;
-    background:var(--panel-raised,#34271e);
-    padding:11px 12px;
-    margin:0 0 12px;
-    text-align:left;
+    border:1px solid var(--panel-line,#8e724e);border-radius:8px;
+    background:var(--panel-raised,#34271e);padding:11px 12px;
+    margin:0 0 12px;text-align:left;
 }
-.kingdom-construction-head strong {color:var(--ink-heading,#f0d7a4);}
+.kingdom-construction strong {color:var(--ink-heading,#f0d7a4);}
 .kingdom-construction p {
-    color:var(--ink-muted,#ddcbb2);
-    margin:6px 0 9px; font:13px/1.45 Arial,sans-serif;
+    color:var(--ink-muted,#ddcbb2);margin:6px 0 9px;
+    font:13px/1.45 Arial,sans-serif;
 }
 .kingdom-construction button {width:100%;min-height:44px;}
 @media(max-width:540px) {
-    .kingdom-pin {
-        width:23%; min-height:40px; padding:3px 1px;
-        font-size:clamp(9px,2.3vw,12px); border-radius:4px;
-    }
-    .kingdom-pin .ui-icon{font-size:12px;}
-    .kingdom-pin-status{font-size:9px;}
-    #kingdom-view.kingdom-map-ready #kingdom-box{padding:3px;border-width:2px;}
-    .kingdom-map-sites{inset:3px;}
-    .kingdom-detail{padding:9px;}
+    #kingdom-view.kingdom-map-ready #kingdom-box {padding:3px;border-width:2px;}
+    #kingdom-location-popup {padding:8px;}
+    #kingdom-location-popup .popup-content {max-height:calc(100dvh - 16px);width:100%;}
+    .kingdom-modal-header {padding:10px 12px;}
+    .kingdom-modal-header h3 {font-size:18px;}
+    #kingdom-location-body {padding:10px 12px 14px;}
 }
-@media(prefers-reduced-motion:reduce){.kingdom-pin{transition:none;}}
