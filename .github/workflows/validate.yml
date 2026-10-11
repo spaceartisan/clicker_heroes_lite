@@ -22,6 +22,7 @@ jobs:
         run: |
           node tests/smoke-test.cjs
           node tests/kingdom-map-test.cjs
+          node tests/kingdom-visual-test.cjs
           node tests/player-account-test.cjs
           node tests/account-leaderboard-test.cjs
           node tests/session-guard-test.cjs

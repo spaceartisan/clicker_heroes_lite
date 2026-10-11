@@ -123,7 +123,7 @@ function drawKingdom() {
     tile(.2, 0, 1.45, 5.6, "#356b78");
     tile(.45, .5, .8, 2.2, "#438595");
     tile(.5, 3.4, .78, 1.6, "#438595");
-    for (const tree of [[2,1],[3,3],[16,2],[18,4],[1,17],[18,17],[2,7],[17,7],[4,18]]) {
+    for (const tree of [[2,1],[4.8,1.1],[16,2],[18.7,7.5],[.15,16.7],[18.7,18.8],[2,7],[17,7],[5,19]]) {
         tile(tree[0] + .34, tree[1] + .7, .25, .45, "#5d4230");
         tile(tree[0], tree[1] - .06, 1, .9, "#24442e");
         tile(tree[0] + .15, tree[1] + .1, .72, .62, "#4d8743");
@@ -141,6 +141,21 @@ function drawKingdom() {
     for (let i = 7; i < 20; i += 2) {
         tile(9.72, i, 1.04, .12, "#d1b27e");
     }
+    // Connect the illustrated royal landmarks to the established main road.
+    // These paths remain under the building sprites and all their roof details.
+    const footpath = (x,y,w,h) => {
+        tile(x,y,w,h,"#796b51");
+        tile(x+.07,y+.08,Math.max(.08,w-.14),Math.max(.08,h-.16),"#ac966f");
+    };
+    footpath(3.29,5.53,.66,1.91); // Academy
+    footpath(3.64,7.03,6.08,.60);
+    footpath(16.11,5.53,.70,1.91); // Treasury
+    footpath(10.78,7.03,5.68,.60);
+    footpath(9.36,10.37,1.72,.47); // Relic Vault
+    footpath(3.18,17.62,.63,.72); // Archives
+    footpath(3.46,18.03,6.31,.54);
+    footpath(16.91,17.62,.62,.72); // Dynasty
+    footpath(10.78,18.03,6.41,.54);
     const built = [["tavern",2,10],["blacksmith",6,14],["barracks",12,14],["market",16,10]];
     for (const item of built) {
         const [id,x,y] = item;
@@ -190,18 +205,18 @@ function drawKingdom() {
 
     // Frontier outposts visibly develop as the player's cleared stages advance.
     if(maxLevel>100) {
-        roof(15.5,3.8,1.8,1.3,"#85624e","#dcad7e");
-        tile(16.22,4.9,.45,.36,"#463c32");
-        banner(16.83,3.0,"#b67d50");
+        roof(5.35,10.65,1.8,1.3,"#85624e","#dcad7e");
+        tile(6.07,11.75,.45,.36,"#463c32");
+        banner(6.68,9.85,"#b67d50");
     }
     if(maxLevel>140) {
-        roof(2.45,5.7,1.55,1.3,"#566475","#9cabac");
-        tile(2.7,6.85,.3,.35,"#ddd1a4");
-        banner(3.75,4.95,"#8d76c2");
+        roof(13.85,11.69,1.55,1.3,"#566475","#9cabac");
+        tile(14.10,12.84,.3,.35,"#ddd1a4");
+        banner(15.15,10.95,"#8d76c2");
     }
     if(maxLevel>180) {
-        roof(15.35,5.95,1.75,1.4,"#9d614b","#f2b15b");
-        banner(16.95,5.4,"#d99a61");
+        roof(1.05,13.10,1.75,1.4,"#9d614b","#f2b15b");
+        banner(2.65,12.55,"#d99a61");
     }
     // All sites remain legible before construction; each upgraded building
     // acquires recognizable decorations representing its gameplay purpose.
