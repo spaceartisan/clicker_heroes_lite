@@ -7,13 +7,7 @@ const source = fs.readFileSync(path.join(__dirname,"..","kingdom-map.js"),"utf8"
 const html = fs.readFileSync(path.join(__dirname,"..","index.html"),"utf8");
 const css = fs.readFileSync(path.join(__dirname,"..","style.css"),"utf8");
 assert(!source.includes("kingdom-pin"),"No floating buttons over the art");
-assert(source.includes("roofFromAbove(") &&
-    !source.includes("const hall ="),"New landmarks are roof-first top-down sprites");
-for(const roofColor of ["#716a84","#a68b56","#647d80","#826475"]){
-    assert(source.includes(roofColor),"Distinct original-style roof palette "+roofColor);
-}
-assert(source.includes("roofless") || source.includes("ROOFLESS"),
-    "Relic shrine is an open overhead courtyard");
+assert(html.includes('src="kingdom-art.js"'),"Shared kingdom renderer is loaded");
 assert(!source.includes("scrollIntoView"),"No bottom-page drawer");
 assert(html.includes('id="kingdom-location-popup"') &&
        html.includes('aria-modal="true"'),"Kingdom detail uses a proper dialog");

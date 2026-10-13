@@ -257,3 +257,10 @@ The old paid-functions `functions/` source is archived as a future reference onl
 - Army empty states distinguish recruitment from deployed squads. Blank selectors are disabled and labeled; requirements remain readable. Stats use aligned integer counts; leaderboard rows align rank/name/stage and explain guest registration.
 - Save schema, progression, Firestore rules and cloud ownership protocol are unchanged.
 - Run `node tests/dialog-test.cjs` alongside the existing regression suites. `tests/responsive-review.html` provides real-game iframe viewports for visual review (use a guest browser; it shares that browser’s save). A constrained viewport does not emulate mobile Safari or a software keyboard.
+
+### v1.16.0 — consistent overhead Kingdom art
+
+- Redrew all ten destinations with a shared 200-pixel art grid, material palettes, roof shapes, thin outlines, and northwest light. Buildings retain their map positions and click targets.
+- Castle courtyard and turrets, Academy study wings, Treasury roof bands, Archives skylights, Dynasty manor courtyard, striped Market pavilion, forge and training yard distinguish each destination. Trees, river, roads, foundations, and frontier outposts use the same style.
+- Construction, Castle expansion, frontier milestones, and squad-role colors remain visible. The renderer only reads progression; save formats and gameplay are unchanged.
+- `tests/kingdom-art-review.html` shows the actual renderer at three fixed development stages without reading or modifying a save. `node tests/kingdom-visual-test.cjs` checks eight development states, map extent, consistent pixel scale, deterministic redraws, clickable centers, and offline inclusion.

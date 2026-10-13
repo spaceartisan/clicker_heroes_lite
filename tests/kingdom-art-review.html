@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kingdom art review · v1.16.0</title>
+<style>
+body{margin:0;background:#202a25;color:#e7d5a0;font:15px/1.5 system-ui,sans-serif;padding:24px}
+h1{font-size:24px;margin:0 0 4px}p{color:#bbbfae;margin:0 0 24px}
+main{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+figure{margin:0}figcaption{margin-bottom:10px;font-weight:600}
+canvas{width:100%;max-width:600px;image-rendering:pixelated;border:1px solid #81795b;box-sizing:border-box}
+</style></head><body>
+<h1>The Royal Domain</h1><p>Actual game renderer · fixed development examples · does not read or modify a save.</p>
+<main><figure><figcaption>New kingdom</figcaption><canvas id="new" width="400" height="400"></canvas></figure>
+<figure><figcaption>Established town</figcaption><canvas id="town" width="400" height="400"></canvas></figure>
+<figure><figcaption>Royal capital</figcaption><canvas id="capital" width="400" height="400"></canvas></figure></main>
+<script src="../kingdom-art.js"></script><script>
+for(const [id,level,stage] of [['new',0,1],['town',6,150],['capital',20,200]]) {
+ KingdomArt.draw(document.getElementById(id).getContext('2d'),{
+  levels:{castle:Math.max(1,level),tavern:level,blacksmith:level,barracks:level,market:level},
+  stage,roles:level?['vanguard','ranger','mystic','raider']:[]
+ });
+}
+</script></body></html>
