@@ -223,6 +223,7 @@ function updateUI() {
     document.getElementById("next-level").disabled = currentLevel >= maxLevel;
     checkAchievements();
     updatePlayerLevelGearText();
+    if (typeof refreshArmyView === "function") refreshArmyView();
 }
 
 // === Player Upgrade ===
@@ -238,24 +239,32 @@ function updatePlayerLevelGearText() {
     const levels=document.getElementById("hero-upgrade-levels");
     if(!levelButton||!gearButton)return;
     const offers=[
-        {button:levelButton,label:"Level Up",quote:levelUpPlayerCost(true)},
-        {button:gearButton,label:"Upgrade Gear",quote:gearUpPlayerCost(true)}
+        {button:levelButton,label:"Level Up",quote:levelUpPlayerCost(true),
+            next:levelUpPlayerCost(true,{amount:1,underfill:false}),capSource:"Castle"},
+        {button:gearButton,label:"Upgrade Gear",quote:gearUpPlayerCost(true),
+            next:gearUpPlayerCost(true,{amount:1,underfill:false}),capSource:"Blacksmith"}
     ];
+    const capHints=[];
     for(const offer of offers){
         const [cost,quantity,atCap]=offer.quote;
         const available=quantity>0&&Number.isFinite(cost)&&cost>0&&gold>=cost;
         const atLimit=quantity===0&&atCap;
+        const displayCost=quantity===0&&!atLimit ? offer.next[0] : cost;
+        if(atLimit)capHints.push("Upgrade the "+offer.capSource+" to raise the "+
+            (offer.button===levelButton?"hero":"gear")+" cap.");
         const nextLabel=atLimit ? offer.label+" · MAX" :
-            offer.label+(quantity>1?" ×"+quantity:"")+" · "+formatDigits(cost,2,5)+" g";
+            offer.label+(quantity>1?" ×"+quantity:"")+" · "+formatDigits(displayCost,2,0).trim()+" g";
         if(offer.button.textContent!==nextLabel)offer.button.textContent=nextLabel;
         offer.button.disabled=!available;
-        offer.button.title=atLimit?"Upgrade cap reached":
+        offer.button.title=atLimit?"Upgrade the "+offer.capSource+" to raise this cap":
             available?"Purchase "+quantity+" upgrade"+(quantity===1?"":"s"):
             "Not enough gold for this purchase";
     }
+    const hint=document.getElementById("hero-upgrade-hint");
+    if(hint){hint.textContent=capHints.join(" ");hint.hidden=!capHints.length;}
     if(levels){
-        const nextLevels="Hero Lv "+formatDigits(playerLevel,2,0)+
-            " · Gear Lv "+formatDigits(playerGearLevel,2,0);
+        const nextLevels="Hero Lv "+Math.floor(playerLevel).toLocaleString()+
+            " · Gear Lv "+Math.floor(playerGearLevel).toLocaleString();
         if(levels.textContent!==nextLevels)levels.textContent=nextLevels;
     }
 }

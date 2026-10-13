@@ -371,14 +371,14 @@ function estimateUpgradeCost({ baseLevel, upgradeEquation, cap, resourceAvailabl
     return query ? [totalCost, unitsAffordable, capReached] : totalCost;
 }
 
-function levelUpPlayerCost(query = false) {
+function levelUpPlayerCost(query = false, options = {}) {
     return estimateUpgradeCost({
         baseLevel: playerLevel,
         upgradeEquation: (lvl) => Math.floor(10 + lvl ** 1.5 * mktUp(1) * getResearchCostFactor()),
         cap: structures.castle.level * 10 + 100,
         resourceAvailable: gold,
-        multiplier: upgradeMultiplier,
-        underfill: underfillEnabled,
+        multiplier: options.amount ?? upgradeMultiplier,
+        underfill: options.underfill ?? underfillEnabled,
         query
     });
 }
@@ -402,14 +402,14 @@ function levelUpPlayer() {
     }
 }
 
-function gearUpPlayerCost(query = false) {
+function gearUpPlayerCost(query = false, options = {}) {
     return estimateUpgradeCost({
         baseLevel: playerGearLevel,
         upgradeEquation: (lvl) => Math.floor(100 * (lvl + 1) ** 2 * mktUp(1) * getResearchCostFactor()),
         cap: (structures.blacksmith.level - 1) * 2 + 5,
         resourceAvailable: gold,
-        multiplier: upgradeMultiplier,
-        underfill: underfillEnabled,
+        multiplier: options.amount ?? upgradeMultiplier,
+        underfill: options.underfill ?? underfillEnabled,
         query
     });
 }

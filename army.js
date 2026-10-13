@@ -5,6 +5,63 @@ const armyExpandedSquads = new Set();
 const ARMY_PAGE_SIZE = 8;
 let armyPage = 0;
 let armySelectionInitialized = false;
+let armyLiveControls = [];
+let armyLivePrices = [];
+let armyLastGold = null;
+
+function armyCapHint(kind) {
+    return kind === "level" ? "Raise Leadership in the Royal Court." :
+        "Upgrade the " + (kind === "gear" ? "Blacksmith" : "Barracks") + ".";
+}
+
+function updateArmyRecruitControl() {
+    const button = document.getElementById("army-recruit");
+    const hint = document.getElementById("army-recruit-hint");
+    if (!button || !hint) return;
+    const count = hiredMercenaries.length, capacity = structures.tavern.level * 5;
+    let quantity = 0, cost = 0;
+    while (quantity < 5 && count + quantity < capacity) {
+        const next = Math.floor(100 * (count + quantity) ** 2);
+        if (cost + next > gold) break;
+        cost += next; quantity++;
+    }
+    button.disabled = quantity === 0;
+    button.textContent = quantity ? "Recruit " + quantity + " · " +
+        (cost ? formatDigits(cost,0,0).trim() + " g" : "Free") : "Recruit mercenaries";
+    const message = !capacity ? "Construct the Tavern to recruit." : count >= capacity ?
+        "Tavern full (" + count + "/" + capacity + "). Upgrade it for more room." :
+        !quantity ? "Next recruit: " + formatDigits(hireMercenaryCost(),0,0).trim() + " gold." :
+        count + "/" + capacity + " Tavern places filled.";
+    if (hint.textContent !== message) hint.textContent = message;
+    button.title = message;
+}
+
+// Refresh existing nodes on the normal HUD tick. Never rebuild a card while
+// a player is selecting equipment, using the keyboard, or reading its roster.
+function refreshArmyView() {
+    const view = document.getElementById("army-view");
+    if (!view || view.style.display === "none") return;
+    for (const update of armyLiveControls) update();
+    if (armyLastGold !== gold) {
+        armyLastGold = gold;
+        for (const update of armyLivePrices) update();
+        updateArmyRecruitControl();
+        updateArmyQuote();
+    }
+    updateArmyStats();
+}
+
+function updateArmyStats() {
+    const squads = getArmySquads();
+    const opponent = enemyType || getEnemyType(currentLevel);
+    const neutral = squads.reduce((sum,group)=>sum+getArmySquadDps(group,true),0);
+    const message = squads.length + " squads · " + hiredMercenaries.length + " mercenaries · " +
+        formatDigits(neutral,1,0).trim() + " neutral DPS · " +
+        formatDigits(getAutoDamage(),1,0).trim() + " effective DPS vs " +
+        opponent.name + " (" + opponent.trait + ")";
+    const target = document.getElementById("army-stats");
+    if (target.textContent !== message) target.textContent = message;
+}
 
 function getArmySquads() {
     const byId = new Map();
@@ -171,20 +228,23 @@ function updateArmyQuote() {
     const quote = planArmyUpgrade(ids, type, amount);
     const target = document.getElementById("army-quote");
     const btn = document.getElementById("army-upgrade-selected");
+    const setText = (node, text) => { if (node.textContent !== text) node.textContent = text; };
     if (!ids.length) {
-        target.textContent = "Select one or more squads to preview a purchase.";
+        setText(target, "Select one or more squads to preview a purchase.");
         btn.disabled = true;
+        btn.textContent = "Select squads";
         return;
     }
     if (quote.capped) {
-        target.textContent = "Selected squads are at the current " + type + " cap.";
+        setText(target, "Selected squads are at the current " + type + " cap. " + armyCapHint(type));
         btn.disabled = true;
+        btn.textContent = "At cap";
         return;
     }
     const noun = type === "level" ? "mercenary levels" : "squad " + type + " tiers";
-    target.textContent = quote.units + " / " + quote.maximumUnits + " " + noun +
+    setText(target, quote.units + " / " + quote.maximumUnits + " " + noun +
         " · Cost " + formatDigits(quote.spent, 0, 0).trim() + " gold" +
-        (quote.partial ? " · Partial purchase (remaining gold insufficient)" : "");
+        (quote.partial ? " · Partial purchase (remaining gold insufficient)" : ""));
     btn.disabled = quote.units === 0;
     btn.textContent = quote.units ? "Purchase " + quote.units + " upgrades" : "Not enough gold";
 }
@@ -252,7 +312,6 @@ function createArmyButton(text, click, className = "") {
 function buildArmyCard(group) {
     const mercs = group.indices.map(index => hiredMercenaries[index]);
     const build = getSquadBuild(group.id);
-    const deployed = isSquadOnCampaign(group.id);
     const average = Math.floor(mercs.reduce((sum, merc) => sum + merc.level, 0) / mercs.length);
     const gear = Math.max(...mercs.map(merc => merc.gearLevel || 0));
     const speed = Math.max(...mercs.map(merc => merc.attackSpeedLevel || 0));
@@ -281,11 +340,16 @@ function buildArmyCard(group) {
     title.append(strong, secondary);
     const dps = document.createElement("div");
     dps.className = "army-dps";
-    const opponent=enemyType||getEnemyType(currentLevel);
-    const baseline=formatDigits(getArmySquadDps(group,true),1,0).trim();
-    const effective=formatDigits(getArmySquadDps(group),1,0).trim();
-    dps.textContent=deployed?"ON CAMPAIGN · 0 combat DPS":
-        "Neutral "+baseline+" DPS · Vs "+opponent.name+" "+effective+" DPS";
+    const updateDps = () => {
+        const opponent=enemyType||getEnemyType(currentLevel);
+        const baseline=formatDigits(getArmySquadDps(group,true),1,0).trim();
+        const effective=formatDigits(getArmySquadDps(group),1,0).trim();
+        const message=isSquadOnCampaign(group.id)?"ON CAMPAIGN · 0 combat DPS":
+            "Neutral "+baseline+" DPS · Vs "+opponent.name+" "+effective+" DPS";
+        if(dps.textContent!==message)dps.textContent=message;
+    };
+    armyLiveControls.push(updateDps);
+    updateDps();
     head.append(checkbox, title, dps);
     outer.appendChild(head);
     outer.classList.toggle("army-card-selected", checkbox.checked);
@@ -298,11 +362,21 @@ function buildArmyCard(group) {
     const quick = document.createElement("div");
     quick.className = "army-quick-actions";
     for (const [kind, label] of [["level", "Level mercs"], ["gear", "Gear"], ["speed", "Speed"]]) {
-        const quote = planArmyUpgrade([group.id], kind, 1);
         const button = createArmyButton(label + " +1", () => purchaseArmyUpgrades([group.id], kind, 1));
-        button.disabled = quote.units === 0;
-        button.title = quote.units ? "Spend " + formatDigits(quote.spent, 0, 0).trim() + " gold" :
-            "At cap or not enough gold";
+        const update = () => {
+            const quote = planArmyUpgrade([group.id], kind, 1);
+            const priced = quote.units ? quote : planArmyUpgrade([group.id], kind, 1, Number.MAX_VALUE);
+            const text = quote.capped ? label + " · Cap " + getArmyCap(kind) :
+                label + (kind === "level" ? " +" + priced.units : " +1") + " · " +
+                formatDigits(priced.spent,0,0).trim() + " g";
+            if(button.textContent!==text)button.textContent=text;
+            button.disabled=quote.units===0;
+            button.title=quote.capped?armyCapHint(kind):quote.units?
+                "Purchase "+quote.units+" of "+quote.maximumUnits+" available upgrades.":
+                "Not enough gold for an upgrade.";
+        };
+        armyLivePrices.push(update);
+        update();
         quick.appendChild(button);
     }
     outer.appendChild(quick);
@@ -362,6 +436,7 @@ function buildArmyCard(group) {
             (!owned && gold < squadUpgradeKitCost(group.id, kitId));
     }
     kitSelect.addEventListener("change", updateKitButton);
+    armyLivePrices.push(updateKitButton);
     updateKitButton();
 
     const fields = document.createElement("div");
@@ -394,6 +469,9 @@ function renderArmyView() {
     const pageCount = Math.max(1, Math.ceil(squads.length / ARMY_PAGE_SIZE));
     armyPage = Math.min(Math.max(0, armyPage), pageCount - 1);
     const visible = squads.slice(armyPage * ARMY_PAGE_SIZE, (armyPage + 1) * ARMY_PAGE_SIZE);
+    armyLiveControls = [];
+    armyLivePrices = [];
+    armyLastGold = null;
     const fragment = document.createDocumentFragment();
     for (const squad of visible) fragment.appendChild(buildArmyCard(squad));
     list.replaceChildren(fragment);
@@ -403,19 +481,12 @@ function renderArmyView() {
 
     const count = document.getElementById("army-selected-count");
     count.textContent = armySelectedSquads.size + " selected";
-    const opponent=enemyType||getEnemyType(currentLevel);
-    const neutral=squads.reduce((sum,group)=>sum+getArmySquadDps(group,true),0);
-    document.getElementById("army-stats").textContent =
-        squads.length+" squads · "+hiredMercenaries.length+" mercenaries · "+
-        formatDigits(neutral,1,0).trim()+" neutral DPS · "+
-        formatDigits(getAutoDamage(),1,0).trim()+" effective DPS vs "+
-        opponent.name+" ("+opponent.trait+")";
+    updateArmyStats();
     document.getElementById("army-page-status").textContent =
         "Page " + (armyPage + 1) + " of " + pageCount;
     document.getElementById("army-prev").disabled = armyPage === 0;
     document.getElementById("army-next").disabled = armyPage >= pageCount - 1;
-    document.getElementById("army-recruit").disabled =
-        structures.tavern.level * 5 <= hiredMercenaries.length || hireMercenaryCost() > gold;
+    updateArmyRecruitControl();
     updateArmyQuote();
     renderSquadCampaigns();
 }

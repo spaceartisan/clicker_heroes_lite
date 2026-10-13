@@ -112,6 +112,7 @@
                 <button type="button" id="hero-level-upgrade" onclick="levelUpPlayer()">Level Up</button>
                 <button type="button" id="hero-gear-upgrade" onclick="gearUpPlayer()">Upgrade Gear</button>
                 <p id="hero-upgrade-levels">Hero Lv 1 · Gear Lv 0</p>
+                <p id="hero-upgrade-hint" class="menu-hint" hidden></p>
                 <div class="upgrade-multiplier" role="group" aria-label="Upgrade purchase quantity"></div>
             </div>
 
@@ -216,7 +217,10 @@
                     <p id="army-stats">Your mercenaries, all in one place.</p>
                     <p class="army-dps-explainer">Neutral DPS shows damage before enemy resistances and counters. Effective DPS is against the current Hero-tab enemy, so it can go down when the enemy changes—even if you upgraded. Squads on campaigns deal no combat DPS.</p>
                 </div>
-                <button type="button" id="army-recruit">Recruit up to 5</button>
+                <div class="army-recruit-controls">
+                    <button type="button" id="army-recruit" aria-describedby="army-recruit-hint">Recruit up to 5</button>
+                    <p id="army-recruit-hint" class="menu-hint"></p>
+                </div>
             </header>
 
             <section id="army-empty-state" class="army-empty-state" hidden>
@@ -307,7 +311,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.16.0 – Heroes of the Click
+        v1.16.1 – Heroes of the Click
     </p>
     <br>
 

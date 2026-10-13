@@ -131,3 +131,9 @@ summary { min-height:44px; padding:10px 0; box-sizing:border-box; cursor:pointer
     :is(#options-popup,#leaderboard-popup,#message-popup,#achievement-menu,#upgrade-menu,#research-popup,#kingdom-location-popup,#general-menu) .popup-content.dialog-shell { max-height:calc(100dvh - 12px); }
     .dialog-header { padding:6px 12px; }
 }
+
+/* Purchase guidance uses the established menu typography. */
+.menu-hint { font: 13px/1.5 Arial, sans-serif; color: var(--menu-muted, #d0c4ad); margin: 8px 0; }
+.army-recruit-controls { flex: 0 0 180px; max-width: 100%; }
+.army-recruit-controls button { width: 100%; }
+@media (max-width: 560px) { .army-header { flex-direction: column; } .army-recruit-controls { flex-basis: auto; width: 100%; } }

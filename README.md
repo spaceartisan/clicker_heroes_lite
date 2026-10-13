@@ -264,3 +264,10 @@ The old paid-functions `functions/` source is archived as a future reference onl
 - Castle courtyard and turrets, Academy study wings, Treasury roof bands, Archives skylights, Dynasty manor courtyard, striped Market pavilion, forge and training yard distinguish each destination. Trees, river, roads, foundations, and frontier outposts use the same style.
 - Construction, Castle expansion, frontier milestones, and squad-role colors remain visible. The renderer only reads progression; save formats and gameplay are unchanged.
 - `tests/kingdom-art-review.html` shows the actual renderer at three fixed development stages without reading or modifying a save. `node tests/kingdom-visual-test.cjs` checks eight development states, map extent, consistent pixel scale, deterministic redraws, clickable centers, and offline inclusion.
+
+### v1.16.1 — purchase feedback and live Army controls
+
+- Army quick upgrades, bulk quotes, equipment affordability, recruitment, and opponent DPS refresh in place on the existing HUD cycle. Prices recalculate only when gold changes; no extra timer or roster replacement.
+- Quick upgrades show their actual price and quantity. Recruitment quotes the affordable number (up to five) using sequential costs, explains Tavern capacity, and clearly marks the first free recruit.
+- Flexible Hero purchases show the next upgrade price when none are affordable. Hero levels display as integers; cap hints identify the Castle, Blacksmith, Barracks, or Leadership decree. Empty/capped Army selections clear stale purchase labels.
+- Fifteen purchase-feedback checks cover income/spending refresh, preserved roster nodes, sequential recruitment pricing, cap guidance, and changing enemies.
