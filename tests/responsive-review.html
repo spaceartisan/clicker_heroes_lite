@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HOTC responsive review</title>
+<style>body{margin:0;padding:12px;background:#15171b;color:#eee;font:14px Arial}nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}button{min-height:44px;padding:8px 14px;cursor:pointer}iframe{display:block;border:1px solid #777;margin:0 auto;width:390px;height:780px;background:#201812}p{margin:6px 0 12px;color:#ccc}</style></head>
+<body><nav aria-label="Preview size"><button onclick="size(320,720)">320 phone</button><button onclick="size(390,780)">390 phone</button><button onclick="size(768,820)">768 tablet</button><button onclick="size(1100,780)">1100 desktop</button><button onclick="size(740,360)">Short landscape</button></nav>
+<p id="size">390 × 780 CSS pixels. This frame runs the actual game and shares this browser’s local save. Use a guest browser for testing. This is not device emulation.</p>
+<iframe id="game-preview" title="Game preview" src="../index.html"></iframe>
+<script>function size(w,h){const f=document.getElementById('game-preview');f.style.width=w+'px';f.style.height=h+'px';document.getElementById('size').textContent=w+' × '+h+' CSS pixels. Actual game in a constrained viewport; not device emulation.';}</script></body></html>

@@ -397,7 +397,9 @@ function renderArmyView() {
     const fragment = document.createDocumentFragment();
     for (const squad of visible) fragment.appendChild(buildArmyCard(squad));
     list.replaceChildren(fragment);
-    if (!squads.length) list.textContent = "Recruit mercenaries from the Tavern to create your first squad.";
+    for (const id of ["army-bulk-panel", "army-list-header", "army-pages"])
+        document.getElementById(id).hidden = !squads.length || (id === "army-pages" && pageCount <= 1);
+    document.getElementById("army-empty-state").hidden = squads.length > 0;
 
     const count = document.getElementById("army-selected-count");
     count.textContent = armySelectedSquads.size + " selected";

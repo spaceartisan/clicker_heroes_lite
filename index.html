@@ -19,6 +19,7 @@
     <title>Heroes of the Click</title>
     <script src="./theme.js"></script>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="menus.css">
     <!-- Firebase SDK (compat version, no module needed) -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -218,7 +219,12 @@
                 <button type="button" id="army-recruit">Recruit up to 5</button>
             </header>
 
-            <section class="army-command" aria-label="Bulk upgrades">
+            <section id="army-empty-state" class="army-empty-state" hidden>
+                <h3>Assemble your first squad</h3>
+                <p>Visit the Tavern to recruit mercenaries. Each squad holds up to five.</p>
+                <button type="button" class="button-primary" onclick="switchView('kingdom');showMenu('tavern')">Visit the Tavern</button>
+            </section>
+            <section id="army-bulk-panel" class="army-command" aria-label="Bulk upgrades">
                 <div class="army-toolbar">
                     <strong>Squad selection</strong>
                     <span id="army-selected-count" aria-live="polite">0 selected</span>
@@ -254,7 +260,7 @@
                 <button type="button" id="campaign-claim-ready" onclick="claimReadyCampaigns()" disabled>No rewards ready</button>
                 <div id="campaign-list" class="campaign-grid"></div>
             </section>
-            <div class="army-list-header">
+            <div id="army-list-header" class="army-list-header">
                 <h3>Squads</h3>
                 <label>Sort
                     <select id="army-sort">
@@ -266,7 +272,7 @@
                 </label>
             </div>
             <div id="army-squad-list" class="army-squad-grid"></div>
-            <nav class="army-pages" aria-label="Army roster pages">
+            <nav id="army-pages" class="army-pages" aria-label="Army roster pages">
                 <button type="button" id="army-prev">← Previous</button>
                 <span id="army-page-status">Page 1 of 1</span>
                 <button type="button" id="army-next">Next →</button>
@@ -282,15 +288,15 @@
                 </div>
                 <button type="button" onclick="closeResearchTree()">Close</button>
             </header>
-            <p class="research-guidance">Research is permanent. Follow prerequisite paths in Warfare, Commerce, and Governance. Future religion mechanics will use a separate progression system.</p>
+            <p class="research-guidance">Research is permanent. Follow prerequisite paths in Warfare, Commerce, and Governance. </p>
             <div id="research-branches" class="research-branches"></div>
-            <button type="button" onclick="closeResearchTree()">Return to Kingdom</button>
+            <button type="button" onclick="closeResearchTree()">Back</button>
         </div>
     </div>
 
         <nav class="game-actions" aria-label="Community and game settings">
             <button type="button" onclick="showLeaderboard()"><span class="ui-icon ui-icon-leaderboard" aria-hidden="true"></span> Leaderboard</button>
-            <button type="button" onclick="showMessage()"><span class="ui-icon ui-icon-message" aria-hidden="true"></span> Message</button>
+            <button type="button" onclick="showMessage()"><span class="ui-icon ui-icon-message" aria-hidden="true"></span> Message Board</button>
             <button type="button" onclick="showOptions()"><span class="ui-icon ui-icon-settings" aria-hidden="true"></span> Game Config</button>
         </nav>
 
@@ -301,7 +307,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.14.5 – Heroes of the Click
+        v1.15.0 – Heroes of the Click
     </p>
     <br>
 
@@ -349,7 +355,7 @@
                 <input type="text" id="account-ranking-name" maxlength="20" placeholder="Choose a public name" autocomplete="nickname">
                 <button type="button" id="account-ranking-publish" onclick="publishAccountRanking()">Publish / Update My Account Score</button>
                 <p id="account-ranking-status" role="status" aria-live="polite">Sign in under Game Config to publish your account score.</p>
-                <p class="account-ranking-explainer">Accounts are linked to Firebase UIDs. Display names are not exclusive; scores are submitted by the browser and are not anti-cheat validated. Legacy rankings remain separate.</p>
+                <p class="account-ranking-explainer">Rankings belong to your signed-in account. Display names are not exclusive, and scores are player-reported. Legacy rankings remain separate.</p>
             </div>
             <button type="button" class="modal-close" onclick="closeLeaderboard()">Close</button>
         </div>
@@ -361,8 +367,9 @@
             <div id="message-scroll">
                 <!-- Messages will be injected here -->
             </div>
+            <p id="message-guest-hint" class="section-intro" hidden>Choose a public name in the Leaderboard before sending a message.</p>
             <div id="message-entry" class="inline-form">
-                <input type="text" id="message-body" placeholder="Enter your message" maxlength="99"
+                <input type="text" id="message-body" placeholder="Enter your message" aria-label="Message text" maxlength="99"
                     >
                 <button id="confirm-button-msg" onclick="sendMessage()">Send</button>
             </div>
@@ -374,10 +381,44 @@
     <div id="options-popup" class="popup">
         <div class="popup-content">
             <h3><span class="ui-icon ui-icon-settings" aria-hidden="true"></span> Game Config</h3>
-            <p><b>Instructions:</b> Click the enemy to attack it. Use abilities to gain an advantage. Upgrade your hero and hire mercenaries
-                to progress faster. To join the message board or leaderboard, create a name under the leaderboard.</p>
+            <nav class="settings-nav" aria-label="Settings sections"><button type="button" data-settings-target="general" aria-pressed="true" aria-controls="settings-general" onclick="showSettingsSection('general')">General</button><button type="button" data-settings-target="account" aria-pressed="false" aria-controls="settings-account" onclick="showSettingsSection('account')">Account & Cloud</button><button type="button" data-settings-target="saves" aria-pressed="false" aria-controls="settings-saves" onclick="showSettingsSection('saves')">Save Files</button><button type="button" data-settings-target="advanced" aria-pressed="false" aria-controls="settings-advanced" onclick="showSettingsSection('advanced')">Advanced</button></nav>
+            <section id="settings-general" data-settings-section="general" aria-label="General settings">
+                <p class="section-intro">Make the kingdom feel at home on this device.</p>
+                <div class="theme-option">
+                    <label for="stone-theme-toggle">
+                        <input type="checkbox" id="stone-theme-toggle" onchange="setGameTheme(this.checked ? 'stone' : 'default')">
+                        <span class="ui-icon ui-icon-settings" aria-hidden="true"></span>
+                        <span><strong>Stone Theme</strong>
+                        <small>Weathered masonry, slate buttons and brass accents. Saved on this device.</small></span>
+                    </label>
+                </div>
+                <div class="checkbox-group">
+                    <label class="checkbox-option" for="use-scientific">
+                        <input type="checkbox" id="use-scientific">
+                        <span><strong>Scientific notation</strong><small>Show large numbers as powers of ten.</small></span>
+                    </label>
+                    <label class="checkbox-option" for="underfill-toggle">
+                        <input type="checkbox" id="underfill-toggle">
+                        <span><strong>Flexible bulk purchases</strong><small>Buy as many upgrades as you can afford, up to the selected quantity.</small></span>
+                    </label>
+                </div>
+                <div class="battery-saver-option">
+                    <label for="battery-saver-toggle">
+                        <input type="checkbox" id="battery-saver-toggle">
+                        <span><strong>Battery Saver</strong>
+                        <small>Fewer HUD redraws. Attack rate and damage stay unchanged.</small></span>
+                    </label>
+                </div>
+
+                <div class="settings-journal"><h4>Your journey</h4><div class="action-row">
+                    <button type="button" onclick="showAchievements()"><span class="ui-icon ui-icon-achievements" aria-hidden="true"></span> Achievements</button>
+                    <button type="button" onclick="generalMenu('stats')"><span class="ui-icon ui-icon-stats" aria-hidden="true"></span> Game Stats</button>
+                </div></div>
+                <details class="game-help"><summary>How to play</summary><p>Click the enemy to attack. Upgrade your hero, hire mercenaries at the Tavern, and explore the Kingdom’s buildings. Confirm a public name in the Leaderboard to post to the Message Board.</p></details>
+            </section>
+            <section id="settings-account" data-settings-section="account" aria-label="Account and cloud settings" hidden>
             <section id="player-account" class="player-account" aria-label="Player account and cloud backup">
-                <h4><span class="ui-icon ui-icon-save" aria-hidden="true"></span> Player Account & Cloud Saves</h4>
+                <h4><span class="ui-icon ui-icon-save" aria-hidden="true"></span> Account & Cloud</h4>
                 <p id="player-account-status" role="status" aria-live="polite">Guest · Your progress is saved on this device only.</p>
                 <div id="player-account-fields">
                     <div class="player-account-fields">
@@ -392,9 +433,10 @@
                         <button type="button" id="player-account-login" onclick="playerEmailAccount(false)">Sign In</button>
                         <button type="button" id="player-account-create" onclick="playerEmailAccount(true)">Create Account</button>
                         <button type="button" id="player-account-google" onclick="playerGoogleAccount(false)">Sign In With Google</button>
-                        <button type="button" id="player-account-google-link" onclick="playerGoogleAccount(true)">Link Guest to New Google Account</button>
+
                     </div>
-                    <p class="player-account-hint">Sign In With Google uses an existing account or creates a new one. Link Guest keeps an anonymous telemetry identity when connecting a new Google account. Sign-in never uploads or replaces a local save. Enable the Google provider in Firebase Console first.</p>
+                    <details class="account-link-details"><summary>Connect an existing guest identity</summary><p>Use this only when linking your guest identity to a new Google account.</p><button type="button" id="player-account-google-link" onclick="playerGoogleAccount(true)">Link Guest to New Google Account</button></details>
+                    <p class="player-account-hint">Sign In With Google uses an existing account or creates a new one. Link Guest connects this device’s guest identity to a new Google account. Sign-in never uploads or replaces a local save. </p>
                 </div>
                 <div id="player-account-authenticated" hidden>
                     <div class="player-account-identity">Signed in: <strong id="player-account-identity"></strong>
@@ -409,7 +451,7 @@
                         <button id="account-session-export-recovery" type="button" onclick="playerExportInterruptedRecovery()" hidden>Export Interrupted Progress</button>
                         <button id="account-session-clear-recovery" type="button" onclick="playerClearInterruptedRecovery()" hidden disabled>Clear Exported Recovery Copy</button>
                         <p id="account-session-recovery-hint" class="player-account-hint" hidden></p>
-                        <p class="player-account-hint">Uses the free Firestore plan after you publish the device-handoff rules. Switching tabs or devices requires cloud save review. Offline gold is not doubled across devices. Leaderboard scores remain unverified.</p>
+                        <p class="player-account-hint">Review cloud progress when switching devices. Offline gold is not doubled across devices. Leaderboard scores remain unverified.</p>
                     </section>
                     <button type="button" id="player-account-logout" onclick="playerAccountSignOut()">Sign Out</button>
                 </div>
@@ -432,54 +474,38 @@
                         </label>
                     </div>
                     <p class="player-account-hint">Cloud saves are checked when you sign in and revisit the game. A banner appears when another device has progress available. Automatic backup still uploads only from the device you enabled it on; restoring to another device requires your confirmation.</p>
-                    <p class="player-account-hint">Before restoring, your current local save is copied to a recovery slot. Cloud saves require owner-only Firestore rules.</p>
+                    <p class="player-account-hint">Before restoring, your current local save is copied to a recovery slot. </p>
                 </div>
             </section>
-            <div id="save-load-controls" class="settings-actions">
-                <button onclick="saveGame()"><span class="ui-icon ui-icon-save" aria-hidden="true"></span> Save Game</button>
-                <button onclick="deleteSave()"><span class="ui-icon ui-icon-delete" aria-hidden="true"></span> Delete Save</button>
-            </div>
-            <div id="export-import-controls">
-                <button onclick="exportGame()"><span class="ui-icon ui-icon-export" aria-hidden="true"></span> Export Save</button>
-                <button type="button" id="export-legacy-save" onclick="exportLegacySave()"><span class="ui-icon ui-icon-export" aria-hidden="true"></span> Export Previous-Season Save</button>
-                <button onclick="importGame()"><span class="ui-icon ui-icon-import" aria-hidden="true"></span> Import Save</button>
-                <button onclick="showAchievements()"><span class="ui-icon ui-icon-achievements" aria-hidden="true"></span> View Achievements</button>
-                <button onclick="generalMenu('stats')"><span class="ui-icon ui-icon-stats" aria-hidden="true"></span> Game Stats</button>
-                <div class="checkbox-group">
-                    <label class="checkbox-option" for="use-scientific">
-                        <input type="checkbox" id="use-scientific">
-                        Use Scientific Notation
-                    </label>
-                    <label class="checkbox-option" for="underfill-toggle">
-                        <input type="checkbox" id="underfill-toggle">
-                        Enable Underfill
-                    </label>
+            </section>
+            <section id="settings-saves" data-settings-section="saves" aria-label="Save files" hidden>
+                <h4>Keep a copy of your progress</h4>
+                <p class="section-intro">Save on this device, or export a file to keep elsewhere. Cloud backups are in Account &amp; Cloud.</p>
+                <div id="save-load-controls" class="settings-actions">
+                    <button type="button" class="button-primary" onclick="saveGame()"><span class="ui-icon ui-icon-save" aria-hidden="true"></span> Save Game</button>
                 </div>
-                <div class="theme-option">
-                    <label for="dark-theme-toggle">
-                        <input type="checkbox" id="stone-theme-toggle" onchange="setGameTheme(this.checked ? 'stone' : 'default')">
-                        <span class="ui-icon ui-icon-settings" aria-hidden="true"></span>
-                        <span><strong>Stone Theme</strong>
-                        <small>Weathered masonry, slate buttons and brass accents. Saved on this device.</small></span>
-                    </label>
+                <div id="export-import-controls" class="action-row">
+                    <button type="button" onclick="exportGame()"><span class="ui-icon ui-icon-export" aria-hidden="true"></span> Export Save</button>
+                    <button type="button" onclick="importGame()"><span class="ui-icon ui-icon-import" aria-hidden="true"></span> Import Save</button>
+                    <button type="button" id="export-legacy-save" onclick="exportLegacySave()"><span class="ui-icon ui-icon-export" aria-hidden="true"></span> Export Previous-Season Save</button>
                 </div>
-                <div class="battery-saver-option">
-                    <label for="battery-saver-toggle">
-                        <input type="checkbox" id="battery-saver-toggle">
-                        <span><strong>Battery Saver</strong>
-                        <small>Fewer HUD redraws. Attack rate and damage stay unchanged.</small></span>
-                    </label>
-                </div>
+            </section>
+            <section id="settings-advanced" data-settings-section="advanced" aria-label="Advanced settings" hidden>
+                <h4>Optional balance sharing</h4>
                 <div class="balance-consent">
                     <label for="balance-telemetry-optin">
                         <input id="balance-telemetry-optin" type="checkbox">
                         <span><strong>Share anonymous balance statistics</strong>
-                        <small>Optional and off by default. Sends aggregated stage progress, boss times and failures, expedition and relic counts, and foreground gameplay time. No player names, chat, or save contents. Requires Firebase anonymous sign-in.</small></span>
+                        <small>Optional and off by default. Sends aggregated stage progress, boss times and failures, expedition and relic counts, and foreground gameplay time. No player names, chat, or save contents. Uses an anonymous account to submit the statistics.</small></span>
                     </label>
                     <p id="balance-telemetry-status" role="status" aria-live="polite">Off by default.</p>
                 </div>
-                <button type="button" class="modal-close" onclick="closeOptions()">Close</button>
-            </div>
+                <section class="danger-zone" aria-labelledby="reset-heading">
+                    <h4 id="reset-heading">Reset local progress</h4>
+                    <p>Deletes the current game save on this device. Cloud saves and recovery copies are kept. Export a copy from Save Files before resetting.</p>
+                    <button type="button" class="button-danger" onclick="deleteSave()"><span class="ui-icon ui-icon-delete" aria-hidden="true"></span> Delete Local Save</button>
+                </section>
+            </section>
         </div>
     </div>
 
@@ -551,6 +577,7 @@
     <script src="enemy.js"></script>
     <script src="database.js"></script>
     <script src="ui.js"></script>
+    <script src="dialogs.js"></script>
     <script src="game.js"></script>
     <script src="army.js"></script>
     <script src="systems.js"></script>

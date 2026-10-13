@@ -686,16 +686,26 @@ function renderSquadCampaigns() {
         const select=document.createElement("select");
         select.setAttribute("aria-label","Squad for "+type.name);
         const available=squads.filter(g=>!isSquadOnCampaign(g.id));
+        const requirement = document.createElement("p");
+        requirement.className = "campaign-requirement";
+        requirement.textContent = "Requires Barracks " + type.barracks;
+        requirement.hidden = structures.barracks.level >= type.barracks;
         for(const group of available) {
             const opt=document.createElement("option");
             opt.value=String(group.id);opt.textContent="Squad "+group.id;
             select.appendChild(opt);
         }
+        if (!available.length) {
+            const placeholder = document.createElement("option");
+            placeholder.textContent = squads.length ? "All squads are on campaigns" : "Recruit a squad at the Tavern";
+            select.appendChild(placeholder);
+            select.disabled = true;
+        }
         const preview=document.createElement("p");
         preview.className="campaign-preview";
         function updatePreview(){
             const group=available.find(g=>g.id===Number(select.value))||available[0];
-            if(!group){preview.textContent="No available squads. Claim or recall one first.";return;}
+            if(!group){preview.textContent=squads.length ? "All squads are away. Claim a completed campaign or recall a squad (forfeits loot)." : "Recruit your first squad at the Tavern.";return;}
             const build=getSquadBuild(group.id);
             preview.textContent=Math.round(getCampaignSuccessChance(type,group.id)*100)+
                 "% success chance"+(build.role===type.favored?" · Favored role":"")+
@@ -714,7 +724,7 @@ function renderSquadCampaigns() {
             ()=>startSquadCampaign(type.id,select.value),
             structures.barracks.level<type.barracks||!available.length||
                 activeCampaigns.length>=getCampaignSlots()));
-        card.append(title,info,preview,actions);
+        card.append(title,info,requirement,preview,actions);
         fragment.appendChild(card);
     }
     target.replaceChildren(fragment);

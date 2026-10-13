@@ -11,7 +11,9 @@ let nextInterval = 0, unsubscribed = 0, mockNow = 1000;
 
 function element(tag = "div") {
     return {
-        tagName: tag, style: {}, textContent: "", innerHTML: "", checked: true,
+        tagName: tag, style: {}, _text: "", innerHTML: "", checked: true,
+        get textContent() { return this._text + this.childNodes.map(node => node.textContent || "").join(""); },
+        set textContent(value) { this._text = String(value); this.childNodes = []; },
         disabled: false, value: "", width: 150, height: 150, childNodes: [],
         classList: { add() {}, remove() {}, toggle() {} },
         appendChild(item) { this.childNodes.push(item); return item; },
@@ -41,6 +43,7 @@ const document = {
         return nodes.get(id);
     },
     createElement: element,
+    querySelectorAll() { return []; },
     querySelector() { return element(); },
     createTextNode: text => ({ textContent: text }),
     createDocumentFragment: () => element("fragment"),
@@ -150,7 +153,7 @@ const visualAssetChecks = (() => {
  ok(css.includes(':root[data-theme="stone"]')&&css.includes("--panel-fill"),
     "Stone mode uses semantic design tokens");
  ok(css.includes("background-attachment: scroll"),"Background avoids fixed-position mobile repaint");
- ok(sw.includes("heroes-of-click-v1.14.5")&&sw.includes('"./theme.js"'),
+ ok(sw.includes("heroes-of-click-v1.15.0")&&sw.includes('"./theme.js"'),
     "Theme controller is precached in PWA");
  ok(source.includes('src="kingdom-map.js"') && sw.includes('"./kingdom-map.js"') &&
     source.includes('id="kingdom-location-popup"'),
@@ -208,7 +211,7 @@ const seasonHistoryChecks=vm.runInContext(`(()=>{
   ok(document.getElementById("leaderboard-season-note").textContent.includes("read-only"),"Archive description visible");
   callbacks.scores.next(sample("Same Name",24730857));
   const priorLine=scroll.childNodes[0].childNodes[0].textContent;
-  ok(priorLine.includes("24730857")&&!priorLine.includes("(You)"),"Historic score without false identity match");
+  ok(priorLine.replace(/,/g, "").includes("24730857")&&!priorLine.includes("(You)"),"Historic score without false identity match");
   callbacks[GAME_SCORE_COLLECTION].next(sample("Stale",5));
   ok(scroll.childNodes[0].childNodes[0].textContent===priorLine,"Stale snapshot ignored");
   switchLeaderboardSeason(GAME_SEASON_ID);
@@ -367,7 +370,7 @@ const layoutChecks = (() => {
  const source=fs.readFileSync(path.join(__dirname,"..","index.html"),"utf8");
  const css=fs.readFileSync(path.join(__dirname,"..","style.css"),"utf8");
  const sw=fs.readFileSync(path.join(__dirname,"..","sw.js"),"utf8");
- assert(source.includes('v1.14.5') && sw.includes('heroes-of-click-v1.14.5'),"Markup and PWA cache versions match");
+ assert(source.includes('v1.15.0') && sw.includes('heroes-of-click-v1.15.0'),"Markup and PWA cache versions match");
  for(const section of ["hero","kingdom","army"]) {
     assert(source.includes('id="view-tab-'+section+'"'),"Accessible tab exists for "+section);
  }
@@ -379,7 +382,7 @@ const layoutChecks = (() => {
  assert((source.match(/class="game-actions"/g)||[]).length===1,"Utility menu actions grouped exactly once");
  assert((source.match(/class="checkbox-option"/g)||[]).length===2,
         "Both settings toggles keep their control and label together");
- assert((source.match(/class="modal-close"/g)||[]).length===5,"Five dialog close actions styled consistently");
+ assert(source.includes('src="dialogs.js"') && source.includes('href="menus.css"'),"Shared dialog controller and menu styles loaded");
  assert(!source.includes("<h3></h3>"),"Empty heading spacers removed");
  assert(!source.includes("<p></p>"),"Empty paragraph spacers removed");
  const ids=[...source.matchAll(/id="([^"]+)"/g)].map(x=>x[1]);
@@ -404,7 +407,7 @@ layoutChecks.forEach(label=>console.log("PASS "+label));
 console.log("Responsive layout tests: "+layoutChecks.length+" passed.");
 
 ctx.fs=fs;ctx.path=path;ctx.__dirname=__dirname;
-const enemyCardChecks = vm.runInContext("(() => {\n const verified=[],check=(value,label)=>{if(!value)throw Error(\"Enemy card: \"+label);verified.push(label)};\n const html=fs.readFileSync(path.join(__dirname,\"..\",\"index.html\"),\"utf8\");\n const css=fs.readFileSync(path.join(__dirname,\"..\",\"style.css\"),\"utf8\");\n const game=fs.readFileSync(path.join(__dirname,\"..\",\"game.js\"),\"utf8\");\n const enemy=fs.readFileSync(path.join(__dirname,\"..\",\"enemy.js\"),\"utf8\");\n const sw=fs.readFileSync(path.join(__dirname,\"..\",\"sw.js\"),\"utf8\");\n check(html.includes('id=\"enemy-name\"') && html.includes('id=\"enemy-trait\"'),\n   \"Name and trait labels are authored in the card\");\n check(html.indexOf('id=\"enemy-level\"')<html.indexOf('id=\"enemy-name\"') &&\n   html.indexOf('id=\"enemy-name\"')<html.indexOf('id=\"enemy-trait\"'),\n   \"Stage, name and trait follow a consistent visual hierarchy\");\n check(game.includes('document.getElementById(\"enemy-name\")'),\n   \"Enemy name reuses authored HTML instead of appending a runtime label\");\n check(!game.includes('document.getElementById(\"enemy-box\").appendChild(enemyNameText)'),\n   \"Old runtime name insertion removed\");\n check(css.includes(\"grid-template-columns: var(--enemy-nav-size) minmax(0, 1fr) var(--enemy-nav-size)\"),\n   \"Navigation uses two stable side columns with a constrained card\");\n check(css.includes(\"max-width: 464px\")&&css.includes(\"width: 100%\"),\n   \"Encounter row is bounded and responsive\");\n check(css.includes(\"#enemy-name\")&&css.includes(\"overflow-wrap: anywhere\"),\n   \"Long enemy names wrap without forcing row growth\");\n check(css.includes(\"margin-top: calc(var(--enemy-card-padding) + 51px)\"),\n   \"Navigation arrows are anchored at the sprite position\");\n check(css.includes(\"--enemy-nav-size: 42px\")&&css.includes(\"gap: 6px\"),\n   \"Phone layout retains fixed button slots\");\n check(sw.includes(\"heroes-of-click-v1.14.5\")&&html.includes(\"v1.14.5\"),\n   \"Installed PWA and visible version update together\");\n check(enemy.includes(\"enemyNameText.textContent = type.name\"),\n   \"Enemy spawning still updates the name\");\n const oldStage=currentLevel, oldEnemy=enemyType;\n try {\n   currentLevel=1;drawRandomEnemy();\n   const first=enemyNameText.textContent;\n   check(first.includes(getEnemyType(1).name),\"First enemy shows correct name\");\n   currentLevel=105;drawRandomEnemy();\n   check(enemyNameText.textContent.includes(\"Veteran\")&&enemyLevelText.textContent.includes(\"VETERAN\"),\n     \"Veteran text updates without extra DOM insertion\");\n   currentLevel=110;drawRandomEnemy();\n   check(enemyLevelText.textContent.includes(\"BOSS\"),\n     \"Boss stage label remains visible\");\n } finally {\n   currentLevel=oldStage;enemyType=oldEnemy;\n }\n return verified;\n})()",ctx,{timeout:2800});
+const enemyCardChecks = vm.runInContext("(() => {\n const verified=[],check=(value,label)=>{if(!value)throw Error(\"Enemy card: \"+label);verified.push(label)};\n const html=fs.readFileSync(path.join(__dirname,\"..\",\"index.html\"),\"utf8\");\n const css=fs.readFileSync(path.join(__dirname,\"..\",\"style.css\"),\"utf8\");\n const game=fs.readFileSync(path.join(__dirname,\"..\",\"game.js\"),\"utf8\");\n const enemy=fs.readFileSync(path.join(__dirname,\"..\",\"enemy.js\"),\"utf8\");\n const sw=fs.readFileSync(path.join(__dirname,\"..\",\"sw.js\"),\"utf8\");\n check(html.includes('id=\"enemy-name\"') && html.includes('id=\"enemy-trait\"'),\n   \"Name and trait labels are authored in the card\");\n check(html.indexOf('id=\"enemy-level\"')<html.indexOf('id=\"enemy-name\"') &&\n   html.indexOf('id=\"enemy-name\"')<html.indexOf('id=\"enemy-trait\"'),\n   \"Stage, name and trait follow a consistent visual hierarchy\");\n check(game.includes('document.getElementById(\"enemy-name\")'),\n   \"Enemy name reuses authored HTML instead of appending a runtime label\");\n check(!game.includes('document.getElementById(\"enemy-box\").appendChild(enemyNameText)'),\n   \"Old runtime name insertion removed\");\n check(css.includes(\"grid-template-columns: var(--enemy-nav-size) minmax(0, 1fr) var(--enemy-nav-size)\"),\n   \"Navigation uses two stable side columns with a constrained card\");\n check(css.includes(\"max-width: 464px\")&&css.includes(\"width: 100%\"),\n   \"Encounter row is bounded and responsive\");\n check(css.includes(\"#enemy-name\")&&css.includes(\"overflow-wrap: anywhere\"),\n   \"Long enemy names wrap without forcing row growth\");\n check(css.includes(\"margin-top: calc(var(--enemy-card-padding) + 51px)\"),\n   \"Navigation arrows are anchored at the sprite position\");\n check(css.includes(\"--enemy-nav-size: 42px\")&&css.includes(\"gap: 6px\"),\n   \"Phone layout retains fixed button slots\");\n check(sw.includes(\"heroes-of-click-v1.15.0\")&&html.includes(\"v1.15.0\"),\n   \"Installed PWA and visible version update together\");\n check(enemy.includes(\"enemyNameText.textContent = type.name\"),\n   \"Enemy spawning still updates the name\");\n const oldStage=currentLevel, oldEnemy=enemyType;\n try {\n   currentLevel=1;drawRandomEnemy();\n   const first=enemyNameText.textContent;\n   check(first.includes(getEnemyType(1).name),\"First enemy shows correct name\");\n   currentLevel=105;drawRandomEnemy();\n   check(enemyNameText.textContent.includes(\"Veteran\")&&enemyLevelText.textContent.includes(\"VETERAN\"),\n     \"Veteran text updates without extra DOM insertion\");\n   currentLevel=110;drawRandomEnemy();\n   check(enemyLevelText.textContent.includes(\"BOSS\"),\n     \"Boss stage label remains visible\");\n } finally {\n   currentLevel=oldStage;enemyType=oldEnemy;\n }\n return verified;\n})()",ctx,{timeout:2800});
 delete ctx.fs;delete ctx.path;delete ctx.__dirname;
 enemyCardChecks.forEach(label=>console.log("PASS "+label));
 console.log("Enemy card layout tests: "+enemyCardChecks.length+" passed.");
@@ -1356,7 +1359,7 @@ const autoCloudMarkupChecks=(()=>{
  ok(html.includes('id="player-cloud-auto"') &&
     html.includes('id="player-cloud-auto-status"'),"Explicit opt-in checkbox and status authored");
  ok(worker.includes('"./player-account.js"')&&
-    worker.includes("heroes-of-click-v1.14.5"),"New cloud client included in offline cache");
+    worker.includes("heroes-of-click-v1.15.0"),"New cloud client included in offline cache");
  ok(css.includes(".player-auto-sync")&&css.includes("@media(max-width:520px)"),
     "Cloud settings accommodate narrow screens");
  ok(account.includes("playerSyncAnchor(user.uid)") &&

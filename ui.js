@@ -266,12 +266,13 @@ function showOptions() {
     if (oldExport) oldExport.hidden = !localStorage.getItem(GAME_LEGACY_BACKUP_KEY);
     if(typeof accountControlsUpdate==="function")accountControlsUpdate();
     const optionsPopup = document.getElementById("options-popup");
-    optionsPopup.style.display = "flex";
+    showSettingsSection("general");
+    openGameDialog("options-popup", closeOptions);
 }
 
 function closeOptions() {
     const optionsPopup = document.getElementById("options-popup");
-    optionsPopup.style.display = "none";
+    closeGameDialog("options-popup");
 }
 
 
@@ -406,15 +407,15 @@ function renderAchievements() {
 
 function showAchievements() {
     renderAchievements();
-    document.getElementById("achievement-menu").style.display = "flex";
+    openGameDialog("achievement-menu", closeAchievements);
 }
 
 function closeAchievements() {
-    document.getElementById("achievement-menu").style.display = "none";
+    closeGameDialog("achievement-menu");
 }
 
 function closeGeneralMenu() {
-    document.getElementById("general-menu").style.display = "none";
+    closeGameDialog("general-menu");
 }
 
 function generalMenu(menuType) {
@@ -427,50 +428,77 @@ function generalMenu(menuType) {
     if (menuType === 'stats') {
         statsMenu(menu, content, genHeader, genBody);
     }
-    menu.style.display = "flex";
+    openGameDialog("general-menu", closeGeneralMenu);
 }
 
 function statsMenu(menu, content, genHeader, genBody) {
     genHeader.replaceChildren(setIconLabel(document.createElement("h3"), "stats", "Game Stats"));
-    genBody.innerHTML = `
-        <p>Player Level: ${formatDigits(playerLevel, 2, 0)}</p>
-        <p>Gear Level: ${formatDigits(playerGearLevel, 2, 0)}</p>
-        <p>Gold: ${formatDigits(gold, 2, 0)}</p>
-        <p>Ability Count: ${abilitiesCount}</p>
-        <p>Enemies Defeated: ${formatDigits(enemiesDefeated, 2, 0)}</p>
-        <p>Total Clicks: ${formatDigits(totalClicks, 2, 0)}</p>
-        <h3></h3>`;
-    // Add a small asterisk to mention some stats may be inaccurate for older saves. Decrease font size and italicize it
-    genBody.innerHTML += `<p style="font-size: 0.8em; font-style: italic;">* Some stats may be inaccurate for older saves</p>`;
+    const rows = [
+        ["Player level", formatDigits(playerLevel, 0, 0)],
+        ["Gear level", formatDigits(playerGearLevel, 0, 0)],
+        ["Gold", formatDigits(gold, 2, 0)],
+        ["Abilities used", formatDigits(abilitiesCount, 0, 0)],
+        ["Enemies defeated", formatDigits(enemiesDefeated, 0, 0)],
+        ["Total clicks", formatDigits(totalClicks, 0, 0)]
+    ];
+    genBody.innerHTML = '<dl class="stats-grid">' + rows.map(([label,value]) =>
+        '<dt>' + label + '</dt><dd>' + value + '</dd>').join('') + '</dl>' +
+        '<p class="section-intro">Some counts may be incomplete in older saves.</p>';
 }
 
+let popupMessageSequence = 0;
 function showPopupMessage(message, showCloseButton = true, autoDismissTime = null, zorder = 20000) {
-    // Create popup container
     const popup = document.createElement("div");
+    if (showCloseButton && typeof GameDialogs !== "undefined") {
+        popup.id = "game-notice-" + (++popupMessageSequence);
+        popup.className = "popup game-notice";
+        popup.style.zIndex = zorder;
+        const content = document.createElement("div");
+        content.className = "popup-content";
+        const title = document.createElement("h3");
+        title.textContent = "Kingdom notice";
+        const text = document.createElement("p");
+        text.textContent = message;
+        content.append(title, text);
+        popup.append(content);
+        document.body.append(popup);
+        const dismiss = () => { closeGameDialog(popup.id); popup.remove(); };
+        openGameDialog(popup.id, dismiss);
+        if (autoDismissTime) setTimeout(dismiss, autoDismissTime);
+        return;
+    }
     popup.className = "popup-message";
     popup.textContent = message;
     popup.style.zIndex = zorder;
-
-    // Add close button if requested
+    popup.setAttribute("role", "status");
     if (showCloseButton) {
-        const linebreak = document.createElement("h3");
-        popup.appendChild(linebreak);
-        const closeBtn = document.createElement("button");
-        closeBtn.className = "popup-close-btn";
-        closeBtn.textContent = "Close";
-        closeBtn.onclick = () => popup.remove();
-        popup.appendChild(closeBtn);
+        const close = document.createElement("button");
+        close.textContent = "Close";
+        close.onclick = () => popup.remove();
+        popup.append(close);
     }
-
-    // Append to body
-    document.body.appendChild(popup);
-
-    if (autoDismissTime) {
-        setTimeout(() => fadeAndRemove(popup), autoDismissTime);
-    }
+    document.body.append(popup);
+    if (autoDismissTime) setTimeout(() => fadeAndRemove(popup), autoDismissTime);
 }
 
 function fadeAndRemove(element) {
     element.classList.add("fade-out");
     setTimeout(() => element.remove(), 400); // Match CSS transition time
+}
+
+function openGameDialog(id, onDismiss) {
+    if (typeof GameDialogs !== "undefined") GameDialogs.open(id, onDismiss);
+    else document.getElementById(id).style.display = "flex";
+}
+function closeGameDialog(id) {
+    if (typeof GameDialogs !== "undefined") GameDialogs.close(id);
+    else document.getElementById(id).style.display = "none";
+}
+function showSettingsSection(name) {
+    for (const section of document.querySelectorAll('[data-settings-section]'))
+        section.hidden = section.dataset.settingsSection !== name;
+    for (const button of document.querySelectorAll('[data-settings-target]'))
+        button.setAttribute('aria-pressed', String(button.dataset.settingsTarget === name));
+    const body = document.querySelector('#options-popup .dialog-body');
+    if (body) body.scrollTop = 0;
 }

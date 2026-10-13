@@ -77,6 +77,8 @@ const state={castle:{level:1},tavern:{level:0},blacksmith:{level:0},
              barracks:{level:0},market:{level:0}};
 const context={
     document,structures:state,gold:100000,
+    openGameDialog:id=>{document.getElementById(id).style.display="flex";},
+    closeGameDialog:id=>{document.getElementById(id).style.display="none";},
     showMenu:id=>actions.push("show:"+id),
     drawKingdom:()=>actions.push("draw"),
     getStructureCost:()=>500,

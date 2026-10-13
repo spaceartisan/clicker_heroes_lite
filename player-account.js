@@ -248,6 +248,7 @@ async function playerCloudDiscover(force=false){
 }
 function playerOpenCloudReview(){
     if(typeof showOptions==="function")showOptions();
+    if(typeof showSettingsSection==="function")showSettingsSection("account");
     playerCheckCloudSave();
 }
 document.addEventListener("visibilitychange",()=>{

@@ -105,7 +105,7 @@
     };
     function closeLocation() {
         if (!modal || modal.style.display === "none") return;
-        modal.style.display = "none";
+        closeGameDialog("kingdom-location-popup");
         modal.setAttribute("aria-hidden","true");
         if (canvas) canvas.focus();
     }
@@ -113,7 +113,7 @@
         if (!modal || !modalSections.has(id)) return;
         for (const [key, section] of modalSections) section.hidden = key !== id;
         modalTitle.textContent = locations.find(site=>site.id===id).label;
-        modal.style.display = "flex";
+        openGameDialog("kingdom-location-popup", closeLocation);
         modal.setAttribute("aria-hidden","false");
         const content = modal.querySelector(".popup-content");
         if (content) content.scrollTop = 0;
@@ -133,7 +133,7 @@
         } else if (id === "treasury" && typeof updateTreasuryUI === "function") {
             updateTreasuryUI();
         }
-        if (modalClose) modalClose.focus();
+        if (modalClose && modalClose.isConnected) modalClose.focus();
     }
     function activate(site) {
         if (!site) return;

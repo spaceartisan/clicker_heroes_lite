@@ -26,7 +26,7 @@ function getTotalAutoDamage() {
 
 
 function deleteSave() {
-    if (confirm("Are you sure you want to delete your save?")) {
+    if (confirm("Delete the current game save on this device? This resets local progress. Cloud saves, recovery copies, previous-season exports, and your appearance settings are kept. Export your save first if you want a copy.")) {
         localStorage.removeItem("clickerHeroSave");
         alert("Save deleted.");
         location.reload();
@@ -148,13 +148,14 @@ function switchLeaderboardSeason(seasonId) {
     seasonSelect.value = season.id;
     nameEntry.hidden = season.historical || authenticated;
     syncButton.hidden = season.historical || authenticated;
+    syncButton.disabled = !nameConfirm;
     syncStatus.hidden = season.historical || authenticated;
     if(accountControls)accountControls.hidden=!authenticated;
     note.textContent = season.historical
         ? "Archived rankings are read-only. Names and scores are preserved."
         : authenticated
-            ? "Connected Accounts · Rankings are tied to Firebase UIDs. Names are display labels; scores are player-reported, not server-validated."
-            : "Current season · Your name and score are registered here.";
+            ? "Connected Accounts · Rankings belong to signed-in players. Scores are player-reported."
+            : nameConfirm ? "Current season · Your public name is registered." : "Current season · Browse rankings, or choose a public name to join.";
     if(authenticated&&typeof accountRankingShowControls==="function")
         accountRankingShowControls();
     if (!season.historical && !authenticated) {
@@ -188,8 +189,16 @@ function switchLeaderboardSeason(seasonId) {
                         : !season.historical && nameConfirm && displayName === playerName;
                     const line = document.createElement("p");
                     if (isPlayer) line.classList.add("highlight-player");
-                    line.textContent = String(++rank) + ". " +
-                        (isPlayer ? "(You) " : "") + displayName + " — Level " + score;
+                    line.classList.add("leaderboard-row");
+                    const position = document.createElement("span");
+                    position.textContent = String(++rank);
+                    const name = document.createElement("span");
+                    name.className = "ranking-name";
+                    name.textContent = (isPlayer ? "(You) " : "") + displayName;
+                    const stage = document.createElement("span");
+                    stage.className = "ranking-stage";
+                    stage.textContent = "Stage " + Math.floor(score).toLocaleString();
+                    line.append(position, name, stage);
                     fragment.appendChild(line);
                 });
                 scrollDiv.replaceChildren(fragment);
@@ -213,13 +222,13 @@ function switchLeaderboardSeason(seasonId) {
 }
 
 function showLeaderboard() {
-    document.getElementById("leaderboard-popup").style.display = "flex";
+    openGameDialog("leaderboard-popup", closeLeaderboard);
     switchLeaderboardSeason(GAME_SEASON_ID);
 }
 
 function closeLeaderboard() {
     ++leaderboardViewGeneration;
-    document.getElementById("leaderboard-popup").style.display = "none";
+    closeGameDialog("leaderboard-popup");
     if (typeof leaderboardUnsub === "function") leaderboardUnsub();
     leaderboardUnsub = null;
 }
@@ -261,6 +270,9 @@ function sendMessage() {
 }
 
 function showMessage() {
+    const guestHint = document.getElementById("message-guest-hint");
+    if (guestHint) guestHint.hidden = !!nameConfirm;
+    document.getElementById("confirm-button-msg").disabled = !nameConfirm;
     const scrollDiv = document.getElementById("message-scroll");
     scrollDiv.innerHTML = "<p>Loading message board...</p>";
 
@@ -307,12 +319,12 @@ function showMessage() {
                 scrollDiv.innerHTML = "<p>Error loading message board.</p>";
             });
     }
-    document.getElementById("message-popup").style.display = "flex";
+    openGameDialog("message-popup", closeMessage);
 }
 
 
 function closeMessage() {
-    document.getElementById("message-popup").style.display = "none";
+    closeGameDialog("message-popup");
     if (typeof messageUnsub === "function") messageUnsub();
     messageUnsub = null;
 }
@@ -366,6 +378,8 @@ function confirmName() {
         }).then(() => {
             playerName = requestedName;
             nameConfirm = true;
+            document.getElementById("sync-score-button").disabled = false;
+            document.getElementById("leaderboard-season-note").textContent = "Current season · Your public name is registered.";
             lastSubmittedScore = stageAtRegistration;
             lastScoreUploadAttempt = Date.now();
             scoreUploadRetryAt = 0;

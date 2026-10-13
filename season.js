@@ -38,12 +38,12 @@ function prepareSeasonSave(){
   localStorage.removeItem("playerName");
   localStorage.removeItem("nameConfirm");
   const notice=document.getElementById("season-transition");
-  if(notice)notice.style.display="flex";
+  if(notice)openGameDialog("season-transition", closeSeasonTransition);
   return true;
 }
 function closeSeasonTransition(){
   const el=document.getElementById("season-transition");
-  if(el)el.style.display="none";
+  if(el)closeGameDialog("season-transition");
 }
 function exportLegacySave(){
   const raw=localStorage.getItem(GAME_LEGACY_BACKUP_KEY);

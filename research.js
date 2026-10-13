@@ -126,16 +126,18 @@ function getStructureCostFactor(id) {
 function openResearchTree() {
     const popup = document.getElementById("research-popup");
     if (!popup) return;
-    popup.style.display = "flex";
+    openGameDialog("research-popup", closeResearchTree);
     renderResearchTree();
 }
 function closeResearchTree() {
     const popup = document.getElementById("research-popup");
-    if (popup) popup.style.display = "none";
+    if (popup) closeGameDialog("research-popup");
     updateStructureUI();
-    if (typeof activeKingdomMenu !== "undefined" &&
-        ["castle", "market"].includes(activeKingdomMenu)) {
+    if (typeof GameDialogs !== "undefined" && GameDialogs.current() === "upgrade-menu" && activeKingdomMenu) {
         showMenu(activeKingdomMenu);
+        const researchButton = document.querySelector('#upgrade-menu .castle-research-button');
+        const close = document.querySelector('#upgrade-menu .dialog-close');
+        if (researchButton || close) (researchButton || close).focus();
     }
 }
 function renderResearchTree() {

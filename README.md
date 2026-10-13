@@ -247,3 +247,13 @@ The old paid-functions `functions/` source is archived as a future reference onl
 ### v1.14.1 — accessible purchase-quantity selection
 
 - Generated ×1/×10/×100 quantity selectors now expose their selected state with `aria-pressed`, updating whenever the player changes the bulk-purchase quantity. Buttons are explicitly non-submitting to avoid accidental form actions. Existing visuals, game balance, save schema and Firebase rules remain unchanged.
+
+
+### v1.15.0 — Menus, settings and dialog consistency
+
+- Shared modal ownership fixes Royal Court → Academy layering, contains keyboard focus, handles Escape, restores the opener, and keeps Close above the scrolling body. Dismissible notices use the same controller.
+- Game Config starts with General, with separate Account & Cloud, Save Files, and Advanced sections. Device-handoff review opens Account & Cloud directly. The Stone label works across the row; destructive local reset is separated and explicitly described.
+- Shared menu styles retain Classic/Stone materials while using readable control typography, stable button geometry, distinct secondary/danger actions, full-width explanatory cards, and responsive layouts.
+- Army empty states distinguish recruitment from deployed squads. Blank selectors are disabled and labeled; requirements remain readable. Stats use aligned integer counts; leaderboard rows align rank/name/stage and explain guest registration.
+- Save schema, progression, Firestore rules and cloud ownership protocol are unchanged.
+- Run `node tests/dialog-test.cjs` alongside the existing regression suites. `tests/responsive-review.html` provides real-game iframe viewports for visual review (use a guest browser; it shares that browser’s save). A constrained viewport does not emulate mobile Safari or a software keyboard.

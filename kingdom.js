@@ -795,7 +795,7 @@ let activeKingdomMenu = null;
 function showMenu(name) {
     activeKingdomMenu = name;
     const menu = document.getElementById("upgrade-menu");
-    menu.style.display = "flex";
+
     menu.classList.toggle("castle-menu", name === "castle");
     const upgradeName = document.getElementById("upgrade-name");
     upgradeName.textContent = name === "castle" ? "Royal Court" :
@@ -862,15 +862,14 @@ function showMenu(name) {
         MarketUpgradeUI(menu, upgradeButtons, container, "multContainer");
     }
 
-    if (!document.getElementById("close-upgrade-menu")) {
+    if (typeof GameDialogs === "undefined" && !document.getElementById("close-upgrade-menu")) {
         const closeButton = document.createElement("button");
         closeButton.textContent = "Close";
         closeButton.id = "close-upgrade-menu";
         closeButton.onclick = () => closeMenu(name);
         popupContent.appendChild(closeButton);
     }
-
-
+    openGameDialog("upgrade-menu", () => closeMenu(activeKingdomMenu));
 }
 
 function closeMenu(name) {
@@ -882,7 +881,7 @@ function closeMenu(name) {
         closeButton.parentElement.removeChild(closeButton);
     }
 
-    menu.style.display = "none";
+    closeGameDialog("upgrade-menu");
     menu.classList.remove("castle-menu");
 }
 
