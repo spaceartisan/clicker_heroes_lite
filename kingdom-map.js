@@ -41,6 +41,26 @@
     let modalTitle = null;
     let modalClose = null;
     let modalSections = new Map();
+    let activeTap = null;
+    let lastTouch = null;
+
+    function developedLocations() {
+        const sites = [];
+        const add = (id,label,bounds) => sites.push({id,label,bounds});
+        if (structures.castle.level >= 12) {
+            add("castle","Royal residence",[5.7,7.8,7.0,9.0]);
+            add("castle","Royal residence",[13.0,7.8,14.3,9.0]);
+        }
+        if (structures.castle.level >= 20) {
+            add("castle","Royal residence",[5.3,5.8,6.4,6.9]);
+            add("castle","Royal residence",[13.4,5.1,14.5,6.2]);
+        }
+        const stage = typeof maxLevel === "number" ? maxLevel : 1;
+        if (stage > 100) add("barracks","Frontier outpost",[5.4,10.2,7.3,12.1]);
+        if (stage > 140) add("barracks","Frontier outpost",[13.9,11.5,15.5,13.1]);
+        if (stage > 180) add("barracks","Frontier outpost",[1.1,13.0,3.0,14.6]);
+        return sites;
+    }
 
     function node(tag, className, label) {
         const el = document.createElement(tag);
@@ -48,18 +68,60 @@
         if (label) el.textContent = label;
         return el;
     }
-    function locationAt(x, y) {
-        return locations.find(site => x >= site.bounds[0] && x <= site.bounds[2] &&
-            y >= site.bounds[1] && y <= site.bounds[3]) || null;
+    function locationAt(x, y, touch = false) {
+        const sites = [...locations,...developedLocations()];
+        const exact = sites.find(site => x >= site.bounds[0] && x <= site.bounds[2] &&
+            y >= site.bounds[1] && y <= site.bounds[3]);
+        if (exact || !touch) return exact || null;
+        // A small finger margin, never a map-wide nearest-building selection.
+        const rect = canvas.getBoundingClientRect();
+        let nearest = null, distance = 9;
+        for (const site of sites) {
+            const [left,top,right,bottom] = site.bounds;
+            const dx = Math.max(left-x,0,x-right)*rect.width/20;
+            const dy = Math.max(top-y,0,y-bottom)*rect.height/20;
+            const gap = Math.hypot(dx,dy);
+            if (gap <= 8 && gap < distance) {nearest=site;distance=gap;}
+        }
+        return nearest;
     }
     function canvasPoint(event) {
         if (!canvas) return null;
         const rect = canvas.getBoundingClientRect();
-        if (!rect.width || !rect.height) return null;
+        if (!rect.width || !rect.height || !Number.isFinite(event.clientX) ||
+            !Number.isFinite(event.clientY)) return null;
         return {
             x:(event.clientX - rect.left) * 20 / rect.width,
             y:(event.clientY - rect.top) * 20 / rect.height
         };
+    }
+    function beginTap(event) {
+        activeTap = {id:event.pointerId,x:event.clientX,y:event.clientY,cancelled:false};
+    }
+    function moveTap(event) {
+        if (!activeTap || activeTap.id !== event.pointerId) return;
+        if (Math.hypot(event.clientX-activeTap.x,event.clientY-activeTap.y)>10)
+            activeTap.cancelled = true;
+    }
+    function endTap(event) {
+        if (!activeTap || activeTap.id !== event.pointerId) return;
+        moveTap(event);
+        const cancelled = activeTap.cancelled;
+        activeTap = null;
+        lastTouch = {x:event.clientX,y:event.clientY,time:Date.now()};
+        if (cancelled) return;
+        const point = canvasPoint(event);
+        const site = point && locationAt(point.x,point.y,true);
+        if (!site) return;
+        if (event.cancelable) event.preventDefault();
+        canvas.focus({preventScroll:true});
+        activate(site);
+    }
+    function cancelTap() {
+        if (activeTap) {
+            lastTouch={x:activeTap.x,y:activeTap.y,time:Date.now()};
+            activeTap.cancelled=true;
+        }
     }
     function locationLabel(site) {
         if (Object.prototype.hasOwnProperty.call(buildingNames,site.id)) {
@@ -231,10 +293,46 @@
         canvas.setAttribute("aria-label",
             "Kingdom map. Use arrow keys to choose a location; Enter to open.");
         canvas.onclick = event => {
+            if (lastTouch && Date.now()-lastTouch.time<800 &&
+                Math.hypot(event.clientX-lastTouch.x,event.clientY-lastTouch.y)<25) return;
             const point = canvasPoint(event);
             if (point) activate(locationAt(point.x,point.y));
         };
+        // Standalone mobile browsers need not synthesize a click for canvas taps.
+        // Let the browser own panning; pointercancel and movement reject scrolls.
+        if (typeof window !== "undefined" && window.PointerEvent) {
+            canvas.addEventListener("pointerdown",event => {
+                if (event.pointerType === "mouse") return;
+                if (event.isPrimary === false || activeTap && !activeTap.cancelled) {
+                    cancelTap();return;
+                }
+                beginTap(event);
+            });
+            canvas.addEventListener("pointermove",moveTap,{passive:true});
+            canvas.addEventListener("pointerup",endTap);
+            canvas.addEventListener("pointercancel",cancelTap,{passive:true});
+        } else {
+            // Older iOS/WebViews without Pointer Events use the same tap rules.
+            canvas.addEventListener("touchstart",event => {
+                if (event.touches.length !== 1) {cancelTap();return;}
+                const t=event.touches[0];
+                beginTap({pointerId:t.identifier,clientX:t.clientX,clientY:t.clientY});
+            },{passive:true});
+            canvas.addEventListener("touchmove",event => {
+                if (event.touches.length !== 1) {cancelTap();return;}
+                const t=event.touches[0];
+                moveTap({pointerId:t.identifier,clientX:t.clientX,clientY:t.clientY});
+            },{passive:true});
+            canvas.addEventListener("touchend",event => {
+                if (event.touches.length) {cancelTap();return;}
+                for (const t of event.changedTouches) endTap({pointerId:t.identifier,
+                    clientX:t.clientX,clientY:t.clientY,cancelable:event.cancelable,
+                    preventDefault:()=>event.preventDefault()});
+            },{passive:false});
+            canvas.addEventListener("touchcancel",cancelTap,{passive:true});
+        }
         canvas.addEventListener("mousemove",event => {
+            if (lastTouch && Date.now()-lastTouch.time<800) return;
             const point = canvasPoint(event);
             const site = point && locationAt(point.x,point.y);
             canvas.style.cursor = site ? "pointer" : "default";

@@ -271,3 +271,10 @@ The old paid-functions `functions/` source is archived as a future reference onl
 - Quick upgrades show their actual price and quantity. Recruitment quotes the affordable number (up to five) using sequential costs, explains Tavern capacity, and clearly marks the first free recruit.
 - Flexible Hero purchases show the next upgrade price when none are affordable. Hero levels display as integers; cap hints identify the Castle, Blacksmith, Barracks, or Leadership decree. Empty/capped Army selections clear stale purchase labels.
 - Fifteen purchase-feedback checks cover income/spending refresh, preserved roster nodes, sequential recruitment pricing, cap guidance, and changing enemies.
+
+### v1.16.2 — Kingdom phone taps and developed buildings
+
+- Kingdom sites handle touch and pen taps directly with Pointer Events, plus a touch-event fallback for older mobile browsers. Compatibility clicks are deduplicated, scroll/pinch/cancel gestures do not open menus, and near-edge finger taps receive a bounded 8 CSS-pixel tolerance. Mouse and keyboard navigation remain supported.
+- The small royal residences that appear as the Castle grows now open the Royal Court. Frontier outposts open the Barracks. Their hit regions only appear when their artwork does.
+- Input regressions cover both mobile event paths, all ten main destinations at three rendered sizes on a scrolled page, duplicate clicks, drags, cancellations, multitouch, and developed buildings. These are simulated input tests; an installed physical-phone check is still needed.
+- Cache version advanced. To obtain this update, close and reopen the installed app while online; the footer should read v1.16.2. No app-data reset or save deletion is required.

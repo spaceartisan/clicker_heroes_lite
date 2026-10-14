@@ -14,6 +14,8 @@ assert(html.includes('id="kingdom-location-popup"') &&
 assert(css.includes("#kingdom-location-body") &&
        !css.includes(".kingdom-map-sites"),"Modal scrolls inside popup, not beneath map");
 
+for (const pointerEvents of [true,false]) {
+let frameRect={left:0,top:0,width:400,height:400};
 let active = null;
 const byId = new Map(), callbacks = {}, actions = [], renders = [];
 function createNode(tagName="DIV") {
@@ -33,7 +35,7 @@ function createNode(tagName="DIV") {
         setAttribute(key,value){this.attributes[key]=String(value);},
         addEventListener(type,handler){this._events[type]=handler;},
         querySelectorAll(){return[];},
-        getBoundingClientRect(){return{left:0,top:0,width:400,height:400};},
+        getBoundingClientRect(){return frameRect;},
         getContext(){return {fillRect(){},clearRect(){},strokeRect(){}};},
         getClientRects(){return[{}];},
         closest(){return null;}
@@ -70,7 +72,8 @@ for(const id of ["royal-treasury","relic-vault","monster-bestiary",
 const state={castle:{level:1},tavern:{level:0},blacksmith:{level:0},
              barracks:{level:0},market:{level:0}};
 const context={
-    document,structures:state,gold:100000,
+    document,structures:state,gold:100000,maxLevel:1,
+    window:pointerEvents?{PointerEvent:function(){}}:{},
     openGameDialog:id=>{document.getElementById(id).style.display="flex";},
     closeGameDialog:id=>{document.getElementById(id).style.display="none";},
     showMenu:id=>actions.push("show:"+id),
@@ -132,4 +135,62 @@ canvas._events.mousemove({clientX:10*20,clientY:11*20});
 assert.equal(canvas.style.cursor,"default","Road has no misleading click cursor");
 canvas._events.mousemove({clientX:17*20,clientY:11*20});
 assert.equal(canvas.style.cursor,"pointer","Building artwork has pointer cursor");
-console.log("Kingdom map regression: 19 checks passed.");
+// Touch and pen events at rendered phone sizes, including scrolled pages.
+const countOpens=()=>actions.filter(x=>x.startsWith("show:")||x==="research").length+renders.length;
+const point=(x,y)=>({clientX:frameRect.left+x*frameRect.width/20,
+    clientY:frameRect.top+y*frameRect.height/20,pointerId:1,pointerType:"touch",isPrimary:true,
+    cancelable:true,preventDefault(){this.prevented=true;}});
+const send=(type,event)=>{
+ if(pointerEvents) canvas._events['pointer'+type](event);
+ else {
+  const t={identifier:event.pointerId,clientX:event.clientX,clientY:event.clientY};
+  const names={down:'start',move:'move',up:'end',cancel:'cancel'};
+  canvas._events['touch'+names[type]]({touches:type==='up'||type==='cancel'?[]:[t],
+   changedTouches:[t],cancelable:true,preventDefault(){}});
+ }
+};
+const tap=(x,y)=>{const e=point(x,y);send('down',e);send('up',e);return e;};
+const sites=[['academy',3.5,4.7],['castle',10,4.4],['treasury',16.6,4.8],
+ ['tavern',3,10.9],['relics',10,9.5],['market',17,11],['archives',3.2,16.6],
+ ['blacksmith',6.9,15],['barracks',13.2,15],['dynasty',17.3,16.7]];
+for(const width of [252,320,640]) {
+ frameRect={left:27,top:-83,width,height:width};
+ for(const [id,x,y] of sites) {
+  const before=countOpens(),e=tap(x,y);
+  assert(countOpens()>before,id+' opens from a direct tap at width '+width);
+  const after=countOpens();canvas.onclick(e);
+  assert.equal(countOpens(),after,'Compatibility click cannot open a second menu');
+ }
+ // Finger margin is limited to 8px, rather than snapping open on distant roads.
+ let before=countOpens();tap(5+4*20/width,4.5);
+ assert(countOpens()>before,'4px near-edge finger tap opens Academy');
+ before=countOpens();tap(7,11);
+ assert.equal(countOpens(),before,'Tapping empty grass does not open a menu');
+ const start=point(10,4.4),drag={...start,clientY:start.clientY+35};
+ send('down',start);send('move',drag);send('move',start);send('up',start);
+ assert.equal(countOpens(),before,'Scrolling away and back is not a tap');
+ send('down',start);send('cancel',start);send('up',start);
+ assert.equal(countOpens(),before,'Cancelled browser gesture never activates');
+ tap(10,4.4);assert(countOpens()>before,'Next tap recovers after cancellation');
+ if(pointerEvents) {
+  before=countOpens();send('down',{...start,pointerType:'pen'});send('up',{...start,pointerType:'pen'});
+  assert(countOpens()>before,'Pen taps open the same building');
+  before=countOpens();send('down',start);send('down',{...start,pointerId:2,isPrimary:false});
+  send('up',start);send('up',{...start,pointerId:2,isPrimary:false});
+  assert.equal(countOpens(),before,'Two-finger gesture never activates');
+ } else {
+  before=countOpens();send('down',start);
+  canvas._events.touchstart({touches:[{},{}]});send('up',start);
+  assert.equal(countOpens(),before,'Legacy two-finger gesture never activates');
+ }
+}
+state.castle.level=20;context.maxLevel=200;
+for(const [x,y] of [[6.2,8.4],[13.6,8.4],[5.8,6.3],[13.9,5.5]]) {
+ tap(x,y);assert.equal(actions.at(-1),'show:castle','Royal houses open the Court');
+}
+for(const [x,y] of [[6.2,11.2],[14.5,12.3],[1.8,13.8]]) {
+ tap(x,y);assert.equal(actions.at(-1),'show:barracks','Frontier outposts open the Barracks');
+}
+console.log('Kingdom input passed: '+(pointerEvents?'Pointer Events':'legacy touch')+
+ ' · 10 sites at 3 widths · duplicate/scroll/cancel/multitouch · developed houses.');
+}
