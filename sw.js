@@ -1,9 +1,10 @@
-const CACHE_NAME = "heroes-of-click-v1.16.2";
+const CACHE_NAME = "heroes-of-click-v1.16.3";
 const SHELL = [
     "./",
     "./index.html",
     "./style.css",
     "./theme.js",
+    "./app-updates.js",
     "./config.js",
     "./database.js",
     "./enemy.js",
@@ -53,6 +54,7 @@ const SHELL = [
     "./icons/ui-battery.svg",
     "./icons/ui-clock.svg",
     "./icons/ui-shield.svg",
+    "./icons/apple-touch-icon.png",
     "./icons/icon-192.png",
     "./icons/icon-512.png"
 ];
@@ -65,16 +67,23 @@ const FIREBASE_SDK = [
 self.addEventListener("install", event => {
     event.waitUntil(
         caches.open(CACHE_NAME).then(async cache => {
-            await cache.addAll(SHELL);
+            // Bypass the HTTP cache when assembling a new release. A failed
+            // shell download prevents installation; the current release stays usable.
+            await cache.addAll(SHELL.map(path => new Request(
+                new URL(path, self.location.href), { cache: "reload" })));
             // Firebase is optional for offline play, but precaching its SDKs
             // allows the game itself to start without connectivity.
             await Promise.allSettled(FIREBASE_SDK.map(async url => {
                 const response = await fetch(url, { mode: "no-cors" });
                 await cache.put(url, response);
             }));
-            await self.skipWaiting();
+            // Updates wait until the player accepts, or all old windows close.
         })
     );
+});
+
+self.addEventListener("message", event => {
+    if (event.data?.type === "ACTIVATE_UPDATE") event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate", event => {
@@ -85,6 +94,8 @@ self.addEventListener("activate", event => {
         ).then(() => self.clients.claim())
     );
 });
+
+const shellUrls = new Set(SHELL.map(path => new URL(path, self.location.href).href));
 
 self.addEventListener("fetch", event => {
     const request = event.request;
@@ -106,21 +117,26 @@ self.addEventListener("fetch", event => {
         return;
     }
 
-    // Network first: Netlify deploys update promptly, with cached offline fallback.
-    event.respondWith(
-        fetch(request).then(response => {
-            if (response.ok) {
-                const copy = response.clone();
-                event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(request, copy)));
-            }
-            return response;
-        }).catch(async () => {
-            const cached = await caches.match(request);
+    // Keep HTML, scripts and styles from the installed release together.
+    // Rechecking the worker downloads the next complete release separately.
+    const documentUrl = new URL("./index.html", self.location.href).href;
+    const pageUrl = new URL(request.url);
+    pageUrl.search = "";
+    const isGamePage = request.mode === "navigate" &&
+        (pageUrl.href === new URL("./", self.location.href).href || pageUrl.href === documentUrl);
+    const cacheKey = isGamePage ? documentUrl : request;
+    event.respondWith((async () => {
+        const cache = await caches.open(CACHE_NAME);
+        if (isGamePage || shellUrls.has(url.href)) {
+            const cached = await cache.match(cacheKey);
             if (cached) return cached;
-            if (request.mode === "navigate") {
-                return caches.match("./index.html");
-            }
-            return Response.error();
-        })
-    );
+        }
+        // Non-shell pages are fetched normally; never replace a release's
+        // cached shell with individual files from a later deployment.
+        try {
+            return await fetch(request, { cache: "no-cache" });
+        } catch (_) {
+            return (await cache.match(cacheKey)) || Response.error();
+        }
+    })());
 });

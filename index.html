@@ -37,6 +37,12 @@
     </nav>
     <div id="game-container">
         <h1>Heroes of the Click</h1>
+        <section id="app-update-notice" class="cloud-sync-notice" hidden aria-label="Game update">
+            <p id="app-update-notice-text" role="status">A game update is ready.</p>
+            <div class="cloud-sync-notice-actions">
+                <button type="button" data-app-update-reload>Update &amp; reload</button>
+            </div>
+        </section>
         <section id="cloud-sync-notice" class="cloud-sync-notice" hidden aria-label="Cloud save available">
             <p id="cloud-sync-notice-text" role="status">A saved game is available from another device.</p>
             <div class="cloud-sync-notice-actions">
@@ -311,7 +317,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.16.2 – Heroes of the Click
+        v1.16.3 – Heroes of the Click
     </p>
     <br>
 
@@ -414,6 +420,14 @@
                     </label>
                 </div>
 
+                <div class="settings-journal">
+                    <h4>Game updates</h4>
+                    <p id="app-update-status" role="status">Updates are checked when you open the game.</p>
+                    <div class="action-row">
+                        <button id="app-update-check" type="button">Check for updates</button>
+                        <button type="button" data-app-update-reload hidden>Update &amp; reload</button>
+                    </div>
+                </div>
                 <div class="settings-journal"><h4>Your journey</h4><div class="action-row">
                     <button type="button" onclick="showAchievements()"><span class="ui-icon ui-icon-achievements" aria-hidden="true"></span> Achievements</button>
                     <button type="button" onclick="generalMenu('stats')"><span class="ui-icon ui-icon-stats" aria-hidden="true"></span> Game Stats</button>
@@ -592,15 +606,7 @@
     <script src="account-leaderboard.js"></script>
     <script src="telemetry.js"></script>
     <script src="kingdom-map.js"></script>
-    <script>
-        if ("serviceWorker" in navigator) {
-            window.addEventListener("load", () => {
-                navigator.serviceWorker.register("./sw.js").catch(error => {
-                    console.warn("Offline support unavailable:", error);
-                });
-            });
-        }
-    </script>
+    <script src="app-updates.js"></script>
 
 
 

@@ -278,3 +278,11 @@ The old paid-functions `functions/` source is archived as a future reference onl
 - The small royal residences that appear as the Castle grows now open the Royal Court. Frontier outposts open the Barracks. Their hit regions only appear when their artwork does.
 - Input regressions cover both mobile event paths, all ten main destinations at three rendered sizes on a scrolled page, duplicate clicks, drags, cancellations, multitouch, and developed buildings. These are simulated input tests; an installed physical-phone check is still needed.
 - Cache version advanced. To obtain this update, close and reopen the installed app while online; the footer should read v1.16.2. No app-data reset or save deletion is required.
+
+### v1.16.3 — reliable installed-app updates
+
+- The installed release serves its HTML, scripts and styles together from its own cache. New releases download separately, bypassing the browser's HTTP cache, and wait for acceptance or for all old game windows to close. A failed shell download leaves the active release in place.
+- A ready update appears above the game and in **Game Config → General → Game updates**. **Update & reload** checkpoints progress before activating the release; a save failure keeps the game open. An update accepted in another window offers a refresh without forcibly reloading this window.
+- Updates are checked on launch, reconnect and return to the foreground (foreground checks are limited to once per minute). **Check for updates** provides a manual retry and explains offline failures. No local saves, cloud saves, account data or settings are cleared.
+- Netlify headers revalidate app files and prevent caching the service-worker script. The installer includes the Apple touch icon and update controller in the offline shell.
+- `node tests/app-update-test.cjs` covers release isolation, offline routing, failed installation, activation, save failure, duplicate taps, first installation, other-window activation and resume/reconnect checks. Browser/device update behavior still requires live validation; clearing browsing data is not an update workflow.
