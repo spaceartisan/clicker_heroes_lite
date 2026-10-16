@@ -58,7 +58,7 @@ canvas.width=400;canvas.height=400;
 const caption=createNode("P"),legacy=createNode("DIV");
 legacy.previousElementSibling=createNode("H3");
 view.querySelector=selector => selector===".structure-list"?legacy:
-    selector===".map-caption"?caption:null;
+    selector===".map-caption:not(#kingdom-commission-status)"?caption:null;
 const modal=register("kingdom-location-popup");
 modal.style.display="none";
 const popupContent=createNode("DIV");
@@ -83,6 +83,7 @@ const context={
     formatDigits:n=>String(n),
     upgradeStructure:id=>{state[id].level++;actions.push("upgrade:"+id);return true;},
     openResearchTree:()=>actions.push("research"),
+    openRoyalCommissions:()=>renders.push("commissions"),
     renderDynastyPanel:()=>renders.push("dynasty"),
     renderRelicVault:()=>renders.push("relics"),
     renderMonsterBestiary:()=>renders.push("monsters"),
@@ -152,7 +153,7 @@ const send=(type,event)=>{
 const tap=(x,y)=>{const e=point(x,y);send('down',e);send('up',e);return e;};
 const sites=[['academy',3.5,4.7],['castle',10,4.4],['treasury',16.6,4.8],
  ['tavern',3,10.9],['relics',10,9.5],['market',17,11],['archives',3.2,16.6],
- ['blacksmith',6.9,15],['barracks',13.2,15],['dynasty',17.3,16.7]];
+ ['blacksmith',6.9,15],['barracks',13.2,15],['dynasty',17.3,16.7],['commissions',13.9,7.1]];
 for(const width of [252,320,640]) {
  frameRect={left:27,top:-83,width,height:width};
  for(const [id,x,y] of sites) {
@@ -192,5 +193,5 @@ for(const [x,y] of [[6.2,11.2],[14.5,12.3],[1.8,13.8]]) {
  tap(x,y);assert.equal(actions.at(-1),'show:barracks','Frontier outposts open the Barracks');
 }
 console.log('Kingdom input passed: '+(pointerEvents?'Pointer Events':'legacy touch')+
- ' · 10 sites at 3 widths · duplicate/scroll/cancel/multitouch · developed houses.');
+ ' · 11 sites at 3 widths · duplicate/scroll/cancel/multitouch · developed houses.');
 }

@@ -136,6 +136,7 @@ function switchView(view) {
                 tabButton.setAttribute("aria-pressed", selected ? "true" : "false");
         }
     }
+    if (typeof refreshKingdomLife === "function") refreshKingdomLife();
     if (destination === "hero") {
         updatePlayerLevelGearText();
     } else if (destination === "kingdom") {

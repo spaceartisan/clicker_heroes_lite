@@ -393,6 +393,7 @@ function levelUpPlayer() {
     if (cost > 0 && gold >= cost) {
         gold -= cost;
         playerLevel += _upgradeMultiplier;
+        if (typeof recordCommissionEvent === "function") recordCommissionEvent("hero", _upgradeMultiplier);
         playerUpgradeCost = Math.floor(10 + playerLevel ** 1.5);
         updateUI();
     } else if (costReturn[2]) {
@@ -419,6 +420,7 @@ function gearUpPlayer() {
     if (cost[0] > 0 && gold >= cost[0]) {
         gold -= cost[0];
         playerGearLevel += cost[1];
+        if (typeof recordCommissionEvent === "function") recordCommissionEvent("gear", cost[1]);
         nextPlayerGearLevelReq += 0;
         updateUI();
     } else if (cost[2]) {
@@ -449,6 +451,7 @@ function levelUpMercenary(i) {
     if (cost[0] > 0 && gold >= cost[0]) {
         gold -= cost[0];
         m.level += cost[1];
+        if (typeof recordCommissionEvent === "function") recordCommissionEvent("squad", cost[1]);
         m.upgradeCost = Math.floor(10 * m.level ** 1.6);
         updateUI();
     } else if (cost[2]) {
@@ -483,6 +486,7 @@ function upgradeMercGear(i) {
             _m.gearCost = Math.floor(_m.gearCost * 2);
             _m.nextGearLevelReq += 40;
         }
+        if (typeof recordCommissionEvent === "function") recordCommissionEvent("gear", cost[1]);
         updateUI();
     } else if (cost[2]) {
         showPopupMessage("You have reached the gear cap!", null, 700);

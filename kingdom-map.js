@@ -14,6 +14,7 @@
         {id:"archives", label:"Royal Archives", bounds:[1.5,15.1,4.9,18.2], description:"Monster and boss field guides"},
         {id:"blacksmith", label:"Blacksmith", bounds:[5.4,13.6,8.4,16.55], description:"Forge squad equipment"},
         {id:"barracks", label:"Barracks", bounds:[11.65,13.3,14.75,16.6], description:"Train and specialize squads"},
+        {id:"commissions", label:"Royal Commissions", bounds:[12.8,6.4,15.0,7.8], description:"Kingdom requests and rewards"},
         {id:"dynasty", label:"Dynasty Estate", bounds:[15.65,15.2,19.0,18.2], description:"Legacy and dynasty investments"}
     ];
     const buildingNames = {
@@ -199,7 +200,9 @@
     }
     function activate(site) {
         if (!site) return;
-        if (site.id === "academy") {
+        if (site.id === "commissions") {
+            openRoyalCommissions();
+        } else if (site.id === "academy") {
             openResearchTree();
         } else if (Object.prototype.hasOwnProperty.call(buildingNames,site.id)) {
             showMenu(site.id);
@@ -285,7 +288,7 @@
         const legacy = kingdom.querySelector(".structure-list");
         if (legacy && legacy.previousElementSibling?.tagName === "H3")
             legacy.previousElementSibling.classList.add("kingdom-legacy-heading");
-        const caption = kingdom.querySelector(".map-caption");
+        const caption = kingdom.querySelector(".map-caption:not(#kingdom-commission-status)");
         if (caption) caption.textContent = "Tap a building or landmark to manage it. " +
             "Your Royal Academy, Treasury, relics, archives and dynasty are part of the map.";
         canvas.setAttribute("tabindex","0");

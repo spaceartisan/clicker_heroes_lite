@@ -55,6 +55,8 @@ function upgradeStructure(id) {
     }
     gold -= cost;
     structure.level++;
+    if (typeof recordCommissionEvent === "function") recordCommissionEvent("building");
+    if (typeof notifyKingdomUpgrade === "function") notifyKingdomUpgrade(id);
     highestCastleEver=Math.max(highestCastleEver,structures.castle.level);
     updateStructureUI();
     updateUI();
@@ -84,15 +86,30 @@ function updateStructureUI() {
 
 let persistentMiniBuildings = [];
 
+let kingdomSceneCache = null;
 function drawKingdom() {
     const canvas = document.getElementById("kingdom-canvas");
+    const ctx = canvas.getContext("2d");
     const squads = [...new Set(hiredMercenaries.map(m => m.squad))].slice(0,6);
-    KingdomArt.draw(canvas.getContext("2d"), {
+    const state = {
         levels: Object.fromEntries(Object.entries(structures).map(([id,s]) => [id,s.level])),
-        stage: maxLevel,
+        stage: maxLevel > 180 ? 181 : maxLevel > 140 ? 141 : maxLevel > 100 ? 101 : 1,
+        ready: typeof royalCommissionReadyCount === "function" ? royalCommissionReadyCount() : 0,
         roles: squads.map(id => getSquadBuild(id).role)
-    }, canvas.width);
+    };
+    if (typeof ctx.drawImage !== "function") { KingdomArt.draw(ctx,state,canvas.width); return; }
+    const key = JSON.stringify(state) + ":" + canvas.width;
+    if (!kingdomSceneCache || kingdomSceneCache.key !== key) {
+        const scene = document.createElement("canvas");
+        scene.width = canvas.width; scene.height = canvas.height;
+        KingdomArt.draw(scene.getContext("2d"),state,scene.width);
+        kingdomSceneCache = {key,scene};
+    }
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(kingdomSceneCache.scene,0,0);
 }
+
 
 
 function drawStructure(ctx, x, y, width, height, color) {

@@ -319,6 +319,7 @@ function saveGame() {
         autoAdvance,
         underfillEnabled,
         batterySaverEnabled,
+        royalCommissions: typeof royalCommissions !== "undefined" ? royalCommissions : null,
         runEnemyDefeats,
         runCombatSeconds,
         runGoldEarned,
@@ -442,6 +443,8 @@ function loadGame() {
                 }
             });
         }
+        if (typeof loadRoyalCommissions === "function") loadRoyalCommissions(data.royalCommissions);
+        if (typeof resetKingdomLife === "function") resetKingdomLife();
         // console.log(marketUpgrades);
         // Restore equation for market upgrades
 
@@ -588,6 +591,7 @@ function applyBatterySaver(enabled, restartCombat = true) {
     batterySaverEnabled = Boolean(enabled);
     batterySaverToggle.checked = batterySaverEnabled;
     document.body.classList.toggle("battery-saver", batterySaverEnabled);
+    if (typeof refreshKingdomLife === "function") refreshKingdomLife();
     if (restartCombat && autoCombatTimer !== null) {
         stopSquadAttack();
         startSquadAttack();
@@ -614,6 +618,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (localStorage.getItem("clickerHeroSave")) {
         loadGame();
     } else {
+        if (typeof loadRoyalCommissions === "function") loadRoyalCommissions(null);
         drawRandomEnemy(); // fresh start
         updateUI();
         saveGame(); // establish a Season II save immediately

@@ -43,6 +43,7 @@ function upgradeAcademyDiscipline(id){
  const price=getAcademyDisciplineCost(id);
  if(getResearchInsightAvailable()<price)return false;
  academyDisciplines[id]++;
+ if (typeof recordCommissionEvent === "function") recordCommissionEvent("research");
  saveGame();renderResearchTree();updateUI();
  return true;
 }
@@ -107,6 +108,7 @@ function canResearchNode(id) {
 function buyResearchNode(id) {
     if (!canResearchNode(id)) return false;
     researchState[id] = true;
+    if (typeof recordCommissionEvent === "function") recordCommissionEvent("research");
     updateUI();
     if (typeof renderResearchTree === "function") renderResearchTree();
     if (typeof renderArmyView === "function") {

@@ -22,7 +22,7 @@ button:hover { transform:none; }
 :is(h1,h2,h3,h4),.dialog-header h3,.kingdom-modal-header h3 {
     font-family:var(--menu-heading-font);
 }
-:is(#options-popup,#leaderboard-popup,#message-popup,#achievement-menu,#upgrade-menu,#research-popup,#kingdom-location-popup,#general-menu,#season-transition,.game-notice) .popup-content.dialog-shell {
+:is(#options-popup,#leaderboard-popup,#message-popup,#achievement-menu,#upgrade-menu,#research-popup,#kingdom-location-popup,#general-menu,#commissions-popup,#season-transition,.game-notice) .popup-content.dialog-shell {
     width:min(100%,680px); max-width:680px; height:auto;
     max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     padding:0; gap:0; display:flex; flex-direction:column; align-items:stretch;
@@ -137,3 +137,15 @@ summary { min-height:44px; padding:10px 0; box-sizing:border-box; cursor:pointer
 .army-recruit-controls { flex: 0 0 180px; max-width: 100%; }
 .army-recruit-controls button { width: 100%; }
 @media (max-width: 560px) { .army-header { flex-direction: column; } .army-recruit-controls { flex-basis: auto; width: 100%; } }
+
+/* Royal requests use the same centered menu and theme tokens. */
+#commission-list { display:grid; gap:14px; }
+.commission-card { padding:16px; border:1px solid var(--panel-line); border-radius:8px; background:var(--panel-inset); }
+.commission-card h4 { margin:0 0 4px; font-size:19px; }
+.commission-reward { margin:0 0 12px; color:var(--ink-heading); }
+.commission-goals { list-style:none; padding:0; margin:0 0 14px; display:grid; gap:12px; }
+.commission-goals li { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 10px; }
+.commission-goals progress { grid-column:1/-1; width:100%; height:8px; accent-color:var(--ink-heading,#d4b165); }
+.commission-help { color:var(--ink-muted); font-size:12px; }
+#commission-status:empty { display:none; }
+#kingdom-commission-status { font-size:12px; line-height:1.5; color:var(--ink-heading); }

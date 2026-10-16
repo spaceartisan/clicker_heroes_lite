@@ -56,6 +56,7 @@ const GameDialogs = (() => {
             }
             document.body.style.overflow = 'hidden';
         } else document.body.style.overflow = overflowBefore;
+        if (typeof refreshKingdomLife === "function") refreshKingdomLife();
     }
     function focusEntry(entry, preferred) {
         if (preferred?.isConnected && !preferred.closest('[hidden],[inert]') && preferred.getClientRects().length && !preferred.disabled) preferred.focus();

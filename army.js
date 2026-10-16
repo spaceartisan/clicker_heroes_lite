@@ -180,6 +180,10 @@ function applyArmyUpgradePlan(plan) {
         }
     }
     gold -= plan.spent;
+    if (typeof recordCommissionEvent === "function") {
+        if (plan.kind === "level") recordCommissionEvent("squad", plan.operations.length);
+        if (plan.kind === "gear") recordCommissionEvent("gear", plan.operations.length);
+    }
     updateUI();
     saveGame();
     return true;

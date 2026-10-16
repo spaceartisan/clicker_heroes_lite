@@ -37,4 +37,4 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 assert(html.indexOf('src="kingdom-art.js"')<html.indexOf('src="kingdom.js"'),'Renderer loads before game integration');
 assert(fs.readFileSync(path.join(root,'sw.js'),'utf8').includes('"./kingdom-art.js"'),'Renderer available offline');
 assert(!map.includes('roofFromAbove')&&!map.includes('kingdom-pin'),'No competing drawing style or floating cards');
-console.log('Kingdom art: 8 development states, 10 clickable sites, grid/extent/state/offline checks passed.');
+console.log('Kingdom art: 8 development states, 11 clickable sites, grid/extent/state/offline checks passed.');

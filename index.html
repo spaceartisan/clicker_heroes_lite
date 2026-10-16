@@ -172,6 +172,7 @@
             </section>
 
             <p id="frontier-kingdom" class="frontier-kingdom" hidden></p>
+            <p id="kingdom-commission-status" class="map-caption" role="status"></p>
             <div id="kingdom-box">
                 <canvas id="kingdom-canvas" width="400" height="400"></canvas>
             </div>
@@ -317,7 +318,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.16.3 – Heroes of the Click
+        v1.17.0 – Heroes of the Click
     </p>
     <br>
 
@@ -561,6 +562,17 @@
     </div>
 
 
+    <div id="commissions-popup" class="popup" role="dialog" aria-modal="true" aria-labelledby="commissions-title" aria-hidden="true">
+        <div class="popup-content">
+            <h3 id="commissions-title">Royal Commissions</h3>
+            <p class="section-intro">Three requests from your kingdom. Progress counts from the moment each is posted. No deadlines or daily resets.</p>
+            <p id="commission-summary"></p>
+            <div id="commission-list"></div>
+            <p id="commission-status" role="status"></p>
+            <p class="commission-help">Replace any request for free; its progress is lost. A new Dynasty brings a fresh board, while your completion count stays.</p>
+        </div>
+    </div>
+
     <div id="kingdom-location-popup" class="popup" role="dialog" aria-modal="true"
          aria-labelledby="kingdom-location-title" aria-hidden="true">
         <div class="popup-content">
@@ -590,6 +602,7 @@
     <script src="progression.js"></script>
     <script src="frontier.js"></script>
     <script src="combat-content.js"></script>
+    <script src="commissions.js"></script>
     <script src="hero.js"></script>
     <script src="kingdom-art.js"></script>
     <script src="kingdom.js"></script>
@@ -606,6 +619,7 @@
     <script src="account-leaderboard.js"></script>
     <script src="telemetry.js"></script>
     <script src="kingdom-map.js"></script>
+    <script src="kingdom-life.js"></script>
     <script src="app-updates.js"></script>
 
 

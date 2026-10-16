@@ -70,6 +70,10 @@ function handleEnemyDefeat() {
     runEnemyDefeats++;
     const type = enemyType || getEnemyType(currentLevel);
     const defeatedStage = currentLevel;
+    if (typeof recordCommissionEvent === "function") {
+        recordCommissionEvent("enemy", 1, defeatedStage);
+        if (isBossEnemy(type)) recordCommissionEvent("boss", 1, defeatedStage);
+    }
     const firstClear = currentLevel === maxLevel;
     const level=Math.max(1,Math.min(1e12,currentLevel));
     const endless=level>200?1+Math.min(1,Math.log10(level/200)*0.12):1;

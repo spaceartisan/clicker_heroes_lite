@@ -112,7 +112,7 @@ function currentDynastyPeak(){
 function foundNewDynasty(){
   const reward=getDynastyReward();
   if(!reward)return false;
-  if(!confirm("Begin a new Dynasty? Gold, hero/mercenary levels, buildings and Market projects reset. Permanent research and Renown investments stay. Earn "+reward+" Renown?"))
+  if(!confirm("Begin a new Dynasty? Gold, hero/mercenary levels, buildings and Market projects reset. Permanent research and Renown investments stay. Commissions refresh for the new Dynasty. Earn "+reward+" Renown?"))
     return false;
   stopSquadAttack();
   // Keep a recoverable rollback in case the player closes the app during rebirth.
@@ -136,6 +136,8 @@ function foundNewDynasty(){
   resetAbilityEffects();
   rallyActive=false;goldRushActive=false;doubleAttackReady=false;
   if(typeof resetArmySelection==="function")resetArmySelection();
+  if(typeof renewRoyalCommissions==="function")renewRoyalCommissions();
+  if(typeof resetKingdomLife==="function")resetKingdomLife();
   drawRandomEnemy();updateUI();updateStructureUI();drawKingdom();
   renderDynastyPanel();saveGame();
   return true;

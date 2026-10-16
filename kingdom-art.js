@@ -135,6 +135,12 @@ const KingdomArt = (() => {
             roof(57,78,13,10,p.clay);roof(130,78,13,10,p.clay);
         }
         if(levels.castle>=20) {roof(53,58,11,9,p.clay);roof(134,51,11,9,p.clay);}
+        // A low wooden posting desk beside the Court, seen from above.
+        slab(129,65,20,11);r(130,66,18,8,p.wood);r(130,66,18,1,p.woodLight);
+        r(132,68,5,5,p.cream);r(139,68,6,5,p.pathLight);
+        r(133,69,3,1,p.woodLight);r(140,69,4,1,p.wood);
+        r(133,71,2,1,p.woodLight);r(140,71,3,1,p.woodLight);
+        r(146,68,2,4,state.ready ? p.gold : p.clay[1]);
         // Academy: cruciform violet roof with two skylights and a study wing.
         roof(29,32,13,28,p.violet);roof(22,38,26,18,p.violet);
         skylight(26,41);skylight(39,41);chimney(31,32);
@@ -210,5 +216,49 @@ const KingdomArt = (() => {
         if(state.stage>140) {roof(139,119,14,10,p.slate);flag(149,115,p.violet[2]);}
         if(state.stage>180) {roof(11,134,15,10,p.clay);flag(23,130,p.gold);}
     }
-    return {draw};
+    // Sparse foreground sprites; caller restores the cached static scene first.
+    function drawLife(ctx, state, size = 400) {
+        const p=palette, scale=size/200, time=state.time || 0;
+        const r=(x,y,w,h,c)=>{
+            ctx.fillStyle=c;
+            const left=Math.round(x*scale), top=Math.round(y*scale);
+            ctx.fillRect(left,top,Math.round((x+w)*scale)-left,Math.round((y+h)*scale)-top);
+        };
+        const villager=(x,y,color,step)=>{
+            x=Math.round(x);y=Math.round(y);
+            r(x+1,y+3,4,2,p.shadow);r(x,y,3,4,p.ink);
+            r(x,y,2,2,p.cream);r(x,y+2,3,2,color);
+            r(x+(step%2),y+4,1,1,p.ink);r(x+2-(step%2),y+4,1,1,p.ink);
+        };
+        const walk=(start,end,offset)=>{
+            const phase=((time/24000+offset)%2);
+            return start+(end-start)*(phase<1?phase:2-phase);
+        };
+        const step=Math.floor(time/450);
+        villager(walk(43,153,0),71,p.clay[2],step);
+        villager(100,walk(123,148,.6),p.slate[2],step+1);
+        if(state.levels.market) villager(walk(45,150,1.1),115,p.gold,step);
+        // Banner cloth moves a pixel; poles stay anchored to their roof.
+        for(const [x,y,c] of [[113,24,p.gold],[184,152,p.clay[2]]]) {
+            r(x,y,5,4,c);r(x,y,5,1,p.cream);
+            r(x+4,y+2+(step%2),1,1,p.woodLight);
+        }
+        if(state.levels.blacksmith) {
+            for(let i=0;i<3;i++) {
+                const rise=(Math.floor(time/450)+i*3)%10;
+                r(74+(rise%3)-1,135-rise,2+(i%2),2,rise<5?p.stoneDark:p.stone);
+            }
+        }
+        if(state.upgrade) {
+            const bounds={castle:[76,22,126,65],tavern:[18,98,43,120],blacksmith:[57,137,82,162],
+                barracks:[120,138,145,162],market:[158,98,183,122]}[state.upgrade.id];
+            if(bounds) {
+                const [l,t,right,bottom]=bounds, rise=Math.floor(state.upgrade.elapsed/250);
+                for(const [x,y] of [[l-2,t+4],[right+1,t+9],[l+5,bottom-1],[right-4,bottom+2]]) {
+                    r(x,y-rise,1,3,p.gold);r(x-1,y+1-rise,3,1,p.cream);
+                }
+            }
+        }
+    }
+    return {draw,drawLife};
 })();
