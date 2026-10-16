@@ -128,7 +128,7 @@ summary { min-height:44px; padding:10px 0; box-sizing:border-box; cursor:pointer
 }
 @media(max-height:500px) {
     .popup { padding-top:6px; padding-bottom:6px; }
-    :is(#options-popup,#leaderboard-popup,#message-popup,#achievement-menu,#upgrade-menu,#research-popup,#kingdom-location-popup,#general-menu) .popup-content.dialog-shell { max-height:calc(100dvh - 12px); }
+    :is(#options-popup,#leaderboard-popup,#message-popup,#achievement-menu,#upgrade-menu,#research-popup,#kingdom-location-popup,#general-menu,#commissions-popup) .popup-content.dialog-shell { max-height:calc(100dvh - 12px); }
     .dialog-header { padding:6px 12px; }
 }
 
@@ -149,3 +149,23 @@ summary { min-height:44px; padding:10px 0; box-sizing:border-box; cursor:pointer
 .commission-help { color:var(--ink-muted); font-size:12px; }
 #commission-status:empty { display:none; }
 #kingdom-commission-status { font-size:12px; line-height:1.5; color:var(--ink-heading); }
+
+.commission-actions { display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; }
+.commission-actions button { margin:0; width:100%; min-width:0; }
+.commission-card.is-complete { border-color:var(--accent,#dbb36d); box-shadow:inset 3px 0 0 var(--accent,#dbb36d); }
+.commission-card.is-complete .commission-next { color:var(--ink-heading); border-color:var(--accent,#dbb36d); }
+.commission-replacement { margin-top:12px; padding-top:12px; border-top:1px solid var(--panel-line); }
+.commission-replacement p { margin:0 0 10px; }
+.commission-ready-badge { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; border-radius:10px; background:var(--accent,#dbb36d); color:var(--panel-inset,#251d19); font:bold 11px Arial; }
+.commission-tracker { margin:12px 0 18px; padding:12px; display:flex; align-items:center; justify-content:space-between; gap:12px; text-align:left; border:1px solid var(--panel-line); border-radius:8px; background:var(--panel-inset); font:13px/1.5 var(--menu-body-font); }
+.commission-tracker strong { color:var(--ink-heading); }
+.commission-tracker p { margin:3px 0 0; }
+.commission-tracker-actions { display:flex; gap:6px; flex-shrink:0; }
+.commission-tracker-actions button { margin:0; font-size:12px; }
+.commission-sr-only { position:absolute; width:1px; height:1px; padding:0; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+@media(max-width:560px) {
+    .commission-actions { grid-template-columns:1fr 1fr; }
+    .commission-actions .commission-next { grid-column:1/-1; }
+    .commission-tracker { align-items:stretch; flex-direction:column; }
+    .commission-tracker-actions { display:grid; grid-template-columns:1fr 1fr; }
+}

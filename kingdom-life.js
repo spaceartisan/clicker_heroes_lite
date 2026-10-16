@@ -2,7 +2,7 @@
 // Never changes gameplay, progression or saved state.
 let kingdomLifeTimer = null;
 let kingdomLifeTime = 0;
-let kingdomLifeUpgrade = null;
+const kingdomLifeUpgrades = new Map();
 let kingdomLifeOnScreen = true;
 const kingdomReducedMotion = typeof window.matchMedia === 'function'
     ? window.matchMedia('(prefers-reduced-motion: reduce)') : {matches:false};
@@ -12,10 +12,10 @@ function kingdomLifeVisible() {
         !(typeof GameDialogs !== 'undefined' && GameDialogs.current());
 }
 function notifyKingdomUpgrade(id) {
-    kingdomLifeUpgrade = {id, elapsed:0};
+    if (Object.hasOwn(structures, id)) kingdomLifeUpgrades.set(id, {id, elapsed:0});
 }
 function resetKingdomLife() {
-    kingdomLifeUpgrade = null;
+    kingdomLifeUpgrades.clear();
     kingdomLifeTime = 0;
 }
 function refreshKingdomLife() {
@@ -27,9 +27,9 @@ function refreshKingdomLife() {
         kingdomLifeTimer = null;
         if (!kingdomLifeVisible() || kingdomReducedMotion.matches) return;
         kingdomLifeTime += delay;
-        if (kingdomLifeUpgrade) {
-            kingdomLifeUpgrade.elapsed += delay;
-            if (kingdomLifeUpgrade.elapsed > 1800) kingdomLifeUpgrade = null;
+        for (const [id, effect] of kingdomLifeUpgrades) {
+            effect.elapsed += delay;
+            if (effect.elapsed > 1800) kingdomLifeUpgrades.delete(id);
         }
         drawKingdom();
         refreshKingdomLife();
@@ -43,7 +43,7 @@ function refreshKingdomLife() {
             const canvas = document.getElementById('kingdom-canvas');
             KingdomArt.drawLife(canvas.getContext('2d'), {
                 levels:Object.fromEntries(Object.entries(structures).map(([id,s])=>[id,s.level])),
-                time:kingdomLifeTime, upgrade:kingdomLifeUpgrade
+                time:kingdomLifeTime, upgrades:[...kingdomLifeUpgrades.values()]
             }, canvas.width);
         }
         return result;

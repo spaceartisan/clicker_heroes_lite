@@ -5,6 +5,7 @@ const COMMISSION_KINDS = ['roads', 'guard', 'civic'];
 const COMMISSION_TITLES = {roads:'Secure the roads', guard:'Prepare the royal guard', civic:'Invest in the kingdom'};
 const COMMISSION_EVENTS = ['enemy', 'boss', 'hero', 'squad', 'gear', 'building', 'research'];
 const commissionNodes = new Map();
+let commissionReplacementId = null;
 function commissionInteger(value, fallback = 0, cap = 1e12) {
     return Number.isFinite(value) ? Math.max(0, Math.min(cap, Math.floor(value))) : fallback;
 }
@@ -42,14 +43,14 @@ function createCommission(kind, serial) {
 }
 function renewRoyalCommissions() {
     const previous = royalCommissions;
-    royalCommissions = {dynasty:dynastyCount, completed:previous?.completed || 0, serial:previous?.serial || 0, jobs:[]};
+    royalCommissions = {dynasty:dynastyCount, completed:previous?.completed || 0, serial:previous?.serial || 0, trackedId:null, jobs:[]};
     for (const kind of COMMISSION_KINDS) royalCommissions.jobs.push(createCommission(kind, ++royalCommissions.serial));
     commissionNodes.clear();
     renderRoyalCommissions();
 }
 function loadRoyalCommissions(saved) {
     royalCommissions = {dynasty:dynastyCount, completed:commissionInteger(saved?.completed),
-        serial:commissionInteger(saved?.serial), jobs:[]};
+        serial:commissionInteger(saved?.serial), trackedId:null, jobs:[]};
     if (saved?.dynasty === dynastyCount && Array.isArray(saved.jobs)) {
         const used = new Set();
         for (let index = 0; index < 3; index++) {
@@ -69,8 +70,9 @@ function loadRoyalCommissions(saved) {
     }
     for (let index = 0; index < 3; index++) if (!royalCommissions.jobs[index])
         royalCommissions.jobs[index] = createCommission(COMMISSION_KINDS[index], ++royalCommissions.serial);
+    royalCommissions.trackedId = royalCommissions.jobs.some(job => job.id === saved?.trackedId) ? saved.trackedId : null;
     commissionNodes.clear();
-    refreshRoyalCommissions();
+    renderRoyalCommissions();
 }
 function commissionComplete(job) { return job.goals.every(goal => goal.progress >= goal.target); }
 function royalCommissionReadyCount() { return royalCommissions?.jobs.filter(commissionComplete).length || 0; }
@@ -88,7 +90,12 @@ function recordCommissionEvent(type, amount = 1, stage = 0) {
     }
     if (changed) {
         refreshRoyalCommissions();
-        if (ready !== royalCommissionReadyCount() && typeof drawKingdom === 'function') drawKingdom();
+        const nextReady = royalCommissionReadyCount();
+        if (nextReady !== ready) {
+            if (typeof drawKingdom === 'function') drawKingdom();
+            const live = document.getElementById('commission-live-status');
+            if (live) live.textContent = nextReady + ' Royal Commission' + (nextReady === 1 ? '' : 's') + ' ready to claim.';
+        }
     }
 }
 function commissionMessage(message) {
@@ -108,22 +115,24 @@ function finishCommission(id, claim) {
     // Replacements alternate the two military briefs; civic work stays civic.
     const nextKind = claim ? job.kind : job.kind === 'roads' ? 'guard' : job.kind === 'guard' ? 'roads' : 'civic';
     royalCommissions.jobs[index] = createCommission(nextKind, ++royalCommissions.serial);
+    if (royalCommissions.trackedId === id) royalCommissions.trackedId = royalCommissions.jobs[index].id;
     try { saveGame(); }
     catch (_) {
         royalCommissions = previous; gold = previousGold;
+        renderRoyalCommissions();
         commissionMessage('Could not save. Nothing was claimed or replaced. Please try again.');
         return false;
     }
     renderRoyalCommissions(); updateUI(); drawKingdom();
     commissionMessage(claim ? 'Commission completed. ' + formatDigits(reward, 0, 0).trim() + ' gold received.' : 'Commission replaced. Its progress has been reset.');
-    document.querySelector('#commission-list [data-commission-slot="' + index + '"] .button-secondary')?.focus();
+    document.querySelector('#commission-list [data-commission-slot="' + index + '"] .commission-next')?.focus();
     return true;
 }
 function commissionGoalLabel(goal, job) {
     const labels = {enemy:'Defeat enemies', boss:'Defeat bosses', hero:'Buy hero levels',
         squad:'Train mercenary levels', gear:'Buy hero or squad gear levels',
         building:'Construct or upgrade a building', research:'Complete research or a College rank'};
-    return labels[goal.type] + (['enemy','boss'].includes(goal.type) ? ' at stage ' + job.stage.toLocaleString() + '+' : '');
+    return labels[goal.type] + (['enemy','boss'].includes(goal.type) ? ' at stage ' + (goal.type === 'boss' ? Math.ceil(job.stage / 10) * 10 : job.stage).toLocaleString() + '+' : '');
 }
 function commissionElement(tag, className, text) {
     const el = document.createElement(tag); if (className) el.className = className;
@@ -132,7 +141,7 @@ function commissionElement(tag, className, text) {
 function renderRoyalCommissions() {
     const root = document.getElementById('commission-list');
     if (!root || !royalCommissions) return;
-    root.replaceChildren(); commissionNodes.clear();
+    root.replaceChildren(); commissionNodes.clear(); commissionReplacementId = null;
     royalCommissions.jobs.forEach((job, index) => {
         const card = commissionElement('article', 'commission-card');
         card.setAttribute('data-commission-slot', String(index));
@@ -147,13 +156,23 @@ function renderRoyalCommissions() {
             meter.setAttribute('aria-label', commissionGoalLabel(goal, job));
             item.append(label, count, meter); list.append(item); return {count,meter};
         });
-        const actions = commissionElement('div', 'action-row');
-        const claim = commissionElement('button', '', 'In progress'); claim.type = 'button';
-        claim.addEventListener('click', () => finishCommission(job.id, true));
+        const actions = commissionElement('div', 'commission-actions');
+        const claim = commissionElement('button', 'commission-next', 'Continue'); claim.type = 'button';
+        claim.addEventListener('click', () => commissionComplete(job) ? finishCommission(job.id, true) : continueCommission(job.id));
+        const track = commissionElement('button', 'button-secondary', 'Track'); track.type = 'button';
+        track.addEventListener('click', () => trackRoyalCommission(job.id));
         const replace = commissionElement('button', 'button-secondary', 'Replace'); replace.type = 'button';
-        replace.addEventListener('click', () => finishCommission(job.id, false));
-        actions.append(claim, replace); card.append(heading, reward, list, actions); root.append(card);
-        commissionNodes.set(job.id, {goals,claim,replace});
+        const confirmation = commissionElement('div', 'commission-replacement'); confirmation.hidden = true;
+        const warning = commissionElement('p', '', 'Replace this request? Its progress will be lost.');
+        const confirm = commissionElement('button', 'button-secondary', 'Replace request'); confirm.type = 'button';
+        const cancel = commissionElement('button', 'button-secondary', 'Keep request'); cancel.type = 'button';
+        confirm.addEventListener('click', () => { if (commissionReplacementId === job.id) finishCommission(job.id, false); });
+        cancel.addEventListener('click', () => { commissionReplacementId = null; refreshRoyalCommissions(); replace.focus(); });
+        replace.addEventListener('click', () => { commissionReplacementId = job.id; refreshRoyalCommissions(); cancel.focus(); });
+        const confirmationActions = commissionElement('div', 'action-row'); confirmationActions.append(cancel, confirm);
+        confirmation.append(warning, confirmationActions);
+        actions.append(claim, track, replace); card.append(heading, reward, list, actions, confirmation); root.append(card);
+        commissionNodes.set(job.id, {card,goals,claim,track,replace,confirmation,confirm,cancel});
     });
     refreshRoyalCommissions();
 }
@@ -164,18 +183,91 @@ function refreshRoyalCommissions() {
     if (summary) summary.textContent = ready + ' ready to claim · ' + royalCommissions.completed.toLocaleString() + ' completed across your Dynasties';
     const mapStatus = document.getElementById('kingdom-commission-status');
     if (mapStatus) mapStatus.textContent = ready ? ready + ' commission' + (ready === 1 ? '' : 's') + ' ready — visit the noticeboard beside the Castle.' : 'Royal Commissions await at the noticeboard beside the Castle.';
+    const badge = document.getElementById('commission-ready-badge');
+    if (badge) { badge.hidden = !ready; badge.textContent = String(ready); }
+    const kingdomTab = document.getElementById('view-tab-kingdom');
+    if (kingdomTab) kingdomTab.setAttribute('aria-label', ready ? 'Kingdom · ' + ready + ' commissions ready' : 'Kingdom');
+    refreshCommissionTracker();
     for (const job of royalCommissions.jobs) {
         const nodes = commissionNodes.get(job.id); if (!nodes) continue;
         job.goals.forEach((goal, i) => {
             nodes.goals[i].count.textContent = goal.progress + ' / ' + goal.target;
             nodes.goals[i].meter.value = goal.progress;
         });
-        nodes.claim.disabled = !commissionComplete(job) || commissionBlocked();
-        nodes.claim.textContent = commissionComplete(job) ? 'Claim reward' : 'In progress';
+        const complete = commissionComplete(job);
+        nodes.card.classList?.toggle('is-complete', complete);
+        nodes.claim.disabled = commissionBlocked();
+        nodes.claim.textContent = complete ? 'Claim reward' : commissionActionLabel(job);
+        nodes.track.textContent = royalCommissions.trackedId === job.id ? 'Untrack' : 'Track';
+        nodes.track.setAttribute('aria-pressed', String(royalCommissions.trackedId === job.id));
+        nodes.track.disabled = commissionBlocked();
         nodes.replace.disabled = commissionBlocked();
+        nodes.confirm.disabled = commissionBlocked();
+        nodes.confirmation.hidden = commissionReplacementId !== job.id;
     }
 }
 function openRoyalCommissions() {
     renderRoyalCommissions(); commissionMessage('');
     openGameDialog('commissions-popup', () => closeGameDialog('commissions-popup'));
+}
+
+function commissionNextGoal(job) { return job.goals.find(goal => goal.progress < goal.target); }
+function commissionActionLabel(job) {
+    const labels = {enemy:'Fight enemies',boss:'Fight bosses',hero:'Open Hero',squad:'Open Army',
+        gear:playerGearLevel < (structures.blacksmith.level - 1) * 2 + 5 ? 'Open Hero' : 'Open Blacksmith',
+        building:'View structures',research:'Open Academy'};
+    return labels[commissionNextGoal(job)?.type] || 'View request';
+}
+function trackRoyalCommission(id, force = false) {
+    if (!royalCommissions || commissionBlocked() || !royalCommissions.jobs.some(job => job.id === id)) return false;
+    const previous = royalCommissions.trackedId;
+    royalCommissions.trackedId = previous === id && !force ? null : id;
+    try { saveGame(); }
+    catch (_) { royalCommissions.trackedId = previous; commissionMessage('Could not save your tracked request. Please try again.'); return false; }
+    refreshRoyalCommissions();
+    return true;
+}
+function continueCommission(id) {
+    const job = royalCommissions?.jobs.find(job => job.id === id);
+    if (!job || commissionBlocked()) return false;
+    if (commissionComplete(job)) { openRoyalCommissions(); return true; }
+    if (!trackRoyalCommission(id, true)) return false;
+    const goal = commissionNextGoal(job);
+    if (goal.type === 'research') openResearchTree();
+    else if (goal.type === 'building') {
+        const available = Object.keys(structures).filter(key => !structureLockReason(key));
+        const cost = key => key === 'tavern' && !structures[key].level ? 0 : getStructureCost(structures[key]);
+        available.sort((a,b) => cost(a) - cost(b));
+        closeGameDialog('commissions-popup');
+        switchView('kingdom');
+        document.getElementById((available[0] || 'castle') + '-structure-upgrade')?.focus();
+    } else if (goal.type === 'gear' && playerGearLevel >= (structures.blacksmith.level - 1) * 2 + 5) {
+        showMenu('blacksmith');
+    } else {
+        closeGameDialog('commissions-popup');
+        const view = goal.type === 'squad' ? 'army' : 'hero';
+        switchView(view);
+        const target = document.getElementById(goal.type === 'hero' ? 'hero-level-upgrade' :
+            goal.type === 'gear' ? 'hero-gear-upgrade' : view === 'army' ? 'view-tab-army' : 'enemy-canvas');
+        if (target && !target.disabled) target.focus();
+        else document.getElementById('view-tab-' + view)?.focus();
+    }
+    return true;
+}
+function refreshCommissionTracker() {
+    const tracker = document.getElementById('commission-tracker');
+    if (!tracker) return;
+    const job = royalCommissions?.jobs.find(job => job.id === royalCommissions.trackedId);
+    tracker.hidden = !job;
+    if (!job) return;
+    const title = document.getElementById('commission-tracker-title');
+    const detail = document.getElementById('commission-tracker-detail');
+    const action = document.getElementById('commission-tracker-action');
+    if (title) title.textContent = COMMISSION_TITLES[job.kind];
+    const goal = commissionNextGoal(job);
+    if (detail) detail.textContent = goal ? commissionGoalLabel(goal, job) + ' · ' + goal.progress + ' / ' + goal.target : 'Complete — your reward is ready.';
+    if (action) { action.textContent = goal ? commissionActionLabel(job) : 'View reward'; action.disabled = commissionBlocked(); }
+}
+function continueTrackedCommission() {
+    if (royalCommissions?.trackedId) continueCommission(royalCommissions.trackedId);
 }

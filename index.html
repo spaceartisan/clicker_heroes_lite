@@ -31,7 +31,7 @@
     <nav id="switch-mode" aria-label="Game sections">
         <div id="view-switch">
             <button type="button" id="view-tab-hero" class="is-active" aria-pressed="true" onclick="switchView('hero')"><span class="ui-icon ui-icon-hero" aria-hidden="true"></span><span>Hero</span></button>
-            <button type="button" id="view-tab-kingdom" class="" aria-pressed="false" onclick="switchView('kingdom')"><span class="ui-icon ui-icon-kingdom" aria-hidden="true"></span><span>Kingdom</span></button>
+            <button type="button" id="view-tab-kingdom" class="" aria-pressed="false" onclick="switchView('kingdom')"><span class="ui-icon ui-icon-kingdom" aria-hidden="true"></span><span>Kingdom</span><span id="commission-ready-badge" class="commission-ready-badge" hidden aria-hidden="true"></span></button>
             <button type="button" id="view-tab-army" class="" aria-pressed="false" onclick="switchView('army')"><span class="ui-icon ui-icon-army" aria-hidden="true"></span><span>Army</span></button>
         </div>
     </nav>
@@ -51,6 +51,11 @@
             </div>
         </section>
 
+        <section id="commission-tracker" class="commission-tracker" aria-label="Tracked Royal Commission" hidden>
+            <div><strong id="commission-tracker-title"></strong><p id="commission-tracker-detail"></p></div>
+            <div class="commission-tracker-actions"><button id="commission-tracker-action" type="button" onclick="continueTrackedCommission()">Continue</button><button type="button" class="button-secondary" onclick="openRoyalCommissions()">Commissions</button></div>
+        </section>
+        <span id="commission-live-status" class="commission-sr-only" role="status"></span>
         <div id="hero-view">
             <div id="enemy-container">
                 <button type="button" id="prev-level" aria-label="Previous stage" onclick="goToPrevLevel()"><span class="ui-icon ui-icon-previous" aria-hidden="true"></span></button>
@@ -182,35 +187,35 @@
                 <article class="structure-card">
                 <div class="structure-row">
                     <span>Castle — Lv <span id="castle-lvl">0</span></span>
-                    <button onclick="upgradeStructure('castle')"><span id="castle-cost">1000</span></button>
+                    <button id="castle-structure-upgrade" onclick="upgradeStructure('castle')"><span id="castle-cost">1000</span></button>
                 </div>
                 <p>Upgrade your castle to unlock new buildings and increase hero damage.</p>
                 </article>
                 <article class="structure-card">
                 <div class="structure-row">
                     <span>Tavern — Lv <span id="tavern-lvl">0</span></span>
-                    <button onclick="upgradeStructure('tavern')"><span id="tavern-cost">1000</span></button>
+                    <button id="tavern-structure-upgrade" onclick="upgradeStructure('tavern')"><span id="tavern-cost">1000</span></button>
                 </div>
                 <p>Upgrade your tavern to increase the amount of mercenaries hired.</p>
                 </article>
                 <article class="structure-card">
                 <div class="structure-row">
                     <span>Blacksmith — Lv <span id="blacksmith-lvl">0</span></span>
-                    <button onclick="upgradeStructure('blacksmith')"><span id="blacksmith-cost">1000</span></button>
+                    <button id="blacksmith-structure-upgrade" onclick="upgradeStructure('blacksmith')"><span id="blacksmith-cost">1000</span></button>
                 </div>
                 <p>Upgrade your blacksmith to improve mercenary and hero gear level.</p>
                 </article>
                 <article class="structure-card">
                 <div class="structure-row">
                     <span>Barracks — Lv <span id="barracks-lvl">0</span></span>
-                    <button onclick="upgradeStructure('barracks')"><span id="barracks-cost">1000</span></button>
+                    <button id="barracks-structure-upgrade" onclick="upgradeStructure('barracks')"><span id="barracks-cost">1000</span></button>
                 </div>
                 <p>Upgrade your barracks to increase the level of your mercenaries.</p>
                 </article>
                 <article class="structure-card">
                 <div class="structure-row">
                     <span>Market — Lv <span id="market-lvl">0</span></span>
-                    <button onclick="upgradeStructure('market')"><span id="market-cost">1000</span></button>
+                    <button id="market-structure-upgrade" onclick="upgradeStructure('market')"><span id="market-cost">1000</span></button>
                 </div>
                 <p>Upgrade your market to increase the amount of gold earned from each defeated enemy.</p>
                 </article>
@@ -318,7 +323,7 @@
     </div>
 
     <p style="font-size: 12px; color: #ccc; text-align: center; margin-top: 40px; font-family: 'MedievalSharp', serif;">
-        v1.17.0 – Heroes of the Click
+        v1.17.1 – Heroes of the Click
     </p>
     <br>
 

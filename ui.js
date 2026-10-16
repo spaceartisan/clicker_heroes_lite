@@ -225,6 +225,7 @@ function updateUI() {
     checkAchievements();
     updatePlayerLevelGearText();
     if (typeof refreshArmyView === "function") refreshArmyView();
+    if (typeof refreshRoyalCommissions === "function" && typeof royalCommissions !== "undefined" && royalCommissions?.trackedId) refreshRoyalCommissions();
 }
 
 // === Player Upgrade ===

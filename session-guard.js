@@ -277,6 +277,7 @@ function sessionGuardSet(phase,message){
         startSquadAttack();
     }
     if(typeof accountControlsUpdate==="function")accountControlsUpdate();
+    if(typeof refreshRoyalCommissions==="function")refreshRoyalCommissions();
 }
 function sessionGuardUnwatch(){
     if(sessionGuardUnsubscribe){sessionGuardUnsubscribe();sessionGuardUnsubscribe=null}

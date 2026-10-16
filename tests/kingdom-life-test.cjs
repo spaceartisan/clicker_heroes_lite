@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 let serial=0,draws=0;const timers=new Map(),listeners={},motion={matches:false,addEventListener(n,fn){this.change=fn;}},view={style:{display:'none'}};
 const state={document:{hidden:false,getElementById:id=>id==='kingdom-view'?view:{width:400,getContext:()=>({})},addEventListener:(n,f)=>listeners[n]=f},
- window:{matchMedia:()=>motion},structures:{castle:{level:1}},batterySaverEnabled:false,
+ window:{matchMedia:()=>motion},structures:{castle:{level:1},market:{level:1}},batterySaverEnabled:false,
  drawKingdom(){draws++;},KingdomArt:{drawLife(){}},GameDialogs:{current:()=>state.modal},
  setTimeout(fn,delay){const id=++serial;timers.set(id,{fn,delay});return id;},clearTimeout(id){timers.delete(id);}};
 vm.createContext(state);vm.runInContext(fs.readFileSync(path.join(__dirname,'../kingdom-life.js'),'utf8'),state);
@@ -12,14 +12,18 @@ view.style.display='block';run('refreshKingdomLife();refreshKingdomLife()');chec
 tick();check(draws===1&&timers.size===1,'Visible map redraws and schedules one next frame');
 state.modal='court';run('refreshKingdomLife()');check(!timers.size,'Opening a dialog stops animation');
 state.modal=null;state.batterySaverEnabled=true;run('refreshKingdomLife()');check([...timers.values()][0].delay===600,'Battery Saver lowers update frequency');
-run('notifyKingdomUpgrade("castle")');tick();check(run('kingdomLifeUpgrade.elapsed')===600,'Upgrade feedback runs when map is visible');
+run('notifyKingdomUpgrade("castle")');tick();check(run("kingdomLifeUpgrades.get('castle').elapsed")===600,'Upgrade feedback runs when map is visible');
 state.document.hidden=true;listeners.visibilitychange();check(!timers.size,'Background tab stops animation');
-state.document.hidden=false;listeners.visibilitychange();tick();tick();tick();check(run('kingdomLifeUpgrade')===null,'Construction effect expires after brief display');
+state.document.hidden=false;listeners.visibilitychange();tick();tick();tick();check(run('kingdomLifeUpgrades.size')===0,'Construction effect expires after brief display');
+run('notifyKingdomUpgrade("castle");notifyKingdomUpgrade("market");notifyKingdomUpgrade("castle");notifyKingdomUpgrade("unknown")');
+check(run('kingdomLifeUpgrades.size')===2,'Multiple buildings retain feedback, repeated purchases coalesce, invalid IDs ignored');
+state.modal='court';run('refreshKingdomLife()');check(!timers.size&&run('kingdomLifeUpgrades.size')===2,'Dialog preserves queued building effects');
+run('resetKingdomLife()');check(run('kingdomLifeUpgrades.size')===0,'Loading or rebirth clears queued feedback');
 motion.matches=true;motion.change();check(!timers.size,'Reduced motion disables animation');
 // Drawing remains on-grid and within the map at every sampled frame.
 const artContext={};vm.createContext(artContext);vm.runInContext(fs.readFileSync(path.join(__dirname,'../kingdom-art.js'),'utf8')+';this.art=KingdomArt;',artContext);
 for(const time of [0,180,600,1200,24000,47800]) {
- const progress={time,levels:{market:1,blacksmith:1},upgrade:{id:'castle',elapsed:1200}};
+ const progress={time,levels:{market:1,blacksmith:1},upgrades:[{id:'castle',elapsed:1200},{id:'market',elapsed:600}]};
  const before=JSON.stringify(progress),commands=[];
  artContext.art.drawLife({fillRect(...args){commands.push(args);}},progress,400);
  check(commands.every(([x,y,w,h])=>[x,y,w,h].every(Number.isInteger)&&x>=0&&y>=0&&x+w<=400&&y+h<=400),'Life sprites remain crisp and bounded at '+time);

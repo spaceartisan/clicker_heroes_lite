@@ -3,7 +3,7 @@ const fs = require('node:fs'), vm = require('node:vm'), path = require('node:pat
 const nodes = new Map();
 function element() { return {textContent:'',children:[],disabled:false,style:{},
  append(...items){this.children.push(...items);},replaceChildren(...items){this.children=items;},
- setAttribute(){},addEventListener(){},focus(){}}; }
+ attributes:{},events:{},classList:{toggle(){}},setAttribute(key,value){this.attributes[key]=value;},addEventListener(name,fn){this.events[name]=fn;},focus(){this.focused=true;}}; }
 const context = vm.createContext({
  document:{getElementById(id){if(!nodes.has(id))nodes.set(id,element());return nodes.get(id);},createElement:element,querySelector(){return null;}},
  maxLevel:1,dynastyCount:0,playerLevel:1,playerGearLevel:0,gold:0,
@@ -13,7 +13,8 @@ const context = vm.createContext({
  structureLockReason:id=>id==='tavern'&&context.maxLevel<=10?'Clear stage 10':'',getStructureCost:()=>1000,
  blocked:false,sessionGuardBlocksGameplay:()=>context.blocked,
  saveGame(){if(context.failSave)throw Error('full');context.saved=run('JSON.stringify(royalCommissions)');},
- updateUI(){},drawKingdom(){},formatDigits:n=>String(n),openGameDialog(){},closeGameDialog(){}
+ updateUI(){},drawKingdom(){},formatDigits:n=>String(n),openGameDialog(id){context.opened=id;},closeGameDialog(id){context.closed=id;},
+ switchView(view){context.view=view;},openResearchTree(){context.opened='research';},showMenu(id){context.opened=id;}
 });
 const run = code => vm.runInContext(code,context);
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../commissions.js'),'utf8'),context);
@@ -55,4 +56,46 @@ check('new Set(royalCommissions.jobs.map(j=>j.id)).size===3&&royalCommissions.jo
 check('Number.isFinite(commissionReward(1e12))','High-stage rewards remain finite');
 run('renderRoyalCommissions(); const card=commissionNodes.get(royalCommissions.jobs[0].id); recordCommissionEvent("enemy",1,1e12)');
 check('commissionNodes.get(royalCommissions.jobs[0].id)===card','Progress refresh preserves existing controls and focus');
+run('playerLevel=1;playerGearLevel=0;maxLevel=1;gold=0;RESEARCH_NODES=[];canResearchNode=()=>false;loadRoyalCommissions(null);const tracked=royalCommissions.jobs[0].id');
+check('trackRoyalCommission(tracked)&&royalCommissions.trackedId===tracked','Tracking selects an issued request');
+check('!document.getElementById("commission-tracker").hidden','Tracked request is visible above gameplay');
+run('loadRoyalCommissions(JSON.parse(saved))');
+check('royalCommissions.trackedId===tracked','Tracked request survives save/load');
+run('const beforeShortcut=JSON.stringify(royalCommissions.jobs);const shortcutGold=gold;continueCommission(tracked)');
+check('view==="hero"&&closed==="commissions-popup"&&JSON.stringify(royalCommissions.jobs)===beforeShortcut&&gold===shortcutGold','Combat shortcut opens Hero without purchases or progress changes');
+run('recordCommissionEvent("enemy",100,1);continueCommission(tracked)');
+check('document.getElementById("hero-level-upgrade").focused','Hero shortcut focuses the relevant upgrade');
+run('recordCommissionEvent("hero",100)');
+check('!document.getElementById("commission-ready-badge").hidden&&document.getElementById("commission-live-status").textContent.includes("ready to claim")','Completion is visible on navigation and announced');
+run('continueTrackedCommission()');
+check('opened==="commissions-popup"','Completed tracker opens the reward board');
+run('finishCommission(tracked,true)');
+check('royalCommissions.trackedId===royalCommissions.jobs[0].id&&royalCommissions.trackedId!==tracked','Tracking follows the replacement after claiming');
+run('const keptId=royalCommissions.jobs[0].id;const kept=JSON.stringify(royalCommissions);commissionNodes.get(keptId).replace.events.click()');
+check('!commissionNodes.get(keptId).confirmation.hidden&&commissionNodes.get(keptId).cancel.focused&&JSON.stringify(royalCommissions)===kept','Replace first shows inline confirmation and focuses Keep');
+run('commissionNodes.get(keptId).cancel.events.click()');
+check('commissionNodes.get(keptId).confirmation.hidden&&JSON.stringify(royalCommissions)===kept','Cancel preserves all request progress');
+run('commissionNodes.get(keptId).confirm.events.click()');
+check('JSON.stringify(royalCommissions)===kept','Hidden confirmation cannot replace a request');
+run('commissionNodes.get(keptId).replace.events.click();commissionNodes.get(keptId).confirm.events.click()');
+check('royalCommissions.trackedId===royalCommissions.jobs[0].id&&royalCommissions.trackedId!==keptId','Confirmed replacement preserves tracking on the new request');
+run('failSave=true;const beforeTrack=royalCommissions.trackedId');
+check('!trackRoyalCommission(royalCommissions.jobs[1].id)&&royalCommissions.trackedId===beforeTrack','Tracking save failure restores previous selection');
+run('failSave=false;blocked=true;refreshRoyalCommissions();const paused=JSON.stringify(royalCommissions);const pausedView=view');
+check('!continueCommission(royalCommissions.jobs[0].id)&&!trackRoyalCommission(royalCommissions.jobs[1].id)&&JSON.stringify(royalCommissions)===paused&&view===pausedView','Paused shortcuts cannot navigate or change tracking');
+check('commissionNodes.get(royalCommissions.jobs[0].id).claim.disabled&&document.getElementById("commission-tracker-action").disabled','Paused controls reflect their blocked state');
+run('blocked=false;refreshRoyalCommissions()');
+check('!commissionNodes.get(royalCommissions.jobs[0].id).claim.disabled','Resume restores controls');
+run('trackRoyalCommission(royalCommissions.trackedId)');
+check('royalCommissions.trackedId===null&&document.getElementById("commission-tracker").hidden','Untrack hides the optional panel');
+run('const badTrack=JSON.parse(JSON.stringify(royalCommissions));badTrack.trackedId=999999;loadRoyalCommissions(badTrack)');
+check('royalCommissions.trackedId===null','Unknown imported tracker ID is discarded');
+for(const [goal, destination] of [['squad','army'],['gear','hero'],['building','kingdom'],['research','research']]) {
+ run('royalCommissions.jobs[0].goals=[commissionGoal('+JSON.stringify(goal)+',1),commissionGoal("enemy",1)];continueCommission(royalCommissions.jobs[0].id)');
+ check((goal==='research'?'opened':'view')+'==='+JSON.stringify(destination),goal+' shortcut reaches its controls');
+}
+check('document.getElementById("castle-structure-upgrade").focused','Building shortcut reaches the construction button rather than the building management menu');
+run('royalCommissions.jobs[0].goals=[commissionGoal("gear",1),commissionGoal("enemy",1)];playerGearLevel=3;continueCommission(royalCommissions.jobs[0].id)');
+check('opened==="blacksmith"','Capped hero gear shortcut opens the forge');
+check('commissionGoalLabel({type:"boss"},{stage:11}).includes("20+")','Boss requirement names the next actual boss stage');
 console.log('Royal Commissions: '+checks+' checks passed.');

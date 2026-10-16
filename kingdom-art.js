@@ -235,9 +235,9 @@ const KingdomArt = (() => {
             return start+(end-start)*(phase<1?phase:2-phase);
         };
         const step=Math.floor(time/450);
-        villager(walk(43,153,0),71,p.clay[2],step);
+        villager(walk(43,119,0),71,p.clay[2],step);
         villager(100,walk(123,148,.6),p.slate[2],step+1);
-        if(state.levels.market) villager(walk(45,150,1.1),115,p.gold,step);
+        if(state.levels.market) villager(walk(112,133,1.1),114,p.gold,step);
         // Banner cloth moves a pixel; poles stay anchored to their roof.
         for(const [x,y,c] of [[113,24,p.gold],[184,152,p.clay[2]]]) {
             r(x,y,5,4,c);r(x,y,5,1,p.cream);
@@ -249,11 +249,11 @@ const KingdomArt = (() => {
                 r(74+(rise%3)-1,135-rise,2+(i%2),2,rise<5?p.stoneDark:p.stone);
             }
         }
-        if(state.upgrade) {
+        for(const upgrade of state.upgrades || []) {
             const bounds={castle:[76,22,126,65],tavern:[18,98,43,120],blacksmith:[57,137,82,162],
-                barracks:[120,138,145,162],market:[158,98,183,122]}[state.upgrade.id];
+                barracks:[120,138,145,162],market:[158,98,183,122]}[upgrade.id];
             if(bounds) {
-                const [l,t,right,bottom]=bounds, rise=Math.floor(state.upgrade.elapsed/250);
+                const [l,t,right,bottom]=bounds, rise=Math.floor(upgrade.elapsed/250);
                 for(const [x,y] of [[l-2,t+4],[right+1,t+9],[l+5,bottom-1],[right-4,bottom+2]]) {
                     r(x,y-rise,1,3,p.gold);r(x-1,y+1-rise,3,1,p.cream);
                 }
